@@ -1,15 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>멍자국 — 산책로 상세 (추천)</title>
-<link rel="stylesheet" th:href="@{/css/tokens.css}" />
-<link rel="stylesheet" th:href="@{/css/style.css}" />
-</head>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 산책로 상세 (추천)', active='mypage', content=~{::main}, showFooter=false, showScript=false)}">
+<head><title>멍자국 — 산책로 상세 (추천)</title></head>
 <body>
-
-<header th:replace="~{fragments/layout :: header(active='mypage')}"></header>
 
 <main class="page">
   <div class="map-preview" style="height:280px;">

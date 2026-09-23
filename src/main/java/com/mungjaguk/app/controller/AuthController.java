@@ -12,16 +12,16 @@ public class AuthController {
 
     @GetMapping("/login")
     public String login() {
-        return "login";
+        return "member/login";
     }
 
     @GetMapping("/mypage")
     public String mypage() {
-        return "mypage";
+        return "member/mypage";
     }
 
     @GetMapping("/pet-profile")
     public String petProfile() {
-        return "pet-profile";
+        return "dog/profile";
     }
 }
