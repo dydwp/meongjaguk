@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>멍자국 — 메인 / 홈</title>
+<link rel="stylesheet" th:href="@{/css/tokens.css}" />
+<link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="spacer"></div>
+  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
+  <ul class="app-nav">
+    <li><a th:href="@{/board}">산책로 게시판</a></li>
+    <li><a th:href="@{/mypage}">마이페이지</a></li>
+    <li><a th:href="@{/login}" class="nav-login">로그인</a></li>
+  </ul>
+</header>
+
+<main class="page">
+  <section class="hero">
+    <div class="hero-text">
+      <span class="hero-badge"><span class="paw">🐾</span> 오늘도 멍자국 남기러 가요</span>
+      <h1>오늘은 어디로<br>산책 나가볼까요?</h1>
+      <p>엄선한 산책로를 둘러보거나, 바로 자유롭게 걸어보세요.</p>
+      <div class="hero-actions">
+        <a th:href="@{/routes}" class="btn btn-primary">추천 코스 보기</a>
+        <a th:href="@{/board}" class="btn btn-outline">같이 걷기 모집 보기</a>
+      </div>
+    </div>
+    <div class="hero-illustration" aria-hidden="true">
+      <svg viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet">
+        <circle cx="252" cy="46" r="30" fill="var(--color-accent)" opacity="0.85"/>
+        <g opacity="0.9">
+          <ellipse cx="200" cy="40" rx="26" ry="12" fill="var(--color-surface)"/>
+          <ellipse cx="222" cy="36" rx="18" ry="10" fill="var(--color-surface)"/>
+        </g>
+        <path d="M0 150 C 60 120, 120 170, 190 140 S 300 120, 320 150 L 320 220 L 0 220 Z" fill="var(--color-secondary)" opacity="0.55"/>
+        <path d="M0 175 C 70 155, 140 190, 210 165 S 300 150, 320 175 L 320 220 L 0 220 Z" fill="var(--color-primary)" opacity="0.45"/>
+        <g>
+          <rect x="46" y="118" width="6" height="30" rx="2" fill="var(--color-primary-dark)"/>
+          <circle cx="49" cy="106" r="22" fill="var(--color-primary)"/>
+        </g>
+        <g>
+          <rect x="262" y="108" width="6" height="34" rx="2" fill="var(--color-primary-dark)"/>
+          <circle cx="265" cy="94" r="26" fill="var(--color-secondary)"/>
+        </g>
+        <path d="M20 196 C 90 170, 170 210, 300 178" fill="none" stroke="var(--color-surface)" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
+        <g transform="translate(120,145)">
+          <ellipse cx="50" cy="55" rx="36" ry="7" fill="var(--color-text)" opacity="0.08"/>
+          <path d="M84 26 C97 21 99 8 90 6 C88 14 84 20 78 26 Z" fill="var(--color-surface)"/>
+          <rect x="70" y="44" width="9" height="15" rx="4.5" fill="var(--color-surface)"/>
+          <rect x="28" y="44" width="9" height="15" rx="4.5" fill="var(--color-surface)"/>
+          <ellipse cx="54" cy="32" rx="32" ry="18" fill="var(--color-surface)"/>
+          <ellipse cx="48" cy="24" rx="11" ry="7" fill="var(--color-accent)"/>
+          <circle cx="18" cy="22" r="16" fill="var(--color-surface)"/>
+          <ellipse cx="4" cy="27" rx="10" ry="7" fill="var(--color-surface)"/>
+          <path d="M14 6 C4 4 -6 12 -4 22 C2 18 9 12 14 6 Z" fill="var(--color-accent)"/>
+          <circle cx="11" cy="18" r="1.8" fill="var(--color-text)"/>
+          <ellipse cx="-4" cy="28" rx="3.5" ry="2.8" fill="var(--color-accent-hover)"/>
+        </g>
+      </svg>
+    </div>
+  </section>
+
+  <div class="two-col">
+    <!-- 왼쪽: 추천 산책로 -->
+    <section>
+      <div class="block-label-row">
+        <h2 class="block-label">추천 산책로</h2>
+        <a th:href="@{/routes}" class="section-link">전체 보기 ›</a>
+      </div>
+
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>한강 벚꽃길 코스 <span class="tag">추천</span></h3>
+          <p>강변을 따라 걷는 평탄한 코스예요. 소형견도 부담 없이 걸을 수 있어요.</p>
+          <span class="meta">2.3km · 약 35분</span>
+        </div>
+      </a>
+
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>동네 뒷산 산책로 <span class="tag-secondary">활력 코스</span></h3>
+          <p>가벼운 오르막이 있는 흙길 코스예요. 활동성이 좋은 아이에게 추천해요.</p>
+          <span class="meta">3.1km · 약 50분</span>
+        </div>
+      </a>
+
+      <a th:href="@{/course-detail}" class="route-item mb-0">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>호수공원 둘레길</h3>
+          <p>넓은 공원을 크게 도는 코스예요. 대형견과 함께라면 이 코스를 추천해요.</p>
+          <span class="meta">4.0km · 약 1시간</span>
+        </div>
+      </a>
+    </section>
+
+    <!-- 오른쪽: 바로 산책하기 -->
+    <section>
+      <h2 class="block-label">바로 산책하기</h2>
+      <div class="card card-pad">
+      <div class="map-preview" style="height:180px;">
+        <svg viewBox="0 0 300 180" preserveAspectRatio="none">
+          <path d="M40 150 C 90 120, 120 140, 150 100 S 220 60, 260 35"
+                fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
+          <circle cx="40" cy="150" r="5" fill="var(--color-primary)"/>
+          <circle cx="260" cy="35" r="5" fill="var(--color-accent)"/>
+        </svg>
+        <span class="map-chip" data-walk-chip>지도 미리보기</span>
+      </div>
+
+      <!-- 산책 전: 시작 버튼만 -->
+      <div data-walk-idle>
+        <p class="small text-muted mt-16">특정 코스 없이 자유롭게 걷고 기록만 남기고 싶을 때 눌러주세요.</p>
+        <button type="button" class="btn btn-primary mt-8" data-start-walk>산책 시작</button>
+      </div>
+
+      <!-- 산책 중: 실시간 거리/시간 + 종료·상세 버튼 -->
+      <div data-walk-active hidden>
+        <div class="stat-row" style="margin:16px 0 0;">
+          <div class="stat-card">
+            <div class="label">이동 거리</div>
+            <div class="value" data-walk-distance>0.0 km</div>
+          </div>
+          <div class="stat-card">
+            <div class="label">경과 시간</div>
+            <div class="value" data-walk-elapsed>00:00</div>
+          </div>
+        </div>
+        <div class="btn-row mt-8">
+          <button type="button" class="btn btn-outline-primary" data-end-walk>산책 종료</button>
+          <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
+        </div>
+      </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="meet-section">
+    <div class="block-label-row">
+      <h2 class="block-label">🐶 같이 걷기 모집 중</h2>
+      <a th:href="@{/board}" class="section-link">더보기 ›</a>
+    </div>
+
+    <div class="meet-grid">
+      <a th:href="@{/course-detail-shared}" class="meet-card">
+        <div class="meet-top">
+          <span class="meet-status">모집중</span>
+          <span class="meet-date">9/27(토) 오후 4:00</span>
+        </div>
+        <h4>토요일 한강 벚꽃길 같이 걸어요</h4>
+        <p class="meet-cond">한강 벚꽃길 코스 · 소형견 환영</p>
+        <div class="progress-bar"><i style="width:60%"></i></div>
+        <div class="meet-count"><span>참여 인원</span><b>3 / 5명</b></div>
+      </a>
+
+      <a th:href="@{/course-detail-shared}" class="meet-card">
+        <div class="meet-top">
+          <span class="meet-status">모집중</span>
+          <span class="meet-date">9/28(일) 오전 8:00</span>
+        </div>
+        <h4>아침 뒷산 산책 메이트 구해요</h4>
+        <p class="meet-cond">동네 뒷산 산책로 · 활동량 많은 친구</p>
+        <div class="progress-bar"><i style="width:50%"></i></div>
+        <div class="meet-count"><span>참여 인원</span><b>2 / 4명</b></div>
+      </a>
+
+      <a th:href="@{/course-detail-shared}" class="meet-card">
+        <div class="meet-top">
+          <span class="meet-status closed">마감</span>
+          <span class="meet-date">9/25(목) 오후 7:30</span>
+        </div>
+        <h4>퇴근 후 호수공원 한 바퀴</h4>
+        <p class="meet-cond">호수공원 둘레길 · 대형견 가능</p>
+        <div class="progress-bar is-full"><i style="width:100%"></i></div>
+        <div class="meet-count"><span>참여 인원</span><b>6 / 6명</b></div>
+      </a>
+    </div>
+  </section>
+</main>
+
+<footer class="site-footer">© 2026 멍자국 · 반려견 산책 코스 &amp; 같이 걷기 서비스</footer>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>

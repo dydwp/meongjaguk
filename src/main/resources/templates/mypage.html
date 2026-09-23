@@ -1,0 +1,151 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>멍자국 — 마이페이지</title>
+<link rel="stylesheet" th:href="@{/css/tokens.css}" />
+<link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="spacer"></div>
+  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
+  <ul class="app-nav">
+    <li><a th:href="@{/board}">산책로 게시판</a></li>
+    <li><a th:href="@{/mypage}" class="active">마이페이지</a></li>
+  </ul>
+</header>
+
+<main class="page">
+  <div class="card card-pad" style="display:flex; align-items:center; gap:14px;">
+    <div class="avatar">하늘</div>
+    <div style="flex:1;">
+      <div style="font-weight:700; font-size:15px;">이하늘</div>
+      <div class="small text-muted">2025.03 가입 · 카카오 계정</div>
+    </div>
+    <a th:href="@{/login}" class="text-link small">로그아웃</a>
+  </div>
+
+  <nav class="tabs" data-tabs>
+    <button type="button" class="tab active" data-tab-target="pets">반려견</button>
+    <button type="button" class="tab" data-tab-target="shared">내가 공유한 글</button>
+    <button type="button" class="tab" data-tab-target="requests">신청 수락·거절</button>
+    <button type="button" class="tab" data-tab-target="activity">활동 내역</button>
+  </nav>
+
+  <!-- 반려견 -->
+  <div data-tab-panel="pets">
+    <div class="grid-3">
+      <div class="pet-card">
+        <div class="photo"></div>
+        <h4>초코</h4>
+        <p>포메라니안 · 소형견 · 3세</p>
+      </div>
+      <div class="pet-card">
+        <div class="photo"></div>
+        <h4>보리</h4>
+        <p>골든리트리버 · 대형견 · 2세</p>
+      </div>
+      <a th:href="@{/pet-profile}" class="pet-card add">
+        <span style="font-size:20px; line-height:1;">+</span>
+        <span class="mt-8">새 반려견 등록</span>
+      </a>
+    </div>
+  </div>
+
+  <!-- 내가 공유한 글 -->
+  <div data-tab-panel="shared" hidden>
+    <a th:href="@{/course-detail-shared}" class="route-item">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>저녁 노을 산책 모임 <span class="tag-neutral">참여 3/5</span></h3>
+        <p>퇴근 후 노을을 보며 가볍게 걷는 코스예요.</p>
+        <span class="meta">1.8km · 약 25분 · 2026.09.20 공유</span>
+      </div>
+    </a>
+    <a th:href="@{/course-detail-shared}" class="route-item mb-0">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>비 온 뒤 흙길 탐방 <span class="tag-neutral">참여 1/3</span></h3>
+        <p>흙 내음이 좋은 조용한 산책로예요.</p>
+        <span class="meta">2.1km · 약 30분 · 2026.09.20 공유</span>
+      </div>
+    </a>
+  </div>
+
+  <!-- 신청 수락·거절 -->
+  <div data-tab-panel="requests" hidden>
+    <div class="request-item" data-request-item>
+      <div class="avatar avatar-sm avatar-muted">김</div>
+      <div class="who">
+        <div class="name">김민준</div>
+        <div class="route">저녁 노을 산책 모임 동행을 신청했어요</div>
+      </div>
+      <div class="request-actions">
+        <button type="button" class="btn-accept" data-accept>수락</button>
+        <button type="button" class="btn-reject" data-reject>거절</button>
+      </div>
+    </div>
+    <div class="request-item" data-request-item>
+      <div class="avatar avatar-sm avatar-muted">정</div>
+      <div class="who">
+        <div class="name">정서윤</div>
+        <div class="route">저녁 노을 산책 모임 동행을 신청했어요</div>
+      </div>
+      <div class="request-actions">
+        <button type="button" class="btn-accept" data-accept>수락</button>
+        <button type="button" class="btn-reject" data-reject>거절</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 활동 내역 -->
+  <div data-tab-panel="activity" hidden>
+    <a th:href="@{/activity-detail}" class="route-item">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>한강 벚꽃길 코스 <span class="tag-neutral">개인 산책</span></h3>
+        <p>2.3km · 약 35분</p>
+        <span class="meta">2026.09.19</span>
+      </div>
+    </a>
+    <a th:href="@{/activity-detail}" class="route-item">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>자유 산책 <span class="tag-neutral">개인 산책</span></h3>
+        <p>1.6km · 약 22분</p>
+        <span class="meta">2026.09.17</span>
+      </div>
+    </a>
+    <a th:href="@{/activity-detail}" class="route-item">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>저녁 노을 산책 모임 <span class="tag-secondary">공유 참여</span></h3>
+        <p>1.8km · 약 25분</p>
+        <span class="meta">2026.09.10</span>
+      </div>
+    </a>
+    <a th:href="@{/activity-detail}" class="route-item">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>동네 뒷산 산책로 <span class="tag-neutral">개인 산책</span></h3>
+        <p>3.1km · 약 50분</p>
+        <span class="meta">2026.09.05</span>
+      </div>
+    </a>
+    <a th:href="@{/activity-detail}" class="route-item mb-0">
+      <div class="route-thumb">🐾</div>
+      <div>
+        <h3>자유 산책 <span class="tag-neutral">개인 산책</span></h3>
+        <p>0.8km · 약 10분</p>
+        <span class="meta">2026.09.02</span>
+      </div>
+    </a>
+  </div>
+</main>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
