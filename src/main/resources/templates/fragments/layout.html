@@ -1,0 +1,19 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head><meta charset="UTF-8" /></head>
+<body>
+
+<header th:fragment="header(active)" class="app-header">
+  <div class="spacer"></div>
+  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
+  <ul class="app-nav">
+    <li><a th:href="@{/board}" th:classappend="${active == 'board'} ? 'active'">산책로 게시판</a></li>
+    <li th:if="${active != 'login'}"><a th:href="@{/mypage}" th:classappend="${active == 'mypage'} ? 'active'">마이페이지</a></li>
+    <li th:if="${active == 'login' or active == null}"><a th:href="@{/login}" th:class="${active == 'login'} ? 'active' : 'nav-login'">로그인</a></li>
+  </ul>
+</header>
+
+<footer th:fragment="footer" class="site-footer">© 2026 멍자국 · 반려견 산책 코스 &amp; 같이 걷기 서비스</footer>
+
+</body>
+</html>

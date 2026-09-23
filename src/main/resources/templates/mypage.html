@@ -9,14 +9,7 @@
 </head>
 <body>
 
-<header class="app-header">
-  <div class="spacer"></div>
-  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
-  <ul class="app-nav">
-    <li><a th:href="@{/board}">산책로 게시판</a></li>
-    <li><a th:href="@{/mypage}" class="active">마이페이지</a></li>
-  </ul>
-</header>
+<header th:replace="~{fragments/layout :: header(active='mypage')}"></header>
 
 <main class="page">
   <div class="card card-pad" style="display:flex; align-items:center; gap:14px;">
