@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>멍자국 — 반려견 프로필</title>
+<link rel="stylesheet" th:href="@{/css/tokens.css}" />
+<link rel="stylesheet" th:href="@{/css/style.css}" />
+</head>
+<body>
+
+<header class="app-header">
+  <div class="spacer"></div>
+  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
+  <ul class="app-nav">
+    <li><a th:href="@{/board}">산책로 게시판</a></li>
+    <li><a th:href="@{/mypage}" class="active">마이페이지</a></li>
+  </ul>
+</header>
+
+<main class="focus-page">
+  <div class="card focus-card card-pad" style="max-width:560px;">
+    <h2 class="block-label" style="font-size:16px;">반려견 프로필</h2>
+
+    <div style="display:flex; align-items:center; gap:16px; margin-bottom:22px;">
+      <div class="photo-upload">사진 등록</div>
+      <p class="small text-muted mb-0">선명한 정면 사진을 올려주시면<br>다른 이웃들이 더 쉽게 알아볼 수 있어요.</p>
+    </div>
+
+    <div class="field">
+      <label>이름</label>
+      <input type="text" value="초코" />
+    </div>
+
+    <div class="field-row">
+      <div class="field">
+        <label>종(품종)</label>
+        <input type="text" value="포메라니안" />
+      </div>
+      <div class="field">
+        <label>나이</label>
+        <input type="text" value="3세" />
+      </div>
+    </div>
+
+    <div class="field">
+      <label>크기</label>
+      <div class="pill-group" data-pill-group>
+        <button type="button" class="pill selected" aria-pressed="true">소형견</button>
+        <button type="button" class="pill" aria-pressed="false">중형견</button>
+        <button type="button" class="pill" aria-pressed="false">대형견</button>
+      </div>
+    </div>
+
+    <div class="field">
+      <label>활동성</label>
+      <div class="pill-group" data-pill-group>
+        <button type="button" class="pill" aria-pressed="false">낮음</button>
+        <button type="button" class="pill selected" aria-pressed="true">보통</button>
+        <button type="button" class="pill" aria-pressed="false">높음</button>
+      </div>
+    </div>
+
+    <a th:href="@{/mypage}" class="btn btn-focus mt-8">저장하기</a>
+  </div>
+</main>
+
+<script th:src="@{/js/app.js}"></script>
+</body>
+</html>
