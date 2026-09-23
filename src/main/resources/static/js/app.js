@@ -62,16 +62,6 @@
     });
   });
 
-  /* ---------- 신고 링크 ---------- */
-  document.querySelectorAll("[data-report-link]").forEach(function (link) {
-    link.addEventListener("click", function (e) {
-      e.preventDefault();
-      link.textContent = "신고가 접수되었어요";
-      link.style.pointerEvents = "none";
-      link.style.textDecoration = "none";
-    });
-  });
-
   /* ---------- 댓글 등록 ---------- */
   document.querySelectorAll("[data-comment-form]").forEach(function (form) {
     var input = form.querySelector("input");

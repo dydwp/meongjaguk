@@ -9,15 +9,7 @@
 </head>
 <body>
 
-<header class="app-header">
-  <div class="spacer"></div>
-  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
-  <ul class="app-nav">
-    <li><a th:href="@{/board}">산책로 게시판</a></li>
-    <li><a th:href="@{/mypage}">마이페이지</a></li>
-    <li><a th:href="@{/login}" class="nav-login">로그인</a></li>
-  </ul>
-</header>
+<header th:replace="~{fragments/layout :: header(active=null)}"></header>
 
 <main class="page">
   <h1 class="page-title">추천 산책로</h1>

@@ -9,14 +9,7 @@
 </head>
 <body>
 
-<header class="app-header">
-  <div class="spacer"></div>
-  <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
-  <ul class="app-nav">
-    <li><a th:href="@{/board}" class="active">산책로 게시판</a></li>
-    <li><a th:href="@{/mypage}">마이페이지</a></li>
-  </ul>
-</header>
+<header th:replace="~{fragments/layout :: header(active='board')}"></header>
 
 <main class="page">
   <div class="map-preview" style="height:280px;">
@@ -59,7 +52,6 @@
     <div class="btn-row mt-16">
       <button type="button" class="btn btn-highlight" data-join-btn data-joined="false">동행 신청</button>
     </div>
-    <p class="small mt-8 mb-0"><a href="#" class="text-link" data-report-link>이 산책로 신고하기</a></p>
   </div>
 
   <div class="mt-24">
