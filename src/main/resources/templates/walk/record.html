@@ -1,15 +1,8 @@
 <!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title>멍자국 — 산책 기록</title>
-<link rel="stylesheet" th:href="@{/css/tokens.css}" />
-<link rel="stylesheet" th:href="@{/css/style.css}" />
-</head>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 산책 기록', active='mypage', content=~{::main}, showFooter=false, showScript=true)}">
+<head><title>멍자국 — 산책 기록</title></head>
 <body>
-
-<header th:replace="~{fragments/layout :: header(active='mypage')}"></header>
 
 <main class="page" data-auto-start-walk>
   <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
@@ -42,6 +35,5 @@
   <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
 </main>
 
-<script th:src="@{/js/app.js}"></script>
 </body>
 </html>

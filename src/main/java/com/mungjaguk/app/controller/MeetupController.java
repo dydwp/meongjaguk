@@ -13,11 +13,11 @@ public class MeetupController {
 
     @GetMapping("/board")
     public String board() {
-        return "board";
+        return "board/list";
     }
 
     @GetMapping("/course-detail-shared")
     public String courseDetailShared() {
-        return "course-detail-shared";
+        return "board/detail";
     }
 }

@@ -12,11 +12,11 @@ public class RouteController {
 
     @GetMapping("/routes")
     public String routes() {
-        return "routes";
+        return "course/list";
     }
 
     @GetMapping("/course-detail")
     public String courseDetail() {
-        return "course-detail";
+        return "course/detail";
     }
 }

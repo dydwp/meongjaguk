@@ -13,11 +13,11 @@ public class WalkController {
 
     @GetMapping("/walk-record")
     public String walkRecord() {
-        return "walk-record";
+        return "walk/record";
     }
 
     @GetMapping("/activity-detail")
     public String activityDetail() {
-        return "activity-detail";
+        return "member/activity";
     }
 }
