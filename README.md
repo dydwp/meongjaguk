@@ -25,3 +25,16 @@ feature
 ├─ jeong
 └─ choi
 ```
+
+## DB 정보 연결
+
+src/main/resources/application.properties안에
+
+spring.datasource.url=jdbc:mysql://localhost:3306/mungjaguk?serverTimezone=Asia/Seoul&characterEncoding=UTF-8
+spring.datasource.username=root
+spring.datasource.password=비밀번호
+spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
+
+spring.jpa.hibernate.ddl-auto=none
+spring.jpa.show-sql=true
+코드를 추가합니다.
