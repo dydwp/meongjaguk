@@ -3,6 +3,7 @@ package com.mungjaguk.app.config;
 import com.mungjaguk.app.security.CustomOAuth2UserService;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.http.HttpMethod;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
 import org.springframework.security.web.SecurityFilterChain;
@@ -25,6 +26,8 @@ public class SecurityConfig {
                 .requestMatchers("/", "/login").permitAll()
                 .requestMatchers("/routes", "/course-detail").permitAll()
                 .requestMatchers("/board", "/course-detail-shared").permitAll()
+                // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
+                .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth
