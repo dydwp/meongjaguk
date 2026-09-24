@@ -7,9 +7,24 @@
   <div class="spacer"></div>
   <a th:href="@{/}" class="logo"><span class="paw">🐾</span> 멍자국</a>
   <ul class="app-nav">
+    <!-- 항상 보임 -->
     <li><a th:href="@{/board}" th:classappend="${active == 'board'} ? 'active'">산책로 게시판</a></li>
-    <li th:if="${active != 'login'}"><a th:href="@{/mypage}" th:classappend="${active == 'mypage'} ? 'active'">마이페이지</a></li>
-    <li th:if="${active == 'login' or active == null}"><a th:href="@{/login}" th:class="${active == 'login'} ? 'active' : 'nav-login'">로그인</a></li>
+
+    <!-- 로그인 상태: 마이페이지 + 닉네임 + 로그아웃 -->
+    <th:block th:if="${loginUser != null}">
+      <li><a th:href="@{/mypage}" th:classappend="${active == 'mypage'} ? 'active'">마이페이지</a></li>
+      <li><span class="nav-user" th:text="|${loginUser.nickname}님|">닉네임님</span></li>
+      <li>
+        <form th:action="@{/logout}" method="post" class="nav-logout-form">
+          <button type="submit" class="nav-logout">로그아웃</button>
+        </form>
+      </li>
+    </th:block>
+
+    <!-- 비로그인 상태: 로그인 -->
+    <li th:if="${loginUser == null}">
+      <a th:href="@{/login}" th:class="${active == 'login'} ? 'active' : 'nav-login'">로그인</a>
+    </li>
   </ul>
 </header>
 
