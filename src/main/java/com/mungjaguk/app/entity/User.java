@@ -5,7 +5,7 @@ import java.time.LocalDateTime;
 
 @Entity
 @Table(name = "users",
-       uniqueConstraints = @UniqueConstraint(name = "uk_users_provider",
+       uniqueConstraints = @UniqueConstraint(name = "uk_users_provider_provider_id",   // 변경: 팀원 SQL과 같은 이름
                                              columnNames = {"provider", "provider_id"}))
 public class User {
 
@@ -36,13 +36,12 @@ public class User {
     @Column(nullable = false, length = 20)
     private String status;
 
-    @Column(name = "last_login_at")
-    private LocalDateTime lastLoginAt;
+    // 삭제: lastLoginAt 필드
 
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "updated_at")
+    @Column(name = "updated_at", nullable = false)   // 변경: 팀원 SQL처럼 NOT NULL
     private LocalDateTime updatedAt;
 
     protected User() {}
@@ -57,22 +56,18 @@ public class User {
         user.profileImage = profileImage;
         user.role = Role.USER;
         user.status = "ACTIVE";
-        user.lastLoginAt = LocalDateTime.now();
+        // 삭제: user.lastLoginAt = LocalDateTime.now();
         return user;
     }
 
-    public void recordLogin() {
-        this.lastLoginAt = LocalDateTime.now();
-    }
+    // 삭제: recordLogin() 메서드
 
-    // 저장 직전에 자동 호출
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
     }
 
-    // 수정 직전에 자동 호출
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
@@ -86,7 +81,7 @@ public class User {
     public String getProfileImage() { return profileImage; }
     public Role getRole() { return role; }
     public String getStatus() { return status; }
-    public LocalDateTime getLastLoginAt() { return lastLoginAt; }
+    // 삭제: getLastLoginAt()
     public LocalDateTime getCreatedAt() { return createdAt; }
     public LocalDateTime getUpdatedAt() { return updatedAt; }
 }
