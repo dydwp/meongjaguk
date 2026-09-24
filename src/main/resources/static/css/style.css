@@ -813,3 +813,26 @@ button.btn { font-family: inherit; }
   .app-header { grid-template-columns: 1fr auto; }
   .app-nav { display: none; }
 }
+
+.nav-logout-form {
+  margin: 0;
+}
+.nav-logout {
+  background: none;
+  border: 0;
+  padding: 0;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+.nav-logout:hover {
+  color: var(--color-primary-dark);
+}
+
+.nav-user {
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--color-text);
+}
