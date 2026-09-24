@@ -1,67 +1,92 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/default :: page(title='멍자국 — 추천 산책로', active=null, content=~{::main}, showFooter=false, showScript=false)}">
-<head><title>멍자국 — 추천 산책로</title></head>
-<body>
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 추천 산책로', active=null, content=~{::main}, showFooter=false, showScript=false)}"
+>
+  <head>
+    <title>멍자국 — 추천 산책로</title>
+  </head>
+  <body>
+    <main class="page">
+      <script th:src="@{/js/coures.js}" defer></script>
+      <h1 class="page-title">추천 산책로</h1>
+      <p class="page-sub">
+        멍자국이 엄선한 산책 코스예요. 반려견 성향에 맞게 골라보세요.
+      </p>
+      <div id="course-list"></div>
 
-<main class="page">
-  <h1 class="page-title">추천 산책로</h1>
-  <p class="page-sub">멍자국이 엄선한 산책 코스예요. 반려견 성향에 맞게 골라보세요.</p>
+      <!-- <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>한강 벚꽃길 코스 <span class="tag">추천</span></h3>
+          <p>
+            강변을 따라 걷는 평탄한 코스예요. 소형견도 부담 없이 걸을 수 있어요.
+          </p>
+          <span class="meta">2.3km · 약 35분</span>
+        </div>
+      </a>
 
-  <a th:href="@{/course-detail}" class="route-item">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>한강 벚꽃길 코스 <span class="tag">추천</span></h3>
-      <p>강변을 따라 걷는 평탄한 코스예요. 소형견도 부담 없이 걸을 수 있어요.</p>
-      <span class="meta">2.3km · 약 35분</span>
-    </div>
-  </a>
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>동네 뒷산 산책로 <span class="tag-secondary">활력 코스</span></h3>
+          <p>
+            가벼운 오르막이 있는 흙길 코스예요. 활동성이 좋은 아이에게 추천해요.
+          </p>
+          <span class="meta">3.1km · 약 50분</span>
+        </div>
+      </a>
 
-  <a th:href="@{/course-detail}" class="route-item">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>동네 뒷산 산책로 <span class="tag-secondary">활력 코스</span></h3>
-      <p>가벼운 오르막이 있는 흙길 코스예요. 활동성이 좋은 아이에게 추천해요.</p>
-      <span class="meta">3.1km · 약 50분</span>
-    </div>
-  </a>
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>호수공원 둘레길</h3>
+          <p>
+            넓은 공원을 크게 도는 코스예요. 대형견과 함께라면 이 코스를
+            추천해요.
+          </p>
+          <span class="meta">4.0km · 약 1시간</span>
+        </div>
+      </a>
 
-  <a th:href="@{/course-detail}" class="route-item">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>호수공원 둘레길</h3>
-      <p>넓은 공원을 크게 도는 코스예요. 대형견과 함께라면 이 코스를 추천해요.</p>
-      <span class="meta">4.0km · 약 1시간</span>
-    </div>
-  </a>
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>
+            강변 자전거길 옆 산책로 <span class="tag-secondary">활력 코스</span>
+          </h3>
+          <p>
+            탁 트인 강변을 따라 걷는 코스예요. 활발하게 걷는 걸 좋아하는
+            아이에게 잘 맞아요.
+          </p>
+          <span class="meta">2.8km · 약 42분</span>
+        </div>
+      </a>
 
-  <a th:href="@{/course-detail}" class="route-item">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>강변 자전거길 옆 산책로 <span class="tag-secondary">활력 코스</span></h3>
-      <p>탁 트인 강변을 따라 걷는 코스예요. 활발하게 걷는 걸 좋아하는 아이에게 잘 맞아요.</p>
-      <span class="meta">2.8km · 약 42분</span>
-    </div>
-  </a>
+      <a th:href="@{/course-detail}" class="route-item">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>골목길 야경 산책 코스</h3>
+          <p>
+            조용한 골목을 따라 걷는 짧은 코스예요. 밤 산책을 좋아하는 분들께
+            추천해요.
+          </p>
+          <span class="meta">1.5km · 약 22분</span>
+        </div>
+      </a>
 
-  <a th:href="@{/course-detail}" class="route-item">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>골목길 야경 산책 코스</h3>
-      <p>조용한 골목을 따라 걷는 짧은 코스예요. 밤 산책을 좋아하는 분들께 추천해요.</p>
-      <span class="meta">1.5km · 약 22분</span>
-    </div>
-  </a>
-
-  <a th:href="@{/course-detail}" class="route-item mb-0">
-    <div class="route-thumb">🐾</div>
-    <div>
-      <h3>수목원 둘레 산책로 <span class="tag">추천</span></h3>
-      <p>그늘이 많고 노면이 고른 코스예요. 나이 많은 반려견도 편하게 걸을 수 있어요.</p>
-      <span class="meta">2.0km · 약 30분</span>
-    </div>
-  </a>
-</main>
-
-</body>
+      <a th:href="@{/course-detail}" class="route-item mb-0">
+        <div class="route-thumb">🐾</div>
+        <div>
+          <h3>수목원 둘레 산책로 <span class="tag">추천</span></h3>
+          <p>
+            그늘이 많고 노면이 고른 코스예요. 나이 많은 반려견도 편하게 걸을 수
+            있어요.
+          </p>
+          <span class="meta">2.0km · 약 30분</span>
+        </div>
+      </a> -->
+    </main>
+  </body>
 </html>
