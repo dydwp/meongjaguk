@@ -24,11 +24,6 @@ public class AuthController {
         return "member/login";
     }
 
-    @GetMapping("/mypage")
-    public String mypage() {
-        return "member/mypage";
-    }
-
     @GetMapping("/pet-profile")
     public String petProfile() {
         return "dog/profile";

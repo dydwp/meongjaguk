@@ -6,12 +6,23 @@
 
 <main class="page">
   <div class="card card-pad" style="display:flex; align-items:center; gap:14px;">
-    <div class="avatar">하늘</div>
+
+    <div class="avatar" th:text="${avatarInitial}">멍</div>
     <div style="flex:1;">
-      <div style="font-weight:700; font-size:15px;">이하늘</div>
-      <div class="small text-muted">2025.03 가입 · 카카오 계정</div>
+      <div style="font-weight:700; font-size:15px;" th:text="${nickname}">
+        사용자
+      </div>
+      <div class="small text-muted" th:text="${joinedLabel}">
+        2026.09 가입 · 카카오 계정
+      </div>
     </div>
-    <a th:href="@{/login}" class="text-link small">로그아웃</a>
+
+    <form th:action="@{/logout}" method="post">
+      <button type="submit" class="text-link small" style="border:0; background:none; cursor:pointer;">
+        로그아웃
+      </button>
+    </form>
+
   </div>
 
   <nav class="tabs" data-tabs>
@@ -22,24 +33,26 @@
   </nav>
 
   <!-- 반려견 -->
-  <div data-tab-panel="pets">
-    <div class="grid-3">
-      <div class="pet-card">
-        <div class="photo"></div>
-        <h4>초코</h4>
-        <p>포메라니안 · 소형견 · 3세</p>
-      </div>
-      <div class="pet-card">
-        <div class="photo"></div>
-        <h4>보리</h4>
-        <p>골든리트리버 · 대형견 · 2세</p>
-      </div>
-      <a th:href="@{/pet-profile}" class="pet-card add">
-        <span style="font-size:20px; line-height:1;">+</span>
-        <span class="mt-8">새 반려견 등록</span>
-      </a>
+<div data-tab-panel="pets">
+  <div class="grid-3">
+
+    <div class="pet-card" th:each="pet : ${pets}">
+      <div class="photo"></div>
+
+      <h4 th:text="${pet.name()}">초코</h4>
+
+      <p th:text="${pet.summaryLine()}">
+        포메라니안 · 소형견 · 3세
+      </p>
     </div>
+
+    <a th:href="@{/pet-profile}" class="pet-card add">
+      <span style="font-size:20px; line-height:1;">+</span>
+      <span class="mt-8">새 반려견 등록</span>
+    </a>
+
   </div>
+</div>
 
   <!-- 내가 공유한 글 -->
   <div data-tab-panel="shared" hidden>
@@ -89,47 +102,38 @@
 
   <!-- 활동 내역 -->
   <div data-tab-panel="activity" hidden>
-    <a th:href="@{/activity-detail}" class="route-item">
+
+    <a th:each="item : ${walkHistory}" th:href="@{/activity-detail(id=${item.id()})}" class="route-item">
+
       <div class="route-thumb">🐾</div>
+
       <div>
-        <h3>한강 벚꽃길 코스 <span class="tag-neutral">개인 산책</span></h3>
-        <p>2.3km · 약 35분</p>
-        <span class="meta">2026.09.19</span>
+        <h3>
+          <span th:text="${item.title()}">한강 벚꽃길 코스</span>
+          <span class="tag-neutral" th:text="${item.tagLabel()}">
+            개인 산책
+          </span>
+        </h3>
+
+        <p>
+          <span th:text="${item.distanceLabel()}">2.3km</span>
+          ·
+          <span th:text="${item.durationLabel()}">약 35분</span>
+        </p>
+
+        <span class="meta" th:text="${item.dateLabel()}">
+          2026.09.19
+        </span>
       </div>
+
     </a>
-    <a th:href="@{/activity-detail}" class="route-item">
-      <div class="route-thumb">🐾</div>
-      <div>
-        <h3>자유 산책 <span class="tag-neutral">개인 산책</span></h3>
-        <p>1.6km · 약 22분</p>
-        <span class="meta">2026.09.17</span>
-      </div>
-    </a>
-    <a th:href="@{/activity-detail}" class="route-item">
-      <div class="route-thumb">🐾</div>
-      <div>
-        <h3>저녁 노을 산책 모임 <span class="tag-secondary">공유 참여</span></h3>
-        <p>1.8km · 약 25분</p>
-        <span class="meta">2026.09.10</span>
-      </div>
-    </a>
-    <a th:href="@{/activity-detail}" class="route-item">
-      <div class="route-thumb">🐾</div>
-      <div>
-        <h3>동네 뒷산 산책로 <span class="tag-neutral">개인 산책</span></h3>
-        <p>3.1km · 약 50분</p>
-        <span class="meta">2026.09.05</span>
-      </div>
-    </a>
-    <a th:href="@{/activity-detail}" class="route-item mb-0">
-      <div class="route-thumb">🐾</div>
-      <div>
-        <h3>자유 산책 <span class="tag-neutral">개인 산책</span></h3>
-        <p>0.8km · 약 10분</p>
-        <span class="meta">2026.09.02</span>
-      </div>
-    </a>
+
+    <p class="text-muted" th:if="${#lists.isEmpty(walkHistory)}">
+      아직 산책 기록이 없습니다.
+    </p>
+
   </div>
+
 </main>
 
 </body>
