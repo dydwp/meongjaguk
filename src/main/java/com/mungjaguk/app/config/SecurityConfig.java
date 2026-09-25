@@ -28,6 +28,8 @@ public class SecurityConfig {
                 .requestMatchers("/board", "/course-detail-shared").permitAll()
                 // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
                 .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
+                // 추가(김환중): 산책로 게시판 목록/상세 조회 API는 비회원도 볼 수 있게
+                .requestMatchers(HttpMethod.GET, "/api/meetings/**").permitAll()
                 .anyRequest().authenticated()
             )
             .oauth2Login(oauth -> oauth

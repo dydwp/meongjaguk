@@ -5,79 +5,90 @@
 <body>
 
 <main class="page">
-  <div class="map-preview" style="height:280px;">
-    <svg viewBox="0 0 900 280" preserveAspectRatio="none">
-      <path d="M90 210 C 190 150, 280 200, 360 160 S 480 100, 600 90 S 760 70, 820 55"
-            fill="none" stroke="var(--color-primary)" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
-      <circle cx="90" cy="210" r="6" fill="var(--color-primary)"/>
-      <circle cx="820" cy="55" r="6" fill="var(--color-accent)"/>
-    </svg>
-    <span class="map-chip">지도 미리보기</span>
-  </div>
-
-  <div class="mt-24">
-    <span class="tag-secondary">공유된 코스</span>
-    <h1 style="font-size:22px; margin:12px 0 10px;">저녁 노을 산책 모임</h1>
-    <p class="small mb-0" style="font-weight:700;">거리 · 1.8km</p>
-    <p class="small" style="font-weight:700; margin-top:2px;">예상 소요시간 · 약 25분</p>
-    <p class="text-muted mt-16">퇴근 후 노을을 보며 가볍게 걷는 코스예요. 큰 오르막이 없어서 누구나 편하게 참여할 수 있어요. 저녁 7시쯤 만나서 함께 걸어요.</p>
-  </div>
-
-  <div class="card card-pad mt-24">
-    <div style="display:flex; align-items:center; gap:12px;">
-      <div class="avatar avatar-sm">하늘</div>
-      <div>
-        <div style="font-size:13.5px; font-weight:700;">이하늘</div>
-        <div class="small text-muted">2026.09.20 공유</div>
-      </div>
+  <div data-meeting-detail hidden
+       th:attr="data-logged-in=${loginUser != null},data-csrf-header=${_csrf?.headerName},data-csrf-token=${_csrf?.token}">
+    <div class="map-preview" style="height:280px;">
+      <svg viewBox="0 0 900 280" preserveAspectRatio="none">
+        <path d="M90 210 C 190 150, 280 200, 360 160 S 480 100, 600 90 S 760 70, 820 55"
+              fill="none" stroke="var(--color-primary)" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
+        <circle cx="90" cy="210" r="6" fill="var(--color-primary)"/>
+        <circle cx="820" cy="55" r="6" fill="var(--color-accent)"/>
+      </svg>
+      <span class="map-chip">지도 미리보기</span>
     </div>
 
-    <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
-      <span class="small text-muted" style="font-weight:700;">참여 현황</span>
-      <div style="display:flex;">
-        <div class="avatar avatar-sm" style="margin-right:-8px; border:2px solid var(--color-surface);">하</div>
-        <div class="avatar avatar-sm avatar-muted" style="margin-right:-8px; border:2px solid var(--color-surface);">민</div>
-        <div class="avatar avatar-sm avatar-muted" style="border:2px solid var(--color-surface);">서</div>
-      </div>
-      <span class="small text-muted"><span data-join-count>3/5</span>명 참여 중</span>
+    <div class="mt-24">
+      <span class="tag-secondary">공유된 코스</span>
+      <span data-status></span>
+      <h1 style="font-size:22px; margin:12px 0 10px;" data-title></h1>
+      <p class="small mb-0" style="font-weight:700;" data-course-name></p>
+      <p class="small mb-0" style="font-weight:700; margin-top:2px;" data-distance></p>
+      <p class="small mb-0" style="font-weight:700; margin-top:2px;" data-minutes></p>
+      <p class="small mb-0" style="font-weight:700; margin-top:2px;" data-when></p>
+      <p class="small mb-0" style="font-weight:700; margin-top:2px;" data-pet></p>
+      <p class="small" style="font-weight:700; margin-top:2px;" data-condition></p>
+      <p class="text-muted mt-16" data-description></p>
     </div>
 
-    <div class="btn-row mt-16">
-      <button type="button" class="btn btn-highlight" data-join-btn data-joined="false">동행 신청</button>
-    </div>
-  </div>
-
-  <div class="mt-24">
-    <h2 class="block-label">댓글 <span data-comment-count>3</span></h2>
-    <div class="comment-input" data-comment-form>
-      <input type="text" placeholder="댓글을 남겨보세요" />
-      <button type="button">등록</button>
-    </div>
-
-    <div data-comment-list>
-      <div class="comment">
-        <div class="avatar avatar-sm avatar-muted">김</div>
+    <div class="card card-pad mt-24">
+      <div style="display:flex; align-items:center; gap:12px;">
+        <div class="avatar avatar-sm" data-host-avatar></div>
         <div>
-          <span class="name">김민준<span class="time">· 1시간 전</span></span>
-          <p>저도 참여하고 싶어요! 강아지가 소형견이어도 괜찮을까요?</p>
+          <div style="font-size:13.5px; font-weight:700;" data-host-name></div>
+          <div class="small text-muted" data-shared-at></div>
         </div>
       </div>
-      <div class="comment">
-        <div class="avatar avatar-sm">하늘</div>
-        <div>
-          <span class="name">이하늘<span class="time">· 40분 전</span></span>
-          <p>그럼요, 소형견도 편하게 걸을 수 있는 코스예요!</p>
-        </div>
+
+      <div style="display:flex; align-items:center; gap:10px; margin-top:18px;">
+        <span class="small text-muted" style="font-weight:700;">참여 현황</span>
+        <div style="display:flex;" data-participant-avatars></div>
+        <span class="small text-muted"><span data-join-count></span>명 참여 중</span>
       </div>
-      <div class="comment">
-        <div class="avatar avatar-sm avatar-muted">정</div>
-        <div>
-          <span class="name">정서윤<span class="time">· 10분 전</span></span>
-          <p>기대돼요! 저녁에 뵐게요.</p>
+
+      <div class="btn-row mt-16">
+        <button type="button" class="btn btn-highlight" data-apply-btn>동행 신청</button>
+      </div>
+    </div>
+
+    <div class="mt-24">
+      <h2 class="block-label">댓글 <span data-comment-count>3</span></h2>
+      <div class="comment-input" data-comment-form>
+        <input type="text" placeholder="댓글을 남겨보세요" />
+        <button type="button">등록</button>
+      </div>
+
+      <div data-comment-list>
+        <div class="comment">
+          <div class="avatar avatar-sm avatar-muted">김</div>
+          <div>
+            <span class="name">김민준<span class="time">· 1시간 전</span></span>
+            <p>저도 참여하고 싶어요! 강아지가 소형견이어도 괜찮을까요?</p>
+          </div>
+        </div>
+        <div class="comment">
+          <div class="avatar avatar-sm">하늘</div>
+          <div>
+            <span class="name">이하늘<span class="time">· 40분 전</span></span>
+            <p>그럼요, 소형견도 편하게 걸을 수 있는 코스예요!</p>
+          </div>
+        </div>
+        <div class="comment">
+          <div class="avatar avatar-sm avatar-muted">정</div>
+          <div>
+            <span class="name">정서윤<span class="time">· 10분 전</span></span>
+            <p>기대돼요! 저녁에 뵐게요.</p>
+          </div>
         </div>
       </div>
     </div>
   </div>
+
+  <div class="mt-24" data-meeting-empty hidden>
+    <p class="text-muted"></p>
+    <a th:href="@{/board}" class="btn btn-outline" style="width:auto;">산책로 게시판으로</a>
+  </div>
+
+  <script th:src="@{/js/meetup.js}" defer></script>
 </main>
 
 </body>
