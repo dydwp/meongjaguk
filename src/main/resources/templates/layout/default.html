@@ -1,21 +1,29 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:fragment="page(title, active, content, showFooter, showScript)">
-<head>
-<meta charset="UTF-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-<title th:text="${title}">멍자국</title>
-<link rel="stylesheet" th:href="@{/css/tokens.css}" />
-<link rel="stylesheet" th:href="@{/css/style.css}" />
-</head>
-<body>
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:fragment="page(title, active, content, showFooter, showScript)"
+>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title th:text="${title}">멍자국</title>
+    <link rel="stylesheet" th:href="@{/css/tokens.css}" />
+    <link rel="stylesheet" th:href="@{/css/style.css}" />
+    <script
+      type="text/javascript"
+      src="//dapi.kakao.com/v2/maps/sdk.js?appkey=18b744b0983c0742b6d365724dd30f98"
+    ></script>
+  </head>
+  <body>
+    <header th:replace="~{fragments/header :: header(${active})}"></header>
 
-<header th:replace="~{fragments/header :: header(${active})}"></header>
+    <th:block th:replace="${content}"></th:block>
 
-<th:block th:replace="${content}"></th:block>
+    <th:block th:if="${showFooter}"
+      ><footer th:replace="~{fragments/footer :: footer}"></footer
+    ></th:block>
 
-<th:block th:if="${showFooter}"><footer th:replace="~{fragments/footer :: footer}"></footer></th:block>
-
-<script th:if="${showScript}" th:src="@{/js/app.js}"></script>
-</body>
+    <script th:if="${showScript}" th:src="@{/js/app.js}"></script>
+  </body>
 </html>
