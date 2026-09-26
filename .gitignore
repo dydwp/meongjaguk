@@ -34,3 +34,11 @@ src/main/resources/application-secret.properties
 # 반려견 업로드 사진은 로컬에 보관
 /src/main/resources/static/images/pets/*
 !/src/main/resources/static/images/pets/.gitkeep
+
+### AI ###
+# Python 캐시
+__pycache__/
+*.py[cod]
+
+# 로컬 지도 데이터
+/ai-server/data/

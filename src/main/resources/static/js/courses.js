@@ -9,10 +9,6 @@ async function loadCourses() {
 
     const courses = await response.json();
 
-    console.log("받은 데이터:", courses);
-    console.log("배열인지:", Array.isArray(courses));
-    console.log("목록 요소:", document.querySelector("#course-list"));
-
     if (courses.length === 0) {
       courseList.textContent = "등록된 추천 산책로가 없습니다.";
       return;
