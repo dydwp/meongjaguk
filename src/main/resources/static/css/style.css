@@ -465,6 +465,38 @@ button.btn { font-family: inherit; }
   flex: none;
 }
 
+.pet-photo-upload {
+  position: relative;
+  width: 112px;
+  height: 112px;
+  border: 2px dashed var(--color-primary);
+  border-radius: 16px;
+  color: var(--color-primary);
+  cursor: pointer;
+  font-family: inherit;
+}
+.pet-photo-prompt:not([hidden]) {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+}
+.pet-photo-prompt > span { font-size: 11px; color: var(--color-text-muted); }
+.pet-photo-upload:hover { border-style: solid; }
+.pet-photo-upload:focus-visible { outline: 3px solid var(--color-primary); outline-offset: 3px; }
+.pet-photo-upload:disabled { cursor: wait; opacity: .6; }
+.pet-photo-change {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  z-index: 1;
+  padding: 5px;
+  background: rgba(0, 0, 0, .65);
+  color: #fff;
+  font-weight: 700;
+}
+
 /* ---------- 아바타 ---------- */
 .avatar {
   width: 48px;

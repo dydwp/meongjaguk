@@ -14,7 +14,8 @@ async function loadCourses() {
     console.log("목록 요소:", document.querySelector("#course-list"));
 
     if (courses.length === 0) {
-      courseList.textContent = "등록된 코스가 없습니다.";
+      courseList.textContent = "등록된 추천 산책로가 없습니다.";
+      return;
     }
 
     const cards = courses.map(createCoursesCard);

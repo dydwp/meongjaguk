@@ -1,55 +1,195 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/default :: page(title='멍자국 — 반려견 프로필', active='mypage', content=~{::main}, showFooter=false, showScript=true)}">
-<head><title>멍자국 — 반려견 프로필</title></head>
-<body>
+﻿<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 반려견 프로필', active='mypage', content=~{::main}, showFooter=false, showScript=true)}"
+>
+  <head>
+    <title>멍자국 — 반려견 프로필</title>
+  </head>
+  <body>
+    <main class="focus-page">
+      <form
+        id="pet-profile-form"
+        class="card focus-card card-pad"
+        style="max-width: 560px"
+        method="post"
+        enctype="multipart/form-data"
+        th:action="@{/api/pet-profile/pets}"
+        th:attr="data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token},data-success-url=@{/mypage}"
+      >
+        <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
+          <h2 class="block-label" style="font-size: 16px; margin: 0;">반려견 프로필</h2>
+          <a th:href="@{/mypage}" class="text-link small" style="flex-shrink: 0;">뒤로가기</a>
+        </div>
 
-<main class="focus-page">
-  <div class="card focus-card card-pad" style="max-width:560px;">
-    <h2 class="block-label" style="font-size:16px;">반려견 프로필</h2>
+        <div
+          style="
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 22px;
+          "
+        >
+          <div style="flex-shrink: 0">
+            <button
+              type="button"
+              id="pet-photo-button"
+              class="photo-upload pet-photo-upload"
+              aria-label="반려견 사진 업로드"
+              aria-describedby="pet-photo-help"
+              style="padding: 0; overflow: hidden"
+            >
+              <span id="pet-photo-placeholder" class="pet-photo-prompt">
+                <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" aria-hidden="true">
+                  <path d="M8 5l1.5-2h5L16 5h4a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1H4a1 1 0 0 1-1-1V6a1 1 0 0 1 1-1h4Z" />
+                  <circle cx="12" cy="12" r="4" />
+                </svg>
+                <strong>사진 업로드</strong>
+                <span>눌러서 선택</span>
+              </span>
+              <span id="pet-photo-change" class="pet-photo-change" hidden>사진 변경</span>
+              <img
+                id="pet-photo-preview"
+                alt="선택한 반려견 사진"
+                hidden
+                style="width: 100%; height: 100%; object-fit: cover"
+              />
+            </button>
+            <input
+              id="pet-photo"
+              name="image"
+              type="file"
+              accept="image/jpeg,image/png"
+              hidden
+            />
+            <button
+              type="button"
+              id="pet-photo-remove"
+              class="text-link small"
+              hidden
+            >
+              사진 삭제
+            </button>
+          </div>
+          <p id="pet-photo-help" class="small text-muted mb-0">
+            사진 영역을 눌러 반려견 사진을 올려주세요.<br />
+            얼굴이 잘 보이는 사진이 좋아요.<br />JPG, PNG · 최대 5MB
+          </p>
+        </div>
 
-    <div style="display:flex; align-items:center; gap:16px; margin-bottom:22px;">
-      <div class="photo-upload">사진 등록</div>
-      <p class="small text-muted mb-0">선명한 정면 사진을 올려주시면<br>다른 이웃들이 더 쉽게 알아볼 수 있어요.</p>
-    </div>
+        <div class="field">
+          <label for="pet-name">이름</label>
+          <input
+            id="pet-name"
+            name="name"
+            type="text"
+            placeholder="반려견 이름을 입력하세요."
+            maxlength="50"
+            required
+          />
+        </div>
 
-    <div class="field">
-      <label>이름</label>
-      <input type="text" value="초코" />
-    </div>
+        <div class="field-row">
+          <div class="field">
+            <label for="pet-breed">종(품종)</label>
+            <input
+              id="pet-breed"
+              name="breed"
+              type="text"
+              placeholder="반려견 품종을 입력하세요."
+              maxlength="50"
+            />
+          </div>
+          <div class="field">
+            <label for="pet-age">나이</label>
+            <input
+              id="pet-age"
+              name="age"
+              type="text"
+              inputmode="numeric"
+              placeholder="반려견 나이를 입력하세요."
+              pattern="[0-9]+\s*세?"
+            />
+          </div>
+        </div>
 
-    <div class="field-row">
-      <div class="field">
-        <label>종(품종)</label>
-        <input type="text" value="포메라니안" />
-      </div>
-      <div class="field">
-        <label>나이</label>
-        <input type="text" value="3세" />
-      </div>
-    </div>
+        <div class="field">
+          <label>크기</label>
+          <div class="pill-group" data-pill-group data-pet-field="size">
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="SMALL"
+            >
+              소형견
+            </button>
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="MEDIUM"
+            >
+              중형견
+            </button>
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="LARGE"
+            >
+              대형견
+            </button>
+          </div>
+        </div>
 
-    <div class="field">
-      <label>크기</label>
-      <div class="pill-group" data-pill-group>
-        <button type="button" class="pill selected" aria-pressed="true">소형견</button>
-        <button type="button" class="pill" aria-pressed="false">중형견</button>
-        <button type="button" class="pill" aria-pressed="false">대형견</button>
-      </div>
-    </div>
+        <div class="field">
+          <label>활동성</label>
+          <div
+            class="pill-group"
+            data-pill-group
+            data-pet-field="activityLevel"
+          >
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="LOW"
+            >
+              낮음
+            </button>
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="MEDIUM"
+            >
+              보통
+            </button>
+            <button
+              type="button"
+              class="pill"
+              aria-pressed="false"
+              data-value="HIGH"
+            >
+              높음
+            </button>
+          </div>
+        </div>
 
-    <div class="field">
-      <label>활동성</label>
-      <div class="pill-group" data-pill-group>
-        <button type="button" class="pill" aria-pressed="false">낮음</button>
-        <button type="button" class="pill selected" aria-pressed="true">보통</button>
-        <button type="button" class="pill" aria-pressed="false">높음</button>
-      </div>
-    </div>
-
-    <a th:href="@{/mypage}" class="btn btn-focus mt-8">저장하기</a>
-  </div>
-</main>
-
-</body>
+        <p
+          id="pet-form-status"
+          class="small"
+          role="status"
+          aria-live="polite"
+          hidden
+        ></p>
+        <button id="pet-submit" type="submit" class="btn btn-focus mt-8">
+          저장하기
+        </button>
+      </form>
+      <script th:src="@{/js/pet-profile.js}" defer></script>
+    </main>
+  </body>
 </html>
