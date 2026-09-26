@@ -190,6 +190,21 @@
     }
     if (endBtn) {
       endBtn.addEventListener("click", function () {
+        // [비회원] 기록 저장은 로그인이 필요 (담당: 박용제)
+        // 확인 → 산책을 끝내지 않고 로그인으로 이동. 산책 상태는 localStorage에
+        //        남아 있어서 로그인 후 메인으로 돌아오면 산책이 그대로 이어짐
+        // 취소 → 저장 없이 산책 종료
+        if (endBtn.getAttribute("data-login-required") === "true") {
+          var goLogin = confirm(
+            "산책 기록을 저장하려면 로그인이 필요해요.\n" +
+            "로그인하면 지금 산책을 이어서 저장할 수 있어요. 로그인할까요?"
+          );
+          if (goLogin) {
+            window.location.href = "/login";
+            return;
+          }
+        }
+
         stopWalking();
         stopTimer();
         var redirect = endBtn.getAttribute("data-end-redirect");

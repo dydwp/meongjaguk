@@ -114,7 +114,9 @@
           </div>
         </div>
         <div class="btn-row mt-8">
-          <button type="button" class="btn btn-outline-primary" data-end-walk>산책 종료</button>
+          <!-- 비회원이면 data-login-required="true" → 종료 시 로그인 안내 -->
+          <button type="button" class="btn btn-outline-primary" data-end-walk
+                  th:attr="data-login-required=${loginUser == null}">산책 종료</button>
           <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
         </div>
       </div>
