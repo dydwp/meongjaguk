@@ -16,12 +16,14 @@ import org.springframework.web.bind.annotation.GetMapping;
 public class HomeController {
 
     private static final int RECOMMEND_COUNT = 3; // 메인에 보여줄 추천 산책로 수
+    private static final int MEET_COUNT = 3;      // 메인에 보여줄 모집 카드 수
 
     private final MainService mainService;
 
     @GetMapping("/")
     public String home(Model model) {
         model.addAttribute("recommendRoutes", mainService.getRecommendRoutes(RECOMMEND_COUNT));
+        model.addAttribute("meetCards", mainService.getRecentMeets(MEET_COUNT));
         return "index";
     }
 }

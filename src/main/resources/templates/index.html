@@ -128,40 +128,33 @@
       <a th:href="@{/board}" class="section-link">더보기 ›</a>
     </div>
 
-    <div class="meet-grid">
-      <a th:href="@{/course-detail-shared}" class="meet-card">
+    <!-- 같이 걷기 모집 카드 (지금은 임시 데이터, 최대 3개) -->
+    <div class="meet-grid" th:unless="${#lists.isEmpty(meetCards)}">
+      <a th:each="meet : ${meetCards}"
+         th:href="@{/course-detail-shared(meetingId=${meet.meetingId})}"
+         class="meet-card">
         <div class="meet-top">
-          <span class="meet-status">모집중</span>
-          <span class="meet-date">9/27(토) 오후 4:00</span>
+          <span class="meet-status"
+                th:classappend="${meet.closed} ? 'closed'"
+                th:text="${meet.closed} ? '마감' : '모집중'">모집중</span>
+          <span class="meet-date" th:text="${meet.meetingDateText}">9/27(토) 오후 4:00</span>
         </div>
-        <h4>토요일 한강 벚꽃길 같이 걸어요</h4>
-        <p class="meet-cond">한강 벚꽃길 코스 · 소형견 환영</p>
-        <div class="progress-bar"><i style="width:60%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>3 / 5명</b></div>
-      </a>
-
-      <a th:href="@{/course-detail-shared}" class="meet-card">
-        <div class="meet-top">
-          <span class="meet-status">모집중</span>
-          <span class="meet-date">9/28(일) 오전 8:00</span>
+        <h4 th:text="${meet.title}">모집 제목</h4>
+        <p class="meet-cond" th:text="|${meet.courseName} · ${meet.participationCondition}|">코스 · 참여 조건</p>
+        <div class="progress-bar" th:classappend="${meet.progressPercent >= 100} ? 'is-full'">
+          <i th:style="|width:${meet.progressPercent}%|"></i>
         </div>
-        <h4>아침 뒷산 산책 메이트 구해요</h4>
-        <p class="meet-cond">동네 뒷산 산책로 · 활동량 많은 친구</p>
-        <div class="progress-bar"><i style="width:50%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>2 / 4명</b></div>
-      </a>
-
-      <a th:href="@{/course-detail-shared}" class="meet-card">
-        <div class="meet-top">
-          <span class="meet-status closed">마감</span>
-          <span class="meet-date">9/25(목) 오후 7:30</span>
+        <div class="meet-count">
+          <span>참여 인원</span>
+          <b th:text="|${meet.currentParticipants} / ${meet.maxParticipants}명|">3 / 5명</b>
         </div>
-        <h4>퇴근 후 호수공원 한 바퀴</h4>
-        <p class="meet-cond">호수공원 둘레길 · 대형견 가능</p>
-        <div class="progress-bar is-full"><i style="width:100%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>6 / 6명</b></div>
       </a>
     </div>
+
+    <!-- 모집 글이 하나도 없을 때 -->
+    <p th:if="${#lists.isEmpty(meetCards)}" class="small text-muted">
+      아직 모집 중인 산책이 없어요.
+    </p>
   </section>
 </main>
 
