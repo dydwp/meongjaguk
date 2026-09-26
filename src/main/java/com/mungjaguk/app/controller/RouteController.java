@@ -35,11 +35,11 @@ public class RouteController {
         return "course/detail";
     }
 
-    @GetMapping("/api/courses/{coursesId}")
-    public ResponseEntity<Route> courseInfo(@PathVariable("coursesId") Long course_id) {
-        Route courses = service.getCourseInfo(course_id);
-        if (courses == null)
+    @GetMapping("/api/courses/{courseId}")
+    public ResponseEntity<Route> courseInfo(@PathVariable("courseId") Long course_id) {
+        Route course = service.getCourseInfo(course_id);
+        if (course == null)
             return ResponseEntity.notFound().build();
-        return ResponseEntity.ok(courses);
+        return ResponseEntity.ok(course);
     }
 }

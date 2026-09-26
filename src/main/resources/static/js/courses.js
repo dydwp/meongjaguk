@@ -36,7 +36,7 @@ function createCoursesCard(courses) {
 
   card.className = "route-item";
 
-  card.href = `/course-detail?coursesId=${encodeURIComponent(courses.courseId)}`;
+  card.href = `/course-detail?courseId=${encodeURIComponent(courses.courseId)}`;
 
   card.innerHTML = `
       <div class="route-thumb">🐾</div>
