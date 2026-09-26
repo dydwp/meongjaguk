@@ -2,10 +2,12 @@ package com.mungjaguk.app.service;
 
 import com.mungjaguk.app.dto.WalkDetailView;
 import com.mungjaguk.app.dto.WalkHistoryItemView;
+import com.mungjaguk.app.dto.WalkPointView;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.WalkRecord;
 import com.mungjaguk.app.repository.RouteRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
+import com.mungjaguk.app.repository.WalkRecordPointRepository;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -21,12 +23,15 @@ public class WalkRecordService {
             DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.KOREA);
 
     private final WalkRecordRepository walkRecordRepository;
+    private final WalkRecordPointRepository walkRecordPointRepository;
     private final RouteRepository routeRepository;
 
     public WalkRecordService(WalkRecordRepository walkRecordRepository,
-                             RouteRepository routeRepository) {
+                            RouteRepository routeRepository,
+                            WalkRecordPointRepository walkRecordPointRepository) {
         this.walkRecordRepository = walkRecordRepository;
         this.routeRepository = routeRepository;
+        this.walkRecordPointRepository = walkRecordPointRepository;
     }
 
     public List<WalkHistoryItemView> getMyWalkHistory(Long userId) {
@@ -117,5 +122,13 @@ public class WalkRecordService {
         int seconds = durationSeconds % 60;
 
         return String.format(Locale.KOREA, "%02d:%02d", minutes, seconds);
+    }
+
+    public List<WalkPointView> getWalkPoints(Long walkRecordId, Long userId) {
+        return walkRecordPointRepository
+                .findByWalkRecord_IdAndWalkRecord_User_UserIdOrderBySequenceNoAsc(walkRecordId, userId)
+                .stream()
+                .map(point -> new WalkPointView(point.getLatitude(), point.getLongitude()))
+                .toList();
     }
 }

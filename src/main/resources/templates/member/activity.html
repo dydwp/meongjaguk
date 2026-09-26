@@ -1,44 +1,80 @@
 <!DOCTYPE html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org"
       th:replace="~{layout/default :: page(title='멍자국 — 활동 내역 상세', active='mypage', content=~{::main}, showFooter=false, showScript=false)}">
-<head><title>멍자국 — 활동 내역 상세</title></head>
+<head>
+  <title>멍자국 — 활동 내역 상세</title>
+</head>
+
 <body>
 
-<main class="page">
-  <div class="map-preview" style="height:280px;">
-    <svg viewBox="0 0 900 280" preserveAspectRatio="none">
-      <path d="M90 220 C 200 160, 300 210, 380 150 S 520 90, 620 70 S 760 50, 830 40"
-            fill="none" stroke="var(--color-primary)" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
-      <circle cx="90" cy="220" r="6" fill="var(--color-primary)"/>
-      <circle cx="830" cy="40" r="6" fill="var(--color-accent)"/>
-    </svg>
-    <span class="map-chip">지도 미리보기</span>
+<main id="activity-detail" class="page">
+
+  <!-- GPS 산책 경로 지도 -->
+  <div id="activity-map" style="width:100%; height:400px;" hidden></div>
+
+  <p id="activity-map-status" class="small text-muted mt-16" role="status" hidden>
+    산책 경로 정보가 없습니다.
+  </p>
+
+  <div id="walk-point-data" hidden>
+    <span th:each="point : ${walkPoints}"
+          th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
   </div>
 
+  <!-- 산책 코스 정보 -->
   <div class="mt-24">
-    <span class="tag-neutral">개인 산책</span>
-    <h1 style="font-size:22px; margin:12px 0 10px;">한강 벚꽃길 코스</h1>
-    <p class="small mb-0" style="font-weight:700;">거리 · 2.3km</p>
-    <p class="small" style="font-weight:700; margin-top:2px;">예상 소요시간 · 약 35분</p>
-    <p class="text-muted mt-16">한강공원을 따라 이어지는 평탄한 산책로예요. 그늘이 많고 노면이 고르기 때문에 나이가 많은 반려견이나 소형견도 편하게 걸을 수 있어요.</p>
+    <span class="tag-neutral" th:text="${detail.tagLabel()}">개인 산책</span>
+
+    <h1 style="font-size:22px; margin:12px 0 10px;"
+        th:text="${detail.title()}">
+      한강 벚꽃길 코스
+    </h1>
+
+    <p class="small mb-0" style="font-weight:700;"
+        th:text="${detail.plannedDistanceLabel()}">
+      거리 · 2.3km
+    </p>
+
+    <p class="small" style="font-weight:700; margin-top:2px;"
+        th:text="${detail.plannedDurationLabel()}">
+      예상 소요시간 · 약 35분
+    </p>
+
+    <p class="text-muted mt-16" th:text="${detail.description()}">
+      한강공원을 따라 이어지는 평탄한 산책로예요.
+    </p>
   </div>
 
+  <!-- 실제 산책 기록 -->
   <div class="card card-pad mt-24">
     <h2 class="block-label">실제 기록</h2>
+
     <div class="stat-row" style="margin:0;">
       <div class="stat-card">
         <div class="label">이동 거리</div>
-        <div class="value">2.4 km</div>
+        <div class="value" th:text="${detail.actualDistanceLabel()}">
+          2.4km
+        </div>
       </div>
+
       <div class="stat-card">
         <div class="label">소요 시간</div>
-        <div class="value">38:12</div>
+        <div class="value" th:text="${detail.actualDurationLabel()}">
+          38:12
+        </div>
       </div>
     </div>
-    <p class="small text-muted mt-16 mb-0">2026.09.19 완료</p>
+
+    <p class="small text-muted mt-16 mb-0" th:text="${detail.completedDateLabel()}">
+      2026.09.19 완료
+    </p>
   </div>
 
   <a th:href="@{/mypage}" class="btn btn-outline mt-24">닫기</a>
+
+  <script th:if="${!#strings.isEmpty(kakaoMapsJavaScriptKey)}"
+          th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapsJavaScriptKey}|"></script>
+  <script th:src="@{/js/activity.js}" defer></script>
 </main>
 
 </body>

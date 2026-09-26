@@ -6,7 +6,7 @@ import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
 
 /**
- * 담당 영역: 인증 / 마이페이지 / 반려견 프로필
+ * 담당 영역: 인증 / 반려견 프로필
  *
  * 소셜 로그인 자체는 Spring Security가 처리합니다.
  *  - 로그인 시작: /oauth2/authorization/{kakao|naver|google}
