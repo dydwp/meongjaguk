@@ -1,0 +1,44 @@
+HELP.md
+target/
+!.mvn/wrapper/maven-wrapper.jar
+!**/src/main/**/target/
+!**/src/test/**/target/
+
+### STS ###
+.apt_generated
+.classpath
+.factorypath
+.project
+.settings
+.springBeans
+.sts4-cache
+bin/
+!**/src/main/**/bin/
+!**/src/test/**/bin/
+
+### IntelliJ IDEA ###
+.idea
+*.iws
+*.iml
+*.ipr
+out/
+!**/src/main/**/out/
+!**/src/test/**/out/
+
+### VS Code ###
+.vscode/
+
+### 비밀 설정 파일 (절대 커밋 금지) ###
+src/main/resources/application-secret.properties
+
+# 반려견 업로드 사진은 로컬에 보관
+/src/main/resources/static/images/pets/*
+!/src/main/resources/static/images/pets/.gitkeep
+
+### AI ###
+# Python 캐시
+__pycache__/
+*.py[cod]
+
+# 로컬 지도 데이터
+/ai-server/data/

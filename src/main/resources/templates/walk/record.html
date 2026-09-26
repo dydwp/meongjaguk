@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 산책 기록', active='mypage', content=~{::main}, showFooter=false, showScript=true)}">
+<head><title>멍자국 — 산책 기록</title></head>
+<body>
+
+<main class="page" data-auto-start-walk>
+  <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
+    <span class="tag tag-dot">기록 중</span>
+    <h1 style="font-size:17px; margin:0;">자유 산책</h1>
+  </div>
+
+  <div class="map-preview" style="height:300px;">
+    <svg viewBox="0 0 900 300" preserveAspectRatio="none">
+      <path d="M100 250 C 180 210, 220 230, 280 190 S 380 150, 430 155 S 560 120, 650 90 S 780 55, 830 45"
+            fill="none" stroke="var(--color-primary)" stroke-width="4" stroke-linecap="round"/>
+      <circle cx="100" cy="250" r="6" fill="var(--color-text)"/>
+      <circle cx="830" cy="45" r="9" fill="var(--color-accent)" opacity="0.3"/>
+      <circle cx="830" cy="45" r="6" fill="var(--color-accent)"/>
+    </svg>
+    <span class="map-chip floating" data-walk-chip>실시간 위치 추적 중</span>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat-card">
+      <div class="label">이동 거리</div>
+      <div class="value" data-walk-distance>0.0 km</div>
+    </div>
+    <div class="stat-card">
+      <div class="label">경과 시간</div>
+      <div class="value" data-walk-elapsed>00:00</div>
+    </div>
+  </div>
+
+  <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
+</main>
+
+</body>
+</html>

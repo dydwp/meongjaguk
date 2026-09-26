@@ -1,0 +1,45 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 활동 내역 상세', active='mypage', content=~{::main}, showFooter=false, showScript=false)}">
+<head><title>멍자국 — 활동 내역 상세</title></head>
+<body>
+
+<main class="page">
+  <div class="map-preview" style="height:280px;">
+    <svg viewBox="0 0 900 280" preserveAspectRatio="none">
+      <path d="M90 220 C 200 160, 300 210, 380 150 S 520 90, 620 70 S 760 50, 830 40"
+            fill="none" stroke="var(--color-primary)" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
+      <circle cx="90" cy="220" r="6" fill="var(--color-primary)"/>
+      <circle cx="830" cy="40" r="6" fill="var(--color-accent)"/>
+    </svg>
+    <span class="map-chip">지도 미리보기</span>
+  </div>
+
+  <div class="mt-24">
+    <span class="tag-neutral">개인 산책</span>
+    <h1 style="font-size:22px; margin:12px 0 10px;">한강 벚꽃길 코스</h1>
+    <p class="small mb-0" style="font-weight:700;">거리 · 2.3km</p>
+    <p class="small" style="font-weight:700; margin-top:2px;">예상 소요시간 · 약 35분</p>
+    <p class="text-muted mt-16">한강공원을 따라 이어지는 평탄한 산책로예요. 그늘이 많고 노면이 고르기 때문에 나이가 많은 반려견이나 소형견도 편하게 걸을 수 있어요.</p>
+  </div>
+
+  <div class="card card-pad mt-24">
+    <h2 class="block-label">실제 기록</h2>
+    <div class="stat-row" style="margin:0;">
+      <div class="stat-card">
+        <div class="label">이동 거리</div>
+        <div class="value">2.4 km</div>
+      </div>
+      <div class="stat-card">
+        <div class="label">소요 시간</div>
+        <div class="value">38:12</div>
+      </div>
+    </div>
+    <p class="small text-muted mt-16 mb-0">2026.09.19 완료</p>
+  </div>
+
+  <a th:href="@{/mypage}" class="btn btn-outline mt-24">닫기</a>
+</main>
+
+</body>
+</html>
