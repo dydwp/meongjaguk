@@ -5,7 +5,9 @@ import java.util.List;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 
+import com.mungjaguk.app.dto.RouteDto;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.service.RouteService;
 
@@ -29,8 +31,16 @@ public class RouteController {
         return ResponseEntity.ok(courses);
     }
 
-    @GetMapping("/courses-detail")
+    @GetMapping("/course-detail")
     public String courseDetail() {
         return "course/detail";
+    }
+
+    @GetMapping("/api/courses/{coursesId}")
+    public ResponseEntity<Route> courseInfo(@PathVariable("coursesId") Long course_id) {
+        Route courses = service.getCourseInfo(course_id);
+        if (courses == null)
+            return ResponseEntity.notFound().build();
+        return ResponseEntity.ok(courses);
     }
 }

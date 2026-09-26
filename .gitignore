@@ -30,3 +30,7 @@ out/
 
 ### 비밀 설정 파일 (절대 커밋 금지) ###
 src/main/resources/application-secret.properties
+
+# 반려견 업로드 사진은 로컬에 보관
+/src/main/resources/static/images/pets/*
+!/src/main/resources/static/images/pets/.gitkeep

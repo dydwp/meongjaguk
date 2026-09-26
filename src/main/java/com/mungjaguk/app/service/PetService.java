@@ -10,7 +10,6 @@ import com.mungjaguk.app.entity.Pet;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.PetRepositroy;
 import com.mungjaguk.app.repository.UserRepository;
-import com.mungjaguk.app.security.LoginUser;
 
 import jakarta.transaction.Transactional;
 
@@ -18,10 +17,12 @@ import jakarta.transaction.Transactional;
 public class PetService {
   private final PetRepositroy repositroy;
   private final UserRepository userRepository;
+  private final PetImageStorage imageStorage;
 
-  public PetService(PetRepositroy repositroy, UserRepository userRepository) {
+  public PetService(PetRepositroy repositroy, UserRepository userRepository, PetImageStorage imageStorage) {
     this.repositroy = repositroy;
     this.userRepository = userRepository;
+    this.imageStorage = imageStorage;
   }
 
   @Transactional
@@ -44,7 +45,7 @@ public class PetService {
     pet.setName(request.name());
     pet.setBreed(request.breed());
     pet.setSize(request.size());
-    pet.setProfileImage(image.toString());
+    pet.setProfileImage(imageStorage.save(image));
 
     repositroy.save(pet);
 
