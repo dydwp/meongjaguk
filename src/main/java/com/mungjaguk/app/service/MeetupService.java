@@ -1,5 +1,6 @@
 package com.mungjaguk.app.service;
 
+import com.mungjaguk.app.dto.CommentDto;
 import com.mungjaguk.app.dto.MeetingCardDto;
 import com.mungjaguk.app.dto.MeetingDetailDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
@@ -8,7 +9,9 @@ import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.entity.WalkApplication;
 import com.mungjaguk.app.entity.WalkMeeting;
+import com.mungjaguk.app.entity.WalkMeetingComment;
 import com.mungjaguk.app.repository.WalkApplicationRepository;
+import com.mungjaguk.app.repository.WalkMeetingCommentRepository;
 import com.mungjaguk.app.repository.WalkMeetingRepository;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.stereotype.Service;
@@ -21,7 +24,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 같이 걷기 게시판: 목록/상세 조회, 동행 신청/취소
+ * 같이 걷기 게시판: 목록/상세 조회, 동행 신청/취소, 댓글 조회/작성
  */
 @Service
 @Transactional(readOnly = true)
@@ -29,13 +32,16 @@ public class MeetupService {
 
     private final WalkMeetingRepository meetingRepository;
     private final WalkApplicationRepository applicationRepository;
+    private final WalkMeetingCommentRepository commentRepository;
     private final UserService userService;
 
     public MeetupService(WalkMeetingRepository meetingRepository,
                          WalkApplicationRepository applicationRepository,
+                         WalkMeetingCommentRepository commentRepository,
                          UserService userService) {
         this.meetingRepository = meetingRepository;
         this.applicationRepository = applicationRepository;
+        this.commentRepository = commentRepository;
         this.userService = userService;
     }
 
@@ -159,6 +165,45 @@ public class MeetupService {
         }
 
         applicationRepository.delete(application);
+    }
+
+    /** 댓글 목록: 오래된 순 */
+    public List<CommentDto> getComments(Long meetingId) {
+        WalkMeeting meeting = findMeeting(meetingId);
+        return commentRepository.findByMeeting_MeetingIdOrderByCreatedAtAscCommentIdAsc(meetingId)
+                .stream()
+                .map(comment -> toCommentDto(comment, meeting))
+                .toList();
+    }
+
+    /**
+     * 댓글 작성 (로그인 회원만)
+     * - 내용은 앞뒤 공백 제거 후 1자 이상, 500자 이하
+     */
+    @Transactional
+    public CommentDto addComment(Long meetingId, Long userId, String content) {
+        String trimmed = content == null ? "" : content.trim();
+        if (trimmed.isEmpty()) {
+            throw new IllegalArgumentException("댓글 내용을 입력해주세요.");
+        }
+        if (trimmed.length() > WalkMeetingComment.MAX_CONTENT_LENGTH) {
+            throw new IllegalArgumentException("댓글은 " + WalkMeetingComment.MAX_CONTENT_LENGTH + "자까지 입력할 수 있어요.");
+        }
+
+        WalkMeeting meeting = findMeeting(meetingId);
+        User user = userService.findById(userId);
+        WalkMeetingComment saved = commentRepository.save(WalkMeetingComment.create(meeting, user, trimmed));
+        return toCommentDto(saved, meeting);
+    }
+
+    private CommentDto toCommentDto(WalkMeetingComment comment, WalkMeeting meeting) {
+        User author = comment.getUser();
+        return new CommentDto(
+                comment.getCommentId(),
+                author.getNickname(),
+                meeting.isHostedBy(author.getUserId()),
+                comment.getContent(),
+                comment.getCreatedAt());
     }
 
     private WalkMeeting findMeeting(Long meetingId) {

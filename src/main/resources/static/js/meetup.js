@@ -1,5 +1,5 @@
 /* ==========================================================================
-   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 동행 신청·취소)
+   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 동행 신청·취소 / 댓글)
    담당: 김환중
    ========================================================================== */
 (function () {
@@ -171,6 +171,7 @@
         renderDetail(meeting);
         renderApplyButton(meeting.myApplicationStatus);
         detailRoot.hidden = false;
+        loadComments();
       })
       .catch(function (err) {
         console.error("모집 정보를 불러오지 못했습니다.", err);
@@ -234,6 +235,93 @@
       else if (status === "REJECTED") applyBtn.textContent = "거절됨";
       else applyBtn.textContent = "동행 신청";
     }
+
+    /* ---------- 댓글 조회 / 작성 ---------- */
+    var commentForm = detailRoot.querySelector("[data-meeting-comment-form]");
+    var commentInput = commentForm.querySelector("input");
+    var commentBtn = commentForm.querySelector("button");
+    var commentList = detailRoot.querySelector("[data-meeting-comment-list]");
+    var commentCount = detailRoot.querySelector("[data-meeting-comment-count]");
+
+    function loadComments() {
+      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/comments")
+        .then(function (res) {
+          if (!res.ok) throw new Error("status " + res.status);
+          return res.json();
+        })
+        .then(function (comments) {
+          commentList.replaceChildren.apply(commentList, comments.map(createComment));
+          commentCount.textContent = String(comments.length);
+        })
+        .catch(function (err) {
+          console.error("댓글을 불러오지 못했습니다.", err);
+          commentList.replaceChildren(el("p", "small text-muted", "댓글을 불러오지 못했어요."));
+        });
+    }
+
+    function submitComment() {
+      if (!loggedIn) {
+        window.location.href = "/login";
+        return;
+      }
+      var content = commentInput.value.trim();
+      if (!content || commentBtn.disabled) return;
+
+      var headers = { "Content-Type": "application/json" };
+      if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+      commentBtn.disabled = true;
+      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/comments", {
+        method: "POST",
+        headers: headers,
+        body: JSON.stringify({ content: content })
+      })
+        .then(function (res) {
+          if (res.redirected || res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) {
+              if (!res.ok) {
+                alert(body.message || "댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요.");
+                return;
+              }
+              commentList.appendChild(createComment(body));
+              commentCount.textContent = String(parseInt(commentCount.textContent || "0", 10) + 1);
+              commentInput.value = "";
+              commentInput.focus();
+            });
+        })
+        .catch(function (err) {
+          console.error("댓글 등록 실패", err);
+          alert("댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요.");
+        })
+        .finally(function () {
+          commentBtn.disabled = false;
+        });
+    }
+
+    commentBtn.addEventListener("click", submitComment);
+    commentInput.addEventListener("keydown", function (e) {
+      // 한글 입력 조합 중 Enter는 무시 (중복 등록 방지)
+      if (e.key === "Enter" && !e.isComposing) submitComment();
+    });
+  }
+
+  // 댓글 한 개 (작성자 아바타 + 이름 · 시간 + 내용)
+  function createComment(comment) {
+    var item = el("div", "comment");
+    item.appendChild(el("div", comment.hostComment ? "avatar avatar-sm" : "avatar avatar-sm avatar-muted",
+      comment.authorNickname.charAt(0)));
+    var body = document.createElement("div");
+    var name = el("span", "name", comment.authorNickname);
+    name.appendChild(el("span", "time", "· " + formatRelative(comment.createdAt)));
+    body.appendChild(name);
+    body.appendChild(el("p", null, comment.content));
+    item.appendChild(body);
+    return item;
   }
 
   function renderDetail(meeting) {

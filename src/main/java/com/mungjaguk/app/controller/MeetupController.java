@@ -1,5 +1,7 @@
 package com.mungjaguk.app.controller;
 
+import com.mungjaguk.app.dto.CommentDto;
+import com.mungjaguk.app.dto.CommentRequest;
 import com.mungjaguk.app.dto.MeetingCardDto;
 import com.mungjaguk.app.dto.MeetingDetailDto;
 import com.mungjaguk.app.security.LoginUser;
@@ -13,6 +15,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestBody;
 
 import java.util.List;
 import java.util.Map;
@@ -83,11 +86,34 @@ public class MeetupController {
         return ResponseEntity.noContent().build();
     }
 
+    /** 댓글 목록 (비회원도 조회 가능) */
+    @GetMapping("/api/meetings/{meetingId}/comments")
+    public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId) {
+        return ResponseEntity.ok(meetupService.getComments(meetingId));
+    }
+
+    /** 댓글 작성 (로그인 회원만) */
+    @PostMapping("/api/meetings/{meetingId}/comments")
+    public ResponseEntity<?> addComment(@PathVariable Long meetingId,
+                                        @RequestBody CommentRequest request,
+                                        @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
+        }
+        CommentDto saved = meetupService.addComment(meetingId, loginUser.getUserId(), request.content());
+        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
+    }
+
     // ---------- 예외 처리 (이 컨트롤러에만 적용) ----------
 
     @ExceptionHandler(NoSuchElementException.class)
     public ResponseEntity<Map<String, String>> handleNotFound(NoSuchElementException e) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)
