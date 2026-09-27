@@ -40,5 +40,5 @@ src/main/resources/application-secret.properties
 __pycache__/
 *.py[cod]
 
-# 로컬 지도 데이터
-/ai-server/data/
+# 한국 전체 OpenStreetMap 원본 데이터 파일
+/ai-server/data/south-korea-latest.osm.pbf
