@@ -23,6 +23,7 @@ a { color: inherit; }
 }
 
 /* ---------- 공통 헤더: 중앙 로고 + 우측 메뉴 ---------- */
+
 .app-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
@@ -67,6 +68,7 @@ a { color: inherit; }
 }
 
 .app-nav a.active { color: var(--color-primary-dark); font-weight: 700; }
+
 .app-nav a:hover { color: var(--color-primary-dark); }
 
 .app-nav a.nav-login {
@@ -76,13 +78,17 @@ a { color: inherit; }
   padding: 5px 14px;
   border-radius: var(--radius-full);
 }
+
 .app-nav a.nav-login:hover { background: var(--color-primary-soft); }
 
 /* ---------- 타이틀 영역 ---------- */
+
 .page-title { font-size: 21px; font-weight: 700; margin: 4px 0 4px; }
+
 .page-sub { font-size: 13.5px; color: var(--color-text-muted); margin: 0 0 20px; }
 
 /* ---------- 메인 홈 배너 ---------- */
+
 .hero {
   position: relative;
   overflow: hidden;
@@ -127,6 +133,7 @@ a { color: inherit; }
 }
 
 .hero-actions { display: flex; gap: 10px; }
+
 .hero-actions .btn { width: auto; padding: 14px 22px; }
 
 .hero-illustration {
@@ -135,6 +142,7 @@ a { color: inherit; }
   width: 320px;
   height: 220px;
 }
+
 .hero-illustration svg { width: 100%; height: 100%; display: block; }
 
 @media (max-width: 860px) {
@@ -159,6 +167,7 @@ a { color: inherit; }
   justify-content: space-between;
   margin: 0 0 12px;
 }
+
 .block-label-row .block-label { margin: 0; }
 
 .section-link {
@@ -167,14 +176,21 @@ a { color: inherit; }
   color: var(--color-primary-dark);
   text-decoration: none;
 }
+
 .section-link:hover { text-decoration: underline; }
 
 /* ---------- 버튼 ----------
+
    규칙:
+
    - 메인(Primary, 초록): 화면당 핵심 액션 1개 — 산책 시작, 저장하기 등
+
    - 포인트(Accent, 오렌지): 시선을 끄는 하이라이트 액션 — 동행 신청, 같이 걷기 모집 등
+
    - 아웃라인: 보조/차선 액션 — 공유하기, 자세히 보기 등
+
 ------------------------------------ */
+
 .btn {
   display: inline-flex;
   align-items: center;
@@ -192,18 +208,21 @@ a { color: inherit; }
 }
 
 .btn:active { transform: translateY(1px); }
+
 button.btn { font-family: inherit; }
 
 .btn-primary {
   background: var(--color-primary);
   color: var(--color-on-primary);
 }
+
 .btn-primary:hover { background: var(--color-primary-hover); }
 
 .btn-highlight {
   background: var(--color-accent);
   color: var(--color-on-accent);
 }
+
 .btn-highlight:hover { background: var(--color-accent-hover); }
 
 .btn-highlight.is-done {
@@ -216,6 +235,7 @@ button.btn { font-family: inherit; }
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
+
 .btn-outline:hover { border-color: var(--color-primary); color: var(--color-primary-dark); }
 
 .btn-outline-primary {
@@ -223,6 +243,7 @@ button.btn { font-family: inherit; }
   color: var(--color-primary-dark);
   border: 1px solid var(--color-primary);
 }
+
 .btn-outline-primary:hover { background: var(--color-primary-soft); }
 
 .btn-kakao {
@@ -234,6 +255,7 @@ button.btn { font-family: inherit; }
   background: var(--color-naver);
   color: var(--color-on-naver);
 }
+
 .btn-naver:hover { opacity: .92; }
 
 .btn-google {
@@ -241,6 +263,7 @@ button.btn { font-family: inherit; }
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
+
 .btn-google:hover { border-color: var(--color-text-muted); }
 
 .oauth-icon {
@@ -264,13 +287,19 @@ button.btn { font-family: inherit; }
 }
 
 .btn-row { display: flex; gap: 10px; }
+
 .btn-row .btn { width: auto; flex: 1; }
 
 /* ---------- 배지 / 태그 ----------
+
    규칙: 시선을 끄는 강조(추천/신규/기록중 등)는 포인트 컬러(accent-soft + text).
+
    생동감 있는 보조 강조(활력 있는 코스 등)는 서브 컬러(secondary-soft + text).
+
    중립 상태(참여 인원 등)는 surface + border.
+
 ------------------------------------ */
+
 .tag {
   display: inline-flex;
   align-items: center;
@@ -315,6 +344,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 카드 ---------- */
+
 .card {
   background: var(--color-surface);
   border: 1px solid var(--color-border);
@@ -325,6 +355,7 @@ button.btn { font-family: inherit; }
 .card-pad { padding: 24px; }
 
 /* 산책로 카드 (리스트 아이템형) */
+
 .route-item {
   display: flex;
   gap: 14px;
@@ -339,7 +370,9 @@ button.btn { font-family: inherit; }
 }
 
 .route-item:hover { border-color: var(--color-primary); }
+
 .route-item.static { cursor: default; }
+
 .route-item.static:hover { border-color: var(--color-border); }
 
 .route-thumb {
@@ -355,10 +388,13 @@ button.btn { font-family: inherit; }
 }
 
 .route-item h3 { margin: 0 0 4px; font-size: 15px; display: flex; align-items: center; gap: 6px; }
+
 .route-item p { margin: 0 0 4px; font-size: 13px; color: var(--color-text-muted); }
+
 .route-item .meta { font-size: 12px; color: var(--color-text-muted); }
 
 /* ---------- 지도 미리보기 ---------- */
+
 .map-preview {
   position: relative;
   background: var(--color-map);
@@ -406,7 +442,9 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 폼 ---------- */
+
 .field { margin-bottom: 18px; }
+
 .field label {
   display: block;
   font-size: 13px;
@@ -429,6 +467,7 @@ button.btn { font-family: inherit; }
 .field input:focus { outline: 2px solid var(--color-secondary); outline-offset: 1px; }
 
 .field-row { display: flex; gap: 14px; }
+
 .field-row .field { flex: 1; }
 
 .pill-group { display: flex; gap: 8px; flex-wrap: wrap; }
@@ -466,6 +505,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 아바타 ---------- */
+
 .avatar {
   width: 48px;
   height: 48px;
@@ -481,9 +521,11 @@ button.btn { font-family: inherit; }
 }
 
 .avatar-sm { width: 30px; height: 30px; font-size: 11px; }
+
 .avatar-muted { background: var(--color-surface-muted); color: var(--color-text-muted); }
 
 /* ---------- 탭 ---------- */
+
 .tabs {
   display: flex;
   gap: 22px;
@@ -511,9 +553,13 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 포커스 화면 (로그인, 반려견 프로필 등 단일 카드 중심 화면) ----------
+
    무채색 회색 배경 위에 넓은 흰 카드를 그림자로 띄워 시선이 카드 하나에 집중되도록 합니다.
+
    이 화면의 버튼/선택 상태 등 강조 요소는 서브 컬러(#A7C957, 활력)를 사용합니다.
+
 ------------------------------------ */
+
 .focus-page {
   position: relative;
   min-height: calc(100vh - 96px);
@@ -549,13 +595,16 @@ button.btn { font-family: inherit; }
 }
 
 /* 포커스 화면 전용 버튼 — 서브 컬러(#A7C957) */
+
 .btn-focus {
   background: var(--color-secondary);
   color: var(--color-on-secondary);
 }
+
 .btn-focus:hover { background: var(--color-secondary-hover); }
 
 /* ---------- 2단 레이아웃 (메인 홈: 추천 리스트 + 자유 진입) ---------- */
+
 .two-col {
   display: grid;
   grid-template-columns: 1.35fr 1fr;
@@ -568,6 +617,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 그리드 ---------- */
+
 .grid-2 {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -597,6 +647,7 @@ button.btn { font-family: inherit; }
 }
 
 .pet-card h4 { margin: 0 0 2px; font-size: 14.5px; }
+
 .pet-card p { margin: 0; font-size: 12.5px; color: var(--color-text-muted); }
 
 .pet-card.add {
@@ -613,6 +664,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 같이 걷기 모집 중 (메인 홈) ---------- */
+
 .meet-section { margin-top: 48px; }
 
 .meet-grid {
@@ -635,6 +687,7 @@ button.btn { font-family: inherit; }
   text-decoration: none;
   color: inherit;
 }
+
 .meet-card:hover { border-color: var(--color-primary); }
 
 .meet-top {
@@ -652,11 +705,13 @@ button.btn { font-family: inherit; }
   background: var(--color-secondary-soft);
   color: var(--color-primary-dark);
 }
+
 .meet-status.closed { background: var(--color-surface-muted); color: var(--color-text-muted); }
 
 .meet-date { font-size: 12.5px; color: var(--color-text-muted); }
 
 .meet-card h4 { margin: 0 0 6px; font-size: 15px; }
+
 .meet-card .meet-cond { font-size: 12.5px; color: var(--color-text-muted); margin: 0 0 14px; }
 
 .progress-bar {
@@ -666,11 +721,13 @@ button.btn { font-family: inherit; }
   overflow: hidden;
   margin-bottom: 8px;
 }
+
 .progress-bar i {
   display: block;
   height: 100%;
   background: var(--color-accent);
 }
+
 .progress-bar.is-full i { background: var(--color-border); }
 
 .meet-count {
@@ -680,9 +737,11 @@ button.btn { font-family: inherit; }
   font-size: 12.5px;
   color: var(--color-text-muted);
 }
+
 .meet-count b { color: var(--color-text); }
 
 /* ---------- 푸터 ---------- */
+
 .site-footer {
   max-width: 980px;
   margin: 56px auto 0;
@@ -694,6 +753,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 게시판 카드 ---------- */
+
 .board-card {
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
@@ -705,11 +765,15 @@ button.btn { font-family: inherit; }
 }
 
 .board-card .map-preview { height: 130px; border-radius: 0; }
+
 .board-card .board-body { padding: 14px 16px 16px; }
+
 .board-card h3 { margin: 0 0 4px; font-size: 14.5px; }
+
 .board-card .meta { font-size: 12px; color: var(--color-text-muted); margin: 0 0 2px; }
 
 /* ---------- 신청 목록 (마이페이지 · 신청 수락/거절) ---------- */
+
 .request-item {
   display: flex;
   align-items: center;
@@ -722,7 +786,9 @@ button.btn { font-family: inherit; }
 }
 
 .request-item .who { flex: 1; }
+
 .request-item .who .name { font-size: 13.5px; font-weight: 700; }
+
 .request-item .who .route { font-size: 12.5px; color: var(--color-text-muted); margin-top: 2px; }
 
 .request-actions { display: flex; gap: 6px; }
@@ -738,8 +804,11 @@ button.btn { font-family: inherit; }
 }
 
 .btn-accept { background: var(--color-primary); color: var(--color-on-primary); }
+
 .btn-accept:hover { background: var(--color-primary-hover); }
+
 .btn-reject { background: var(--color-surface); color: var(--color-text-muted); border: 1px solid var(--color-border) !important; }
+
 .btn-reject:hover { border-color: var(--color-text-muted) !important; }
 
 .mypage-message {
@@ -760,6 +829,7 @@ button.btn { font-family: inherit; }
 }
 
 /* ---------- 댓글 ---------- */
+
 .comment-input {
   display: flex;
   gap: 8px;
@@ -799,11 +869,15 @@ button.btn { font-family: inherit; }
 }
 
 .comment .name { font-size: 13px; font-weight: 700; }
+
 .comment .time { font-size: 11.5px; color: var(--color-text-muted); font-weight: 400; margin-left: 6px; }
+
 .comment p { margin: 2px 0 0; font-size: 13.5px; color: var(--color-text); }
 
 /* ---------- 통계 카드 (산책 기록) ---------- */
+
 .stat-row { display: flex; gap: 14px; margin: 16px 0; }
+
 .stat-card {
   flex: 1;
   border: 1px solid var(--color-border);
@@ -811,29 +885,33 @@ button.btn { font-family: inherit; }
   border-radius: var(--radius-md);
   padding: 16px 18px;
 }
+
 .stat-card .label { font-size: 12.5px; color: var(--color-text-muted); margin-bottom: 6px; }
+
 .stat-card .value { font-size: 20px; font-weight: 800; }
 
 /* ---------- 유틸 ---------- */
-.mt-8 { margin-top: 8px; }
-.mt-16 { margin-top: 16px; }
-.mt-24 { margin-top: 24px; }
-.mb-0 { margin-bottom: 0; }
-.text-muted { color: var(--color-text-muted); }
-.text-link { color: var(--color-primary-dark); text-decoration: underline; background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-size: inherit; }
-.small { font-size: 13px; }
-[hidden] { display: none !important; }
 
-@media (max-width: 640px) {
-  .grid-3 { grid-template-columns: repeat(2, 1fr); }
-  .field-row { flex-direction: column; gap: 0; }
-  .app-header { grid-template-columns: 1fr auto; }
-  .app-nav { display: none; }
-}
+.mt-8 { margin-top: 8px; }
+
+.mt-16 { margin-top: 16px; }
+
+.mt-24 { margin-top: 24px; }
+
+.mb-0 { margin-bottom: 0; }
+
+.text-muted { color: var(--color-text-muted); }
+
+.text-link { color: var(--color-primary-dark); text-decoration: underline; background: none; border: none; padding: 0; cursor: pointer; font-family: inherit; font-size: inherit; }
+
+.small { font-size: 13px; }
+
+[hidden] { display: none !important; }
 
 .nav-logout-form {
   margin: 0;
 }
+
 .nav-logout {
   background: none;
   border: 0;
@@ -844,6 +922,7 @@ button.btn { font-family: inherit; }
   color: var(--color-text-muted);
   cursor: pointer;
 }
+
 .nav-logout:hover {
   color: var(--color-primary-dark);
 }
@@ -854,10 +933,91 @@ button.btn { font-family: inherit; }
   color: var(--color-text);
 }
 
+/* ---------- 반응형 ---------- */
+
+@media (max-width: 760px) {
+  .app-header {
+    grid-template-columns: 1fr;
+    row-gap: 14px;
+  }
+
+  .logo {
+    grid-column: 1;
+    grid-row: 1;
+    justify-self: center;
+  }
+
+  .app-nav {
+    grid-column: 1;
+    grid-row: 2;
+    justify-self: center;
+    align-self: center;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: 10px 16px;
+  }
+}
+
+@media (max-width: 640px) {
+  .grid-3 { grid-template-columns: repeat(2, 1fr); }
+  .field-row { flex-direction: column; gap: 0; }
+}
+
+@media (max-width: 520px) {
+  .grid-3 { grid-template-columns: 1fr; }
+
+  .app-header {
+    padding: 24px 16px 18px;
+  }
+
+  .app-nav {
+    gap: 8px 12px;
+  }
+
+  .app-nav a,
+  .nav-user,
+  .nav-logout {
+    font-size: 11.5px;
+  }
+}
+
+/* ---------- 모바일 세부 반응형 ---------- */
+
+@media (max-width: 420px) {
+  .tabs {
+    gap: 14px;
+  }
+
+  .tab {
+    font-size: 13px;
+  }
+
+  .request-item {
+    align-items: flex-start;
+    flex-wrap: wrap;
+  }
+
+  .request-item .who {
+    min-width: 0;
+  }
+
+  .request-actions {
+    width: 100%;
+    justify-content: flex-end;
+    margin-top: 8px;
+  }
+}
+
 /* ---------- 메인 홈: 추천 산책로 / 바로 산책하기 높이 맞춤 (담당: 박용제) ---------- */
+
 .home-cols { align-items: stretch; }              /* 두 칸 높이를 같게 */
+
 .home-walk { display: flex; flex-direction: column; }
+
 .home-walk > .card { flex: 1; display: flex; flex-direction: column; }
+
 .home-walk .map-preview { flex: 1; min-height: 180px; } /* 남는 높이를 지도가 채움 */
 
 @media (max-width: 640px) {
