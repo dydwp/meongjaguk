@@ -2,34 +2,44 @@ package com.mungjaguk.app.controller;
 
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.security.LoginUser;
+import com.mungjaguk.app.service.MyPageService;
 import com.mungjaguk.app.service.PetService;
 import com.mungjaguk.app.service.UserService;
+import com.mungjaguk.app.service.WalkApplicationService;
 import com.mungjaguk.app.service.WalkRecordService;
 import java.time.format.DateTimeFormatter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 
 @Controller
 public class MyPageController {
 
-    private static final DateTimeFormatter JOIN_DATE_FORMAT =
-            DateTimeFormatter.ofPattern("yyyy.MM");
+    private static final DateTimeFormatter JOIN_DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM");
 
     private final UserService userService;
     private final PetService petService;
     private final WalkRecordService walkRecordService;
+    private final MyPageService myPageService;
+    private final WalkApplicationService walkApplicationService;
 
     public MyPageController(UserService userService, PetService petService,
-                            WalkRecordService walkRecordService) {
+                            WalkRecordService walkRecordService, MyPageService myPageService,
+                            WalkApplicationService walkApplicationService) {
         this.userService = userService;
         this.petService = petService;
         this.walkRecordService = walkRecordService;
+        this.myPageService = myPageService;
+        this.walkApplicationService = walkApplicationService;
     }
 
     @GetMapping("/mypage")
-    public String mypage(@AuthenticationPrincipal LoginUser loginUser, Model model) {
+    public String mypage(@AuthenticationPrincipal LoginUser loginUser,
+                         @RequestParam(defaultValue = "pets") String tab, Model model) {
         Long userId = loginUser.getUserId();
         User user = userService.findById(userId);
 
@@ -37,9 +47,33 @@ public class MyPageController {
         model.addAttribute("avatarInitial", avatarInitial(user.getNickname()));
         model.addAttribute("joinedLabel", joinedLabel(user));
         model.addAttribute("pets", petService.getMyPets(userId));
+        model.addAttribute("sharedMeetings", myPageService.getMySharedMeetings(userId));
+        model.addAttribute("meetingRequests", myPageService.getMeetingRequests(userId));
         model.addAttribute("walkHistory", walkRecordService.getMyWalkHistory(userId));
+        model.addAttribute("activeTab", validTab(tab));
 
         return "member/mypage";
+    }
+
+    @PostMapping("/mypage/requests/{applicationId}/accept")
+    public String acceptRequest(@PathVariable Long applicationId,
+                                @AuthenticationPrincipal LoginUser loginUser) {
+        walkApplicationService.acceptForHost(applicationId, loginUser.getUserId());
+        return "redirect:/mypage?tab=requests";
+    }
+
+    @PostMapping("/mypage/requests/{applicationId}/reject")
+    public String rejectRequest(@PathVariable Long applicationId,
+                                @AuthenticationPrincipal LoginUser loginUser) {
+        walkApplicationService.rejectForHost(applicationId, loginUser.getUserId());
+        return "redirect:/mypage?tab=requests";
+    }
+
+    private String validTab(String tab) {
+        return switch (tab) {
+            case "shared", "requests", "activity" -> tab;
+            default -> "pets";
+        };
     }
 
     private String avatarInitial(String nickname) {
@@ -52,7 +86,6 @@ public class MyPageController {
 
     private String joinedLabel(User user) {
         String joinedDate = user.getCreatedAt().format(JOIN_DATE_FORMAT);
-
         return joinedDate + " 가입 · " + providerLabel(user.getProvider()) + " 계정";
     }
 
