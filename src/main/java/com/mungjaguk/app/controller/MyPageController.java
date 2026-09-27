@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class MyPageController {
@@ -57,15 +58,25 @@ public class MyPageController {
 
     @PostMapping("/mypage/requests/{applicationId}/accept")
     public String acceptRequest(@PathVariable Long applicationId,
-                                @AuthenticationPrincipal LoginUser loginUser) {
-        walkApplicationService.acceptForHost(applicationId, loginUser.getUserId());
+                                @AuthenticationPrincipal LoginUser loginUser,
+                                RedirectAttributes redirectAttributes) {
+        try {
+            walkApplicationService.acceptForHost(applicationId, loginUser.getUserId());
+            redirectAttributes.addFlashAttribute("successMessage", "참여 신청을 수락했습니다.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
+
         return "redirect:/mypage?tab=requests";
     }
 
     @PostMapping("/mypage/requests/{applicationId}/reject")
     public String rejectRequest(@PathVariable Long applicationId,
-                                @AuthenticationPrincipal LoginUser loginUser) {
+                                @AuthenticationPrincipal LoginUser loginUser,
+                                RedirectAttributes redirectAttributes) {
         walkApplicationService.rejectForHost(applicationId, loginUser.getUserId());
+        redirectAttributes.addFlashAttribute("successMessage", "참여 신청을 거절했습니다.");
+
         return "redirect:/mypage?tab=requests";
     }
 

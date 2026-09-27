@@ -50,9 +50,16 @@ public class WalkApplicationService {
     @Transactional
     public void acceptForHost(Long applicationId, Long hostUserId) {
         WalkApplication application = findAuthorizedApplication(applicationId, hostUserId);
-        if (application.getStatus() == ApplicationStatus.PENDING) {
-            application.accept();
+
+        if (application.getStatus() != ApplicationStatus.PENDING) {
+            return;
         }
+
+        if (!myPageQueryRepository.hasAvailableCapacity(applicationId)) {
+            throw new IllegalStateException("모집 정원이 가득 찼습니다.");
+        }
+
+        application.accept();
     }
 
     @Transactional

@@ -85,4 +85,19 @@ public class MyPageQueryRepository {
         Integer count = jdbcTemplate.queryForObject(sql, Integer.class, applicationId, hostUserId);
         return count != null && count > 0;
     }
+
+    public boolean hasAvailableCapacity(Long applicationId) {
+        String sql = """
+                SELECT
+                    COUNT(CASE WHEN wa2.status = 'ACCEPTED' THEN 1 END) < wm.max_participants
+                FROM walk_applications wa
+                JOIN walk_meetings wm ON wa.meeting_id = wm.meeting_id
+                LEFT JOIN walk_applications wa2 ON wm.meeting_id = wa2.meeting_id
+                WHERE wa.application_id = ?
+                GROUP BY wm.meeting_id, wm.max_participants
+                """;
+
+        Boolean available = jdbcTemplate.queryForObject(sql, Boolean.class, applicationId);
+        return Boolean.TRUE.equals(available);
+    }
 }

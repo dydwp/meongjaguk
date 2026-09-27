@@ -36,6 +36,14 @@
             th:classappend="${activeTab == 'activity'} ? ' active' : ''">활동 내역</button>
   </nav>
 
+  <div class="mypage-message success" th:if="${successMessage}" th:text="${successMessage}">
+    참여 신청을 수락했습니다.
+  </div>
+
+  <div class="mypage-message error" th:if="${errorMessage}" th:text="${errorMessage}">
+    모집 정원이 가득 찼습니다.
+  </div>
+
   <!-- 반려견 -->
   <div data-tab-panel="pets" th:attr="hidden=${activeTab != 'pets'} ? 'hidden' : null">
     <div class="grid-3">
