@@ -836,3 +836,13 @@ button.btn { font-family: inherit; }
   font-weight: 600;
   color: var(--color-text);
 }
+
+/* ---------- 메인 홈: 추천 산책로 / 바로 산책하기 높이 맞춤 (담당: 박용제) ---------- */
+.home-cols { align-items: stretch; }              /* 두 칸 높이를 같게 */
+.home-walk { display: flex; flex-direction: column; }
+.home-walk > .card { flex: 1; display: flex; flex-direction: column; }
+.home-walk .map-preview { flex: 1; min-height: 180px; } /* 남는 높이를 지도가 채움 */
+
+@media (max-width: 640px) {
+  .home-walk .map-preview { flex: none; height: 180px; } /* 모바일은 원래 높이 */
+}
