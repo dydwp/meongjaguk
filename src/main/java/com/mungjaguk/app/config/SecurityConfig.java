@@ -24,7 +24,7 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/", "/login").permitAll()
-                        .requestMatchers("/routes", "/courses-detail").permitAll()
+                        .requestMatchers("/routes", "/course-detail").permitAll()
                         .requestMatchers("/board", "/course-detail-shared").permitAll()
                         // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()

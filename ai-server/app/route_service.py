@@ -10,6 +10,7 @@ import geopandas as gpd
 
 from xgboost import XGBRegressor
 from shapely.geometry import Point
+from app.route_description import RoutePlaceLookup, build_route_description
 
 
 # =========================================================
@@ -35,6 +36,8 @@ GREEN_AREAS = gpd.read_file(
     GREEN_PATH,
     engine="fiona"
 )
+
+ROUTE_PLACE_LOOKUP = RoutePlaceLookup(GREEN_AREAS)
 
 MODEL_PATH = (
     BASE_DIR
@@ -1082,7 +1085,15 @@ def recommend_routes(
             )
         )
 
+        route_text = build_route_description(
+            row,
+            distance_m,
+            estimated_minutes,
+            ROUTE_PLACE_LOOKUP.find(G, candidate["route"]),
+        )
+
         results.append({
+            **route_text,
             "rank":
                 rank,
 
