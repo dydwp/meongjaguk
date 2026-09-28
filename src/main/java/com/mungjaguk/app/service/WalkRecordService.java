@@ -1,19 +1,21 @@
 package com.mungjaguk.app.service;
 
+import java.time.format.DateTimeFormatter;
+import java.util.List;
+import java.util.Locale;
+import java.util.Optional;
+
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 import com.mungjaguk.app.dto.WalkDetailView;
 import com.mungjaguk.app.dto.WalkHistoryItemView;
 import com.mungjaguk.app.dto.WalkPointView;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.WalkRecord;
 import com.mungjaguk.app.repository.RouteRepository;
-import com.mungjaguk.app.repository.WalkRecordRepository;
 import com.mungjaguk.app.repository.WalkRecordPointRepository;
-import java.time.format.DateTimeFormatter;
-import java.util.List;
-import java.util.Locale;
-import java.util.Optional;
-import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
+import com.mungjaguk.app.repository.WalkRecordRepository;
 
 @Service
 @Transactional(readOnly = true)
@@ -27,21 +29,21 @@ public class WalkRecordService {
     private final RouteRepository routeRepository;
 
     public WalkRecordService(WalkRecordRepository walkRecordRepository,
-                            RouteRepository routeRepository,
-                            WalkRecordPointRepository walkRecordPointRepository) {
+                             RouteRepository routeRepository,
+                             WalkRecordPointRepository walkRecordPointRepository) {
         this.walkRecordRepository = walkRecordRepository;
         this.routeRepository = routeRepository;
         this.walkRecordPointRepository = walkRecordPointRepository;
     }
 
     public List<WalkHistoryItemView> getMyWalkHistory(Long userId) {
-        return walkRecordRepository.findByUser_UserIdOrderByStartedAtDesc(userId).stream()
+        return walkRecordRepository.findByUserIdOrderByStartedAtDesc(userId).stream()
                 .map(this::toHistoryItem)
                 .toList();
     }
 
     public Optional<WalkDetailView> getDetail(Long walkRecordId, Long userId) {
-        return walkRecordRepository.findByIdAndUser_UserId(walkRecordId, userId)
+        return walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId)
                 .map(this::toDetailView);
     }
 
@@ -49,7 +51,7 @@ public class WalkRecordService {
         Optional<Route> route = findRoute(record.getCourseId());
 
         return new WalkHistoryItemView(
-                record.getId(),
+                record.getWalkRecordId(),
                 route.map(Route::getCourseName).orElse("자유 산책"),
                 "개인 산책",
                 distanceLabel(record.getDistanceM()),
@@ -63,17 +65,12 @@ public class WalkRecordService {
 
         String title = route.map(Route::getCourseName).orElse("자유 산책");
         String description = route.map(Route::getDescription).orElse("");
-        String plannedDistance = route
-                .map(Route::getDistanceM)
-                .map(this::distanceLabel)
-                .orElse("-");
-        String plannedDuration = route
-                .map(Route::getEstimatedMinutes)
-                .map(minutes -> "약 " + minutes + "분")
-                .orElse("-");
+        String plannedDistance = route.map(Route::getDistanceM).map(this::distanceLabel).orElse("-");
+        String plannedDuration = route.map(Route::getEstimatedMinutes)
+                .map(minutes -> "약 " + minutes + "분").orElse("-");
 
         return new WalkDetailView(
-                record.getId(),
+                record.getWalkRecordId(),
                 title,
                 "개인 산책",
                 description,
@@ -120,14 +117,15 @@ public class WalkRecordService {
 
         int minutes = durationSeconds / 60;
         int seconds = durationSeconds % 60;
-
         return String.format(Locale.KOREA, "%02d:%02d", minutes, seconds);
     }
 
     public List<WalkPointView> getWalkPoints(Long walkRecordId, Long userId) {
-        return walkRecordPointRepository
-                .findByWalkRecord_IdAndWalkRecord_User_UserIdOrderBySequenceNoAsc(walkRecordId, userId)
-                .stream()
+        if (walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId).isEmpty()) {
+            return List.of();
+        }
+
+        return walkRecordPointRepository.findByWalkRecordIdOrderBySequenceNoAsc(walkRecordId).stream()
                 .map(point -> new WalkPointView(point.getLatitude(), point.getLongitude()))
                 .toList();
     }

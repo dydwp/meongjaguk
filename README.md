@@ -38,3 +38,15 @@ spring.datasource.driver-class-name=com.mysql.cj.jdbc.Driver
 spring.jpa.hibernate.ddl-auto=none
 spring.jpa.show-sql=true
 코드를 추가합니다.
+
+## 서비스용 서울 보행 도로망 데이터 파일 관리
+
+`/ai-server/data/seoul_walk.graphml` 파일은 용량이 약 1.4GB로 크기 때문에 Git LFS로 관리합니다.
+
+해당 파일은 `.gitattributes`에 Git LFS 추적 대상으로 등록되어 있습니다.
+
+프로젝트를 처음 clone하거나 Git LFS를 처음 사용하는 경우 아래 명령어를 실행해주세요.
+
+```bash
+git lfs install
+```
