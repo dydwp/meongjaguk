@@ -6,16 +6,43 @@
   const cacheKey = "walk-recommendations:v1";
   let loading = false;
 
+  function showLoadingCards() {
+    const count = Math.min(Number(list.dataset.limit) || 3, 3);
+    const cards = Array.from({ length: count }, () => {
+      const card = document.createElement("div");
+      card.className = "route-item walk-recommend-loading-card";
+      card.setAttribute("aria-hidden", "true");
+
+      const distance = document.createElement("div");
+      distance.className =
+        "route-thumb route-distance walk-recommend-loading-distance";
+
+      const details = document.createElement("div");
+      details.className = "walk-recommend-loading-details";
+      for (const width of ["65%", "92%", "42%"]) {
+        const line = document.createElement("span");
+        line.className = "walk-recommend-loading-line";
+        line.style.width = width;
+        details.append(line);
+      }
+
+      card.append(distance, details);
+      return card;
+    });
+    list.replaceChildren(...cards);
+  }
+
   function validRoutes(routes) {
-    return Array.isArray(routes) && routes.every(route =>
-      route && typeof route === "object" && !Array.isArray(route));
+    return (
+      Array.isArray(routes) &&
+      routes.every(
+        (route) => route && typeof route === "object" && !Array.isArray(route),
+      )
+    );
   }
 
   function renderRoutes(routes) {
     list.replaceChildren(...routes.map(createWalkRouteCard));
-    status.textContent = routes.length
-      ? `내 주변 산책로 ${routes.length}개를 찾았어요.`
-      : "주변에 추천할 산책로가 없어요. 다른 위치에서 다시 확인해주세요.";
     list.setAttribute("aria-busy", "false");
     retry.hidden = false;
   }
@@ -45,50 +72,51 @@
       } catch (error) {
         event.preventDefault();
         console.error("추천 경로 보관 실패:", error);
-        status.textContent = "상세 정보를 열지 못했어요. 잠시 후 다시 시도해주세요.";
+        status.textContent =
+          "상세 정보를 열지 못했어요. 잠시 후 다시 시도해주세요.";
       }
     };
     card.addEventListener("click", rememberRoute);
     card.addEventListener("auxclick", rememberRoute);
     const thumb = document.createElement("div");
     thumb.className = "route-thumb route-distance";
-    const distance = Number.isFinite(route.distance_m) && route.distance_m >= 0
-      ? (route.distance_m / 1000).toFixed(1) : "—";
+    const distance =
+      Number.isFinite(route.distance_m) && route.distance_m >= 0
+        ? (route.distance_m / 1000).toFixed(1)
+        : "—";
     const distanceValue = document.createElement("strong");
     distanceValue.className = "route-distance-value";
     distanceValue.textContent = distance;
     const distanceUnit = document.createElement("span");
     distanceUnit.className = "route-distance-unit";
     distanceUnit.textContent = "KM";
-    thumb.setAttribute("aria-label", distance === "—" ? "거리 정보 없음" : `거리 ${distance}킬로미터`);
+    thumb.setAttribute(
+      "aria-label",
+      distance === "—" ? "거리 정보 없음" : `거리 ${distance}킬로미터`,
+    );
     thumb.append(distanceValue, distanceUnit);
 
     const info = document.createElement("div");
     const title = document.createElement("h3");
     title.textContent = route.title || `추천 산책로 ${route.rank ?? index + 1}`;
     const description = document.createElement("p");
-    description.textContent = route.description || "현재 위치를 기준으로 추천한 산책 경로예요.";
+    description.textContent =
+      route.description || "현재 위치를 기준으로 추천한 산책 경로예요.";
     const meta = document.createElement("span");
     meta.className = "meta";
-    meta.textContent = [
-      Number.isFinite(route.distance_m) ? `${(route.distance_m / 1000).toFixed(1)}km` : null,
-      Number.isFinite(route.estimated_minutes) ? `약 ${route.estimated_minutes}분` : null,
-    ].filter(Boolean).join(" · ") || "거리와 소요 시간 정보가 없어요.";
+    meta.textContent =
+      [
+        Number.isFinite(route.distance_m)
+          ? `${(route.distance_m / 1000).toFixed(1)}km`
+          : null,
+        Number.isFinite(route.estimated_minutes)
+          ? `약 ${route.estimated_minutes}분`
+          : null,
+      ]
+        .filter(Boolean)
+        .join(" · ") || "거리와 소요 시간 정보가 없어요.";
 
     info.append(title, description, meta);
-    const features = [];
-    if (Number.isFinite(route.walkway_ratio)) {
-      features.push(`보행로 ${Math.round(route.walkway_ratio * 100)}%`);
-    }
-    if (Number.isFinite(route.green_ratio)) {
-      features.push(`녹지 ${Math.round(route.green_ratio * 100)}%`);
-    }
-    if (features.length) {
-      const detail = document.createElement("p");
-      detail.className = "small text-muted";
-      detail.textContent = features.join(" · ");
-      info.append(detail);
-    }
     card.append(thumb, info);
     return card;
   }
@@ -106,26 +134,40 @@
   async function loadRecommendedRoutes() {
     if (loading) return;
     if (!navigator.geolocation) {
-      status.textContent = "현재 위치를 확인할 수 없어요. 다른 브라우저에서 이용해주세요.";
+      status.textContent =
+        "현재 위치를 확인할 수 없어요. 다른 브라우저에서 이용해주세요.";
       return;
     }
     loading = true;
+    const previousCards = [...list.childNodes];
     list.setAttribute("aria-busy", "true");
     retry.hidden = true;
-    status.textContent = "현재 위치를 확인하고 있어요. 위치 접근을 허용해주세요.";
+    showLoadingCards();
+    status.textContent =
+      "현재 위치를 확인하고 있어요. 위치 접근을 허용해주세요.";
     let locating = true;
+
+    const top_k = Number(list.getAttribute("data-limit"));
 
     try {
       const position = await getCurrentPosition();
       locating = false;
-      status.textContent = "주변 산책로를 추천하고 있어요. 잠시만 기다려주세요.";
+      status.textContent =
+        "주변 산책로를 추천하고 있어요. 잠시만 기다려주세요.";
       const { latitude, longitude } = position.coords;
-      const response = await fetch("http://127.0.0.1:8000/api/routes/recommend", {
-        method: "POST",
-        headers: { "Content-Type": "application/json", Accept: "application/json" },
-        body: JSON.stringify({ latitude, longitude }),
-      });
-      if (!response.ok) throw new Error(`Recommendation request failed: ${response.status}`);
+      const response = await fetch(
+        "http://127.0.0.1:8000/api/routes/recommend",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ latitude, longitude, top_k }),
+        },
+      );
+      if (!response.ok)
+        throw new Error(`Recommendation request failed: ${response.status}`);
       const data = await response.json();
       if (!validRoutes(data.routes)) {
         throw new Error("Invalid recommendation response");
@@ -138,10 +180,11 @@
       renderRoutes(data.routes);
     } catch (error) {
       console.error("산책로 추천 실패:", error);
+      list.replaceChildren(...previousCards);
       status.textContent = locating
-        ? (error.code === 1
+        ? error.code === 1
           ? "위치 접근을 허용하면 주변 산책로를 추천받을 수 있어요."
-          : "현재 위치를 확인하지 못했어요. 잠시 후 다시 시도해주세요.")
+          : "현재 위치를 확인하지 못했어요. 잠시 후 다시 시도해주세요."
         : "추천 산책로를 불러오지 못했어요. 잠시 후 다시 시도해주세요.";
     } finally {
       loading = false;

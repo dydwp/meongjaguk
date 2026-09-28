@@ -16,9 +16,6 @@
         멍자국이 엄선한 산책 코스예요. 반려견 성향에 맞게 골라보세요.
       </p>
       <section aria-labelledby="walk-recommend-heading">
-        <h2 id="walk-recommend-heading" class="block-label">
-          내 주변 추천 산책로
-        </h2>
         <p
           id="walk-recommend-status"
           class="small text-muted"
@@ -29,6 +26,7 @@
           id="walk-recommend-list"
           th:attr="data-detail-url=@{/course-detail}"
           aria-busy="false"
+          data-limit="6"
         ></div>
         <button
           id="walk-recommend-retry"
