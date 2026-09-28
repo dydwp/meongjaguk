@@ -141,6 +141,36 @@
     var km = minutes * 0.08; // 데모용 — 도보 평균 속도(~4.8km/h) 가정한 시뮬레이션 값
     return km.toFixed(1) + " km";
   }
+  // 저장용 거리(m) — 화면과 같은 데모 계산. 실제 GPS 거리는 다음 단계에서 교체 (담당: 박용제)
+  function distanceMeters(ms) {
+    return Math.round(Math.max(0, ms / 60000) * 0.08 * 1000);
+  }
+
+  /* ---------- 산책 기록 저장 (담당: 박용제) ----------
+     회원이 산책을 종료하면 POST /api/walks 로 기록을 보냄
+  ------------------------------------ */
+  function saveWalkRecord(startedAt, endedAt) {
+    var headers = { "Content-Type": "application/json" };
+    var tokenMeta = document.querySelector('meta[name="_csrf"]');
+    var headerMeta = document.querySelector('meta[name="_csrf_header"]');
+    if (tokenMeta && headerMeta && tokenMeta.content) {
+      headers[headerMeta.content] = tokenMeta.content; // 스프링 시큐리티 보안 토큰
+    }
+
+    return fetch("/api/walks", {
+      method: "POST",
+      headers: headers,
+      body: JSON.stringify({
+        courseId: null,                 // 자유 산책
+        startedAt: startedAt,
+        endedAt: endedAt,
+        distanceM: distanceMeters(endedAt - startedAt)
+      })
+    }).then(function (res) {
+      if (!res.ok) throw new Error("저장 실패: " + res.status);
+      return res.json();
+    });
+  }
 
   (function initWalkWidget() {
     var idle = document.querySelector("[data-walk-idle]");
@@ -182,6 +212,18 @@
       }
     }
 
+    // 산책 종료 처리 (저장 여부와 상관없이 공통)
+    function finishWalk() {
+      stopWalking();
+      stopTimer();
+      var redirect = endBtn.getAttribute("data-end-redirect");
+      if (redirect) {
+        window.location.href = redirect;
+      } else {
+        render();
+      }
+    }
+
     if (startBtn) {
       startBtn.addEventListener("click", function () {
         startWalking();
@@ -203,16 +245,24 @@
             window.location.href = "/login";
             return;
           }
+          finishWalk(); // 취소 → 저장 없이 종료
+          return;
         }
 
-        stopWalking();
-        stopTimer();
-        var redirect = endBtn.getAttribute("data-end-redirect");
-        if (redirect) {
-          window.location.href = redirect;
-        } else {
-          render();
-        }
+        // [회원] 기록 저장 후 종료. 실패하면 산책을 유지해서 다시 누를 수 있게 함
+        endBtn.disabled = true;
+        saveWalkRecord(walkStartedAt(), Date.now())
+          .then(function () {
+            alert("산책 기록을 저장했어요!");
+            finishWalk();
+          })
+          .catch(function (err) {
+            console.error(err);
+            alert("산책 기록 저장에 실패했어요. 잠시 후 다시 눌러주세요.");
+          })
+          .finally(function () {
+            endBtn.disabled = false;
+          });
       });
     }
 

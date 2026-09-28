@@ -5,6 +5,9 @@
 <meta charset="UTF-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 <title th:text="${title}">멍자국</title>
+<!-- JS에서 POST 요청할 때 필요한 보안 토큰 (산책 기록 저장 등) -->
+<meta name="_csrf" th:content="${_csrf?.token}" />
+<meta name="_csrf_header" th:content="${_csrf?.headerName}" />
 <link rel="stylesheet" th:href="@{/css/tokens.css}" />
 <link rel="stylesheet" th:href="@{/css/style.css}" />
 </head>
