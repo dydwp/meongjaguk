@@ -45,12 +45,21 @@
       <div class="grid-3">
 
         <div class="pet-card" th:each="pet : ${pets}">
-          <div class="photo"></div>
+          <div class="photo">
+            <img th:if="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}"
+                th:src="${pet.profileImage()}"
+                th:alt="${pet.name()}">
+            <span th:unless="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}">🐾</span>
+          </div>
 
           <h4 th:text="${pet.name()}">초코</h4>
 
           <p th:text="${pet.summaryLine()}">
             포메라니안 · 소형견 · 3세
+          </p>
+          <p th:if="${!#strings.isEmpty(pet.activityLevelLabel())}"
+            th:text="|활동성 ${pet.activityLevelLabel()}|">
+            활동성 높음
           </p>
         </div>
 

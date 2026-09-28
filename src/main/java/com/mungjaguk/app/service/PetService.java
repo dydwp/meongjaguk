@@ -1,5 +1,6 @@
 package com.mungjaguk.app.service;
 
+import java.time.LocalDate;
 import java.util.List;
 
 import org.springframework.stereotype.Service;
@@ -60,8 +61,13 @@ public class PetService {
     pet.setName(request.name());
     pet.setBreed(request.breed());
     pet.setSize(request.size());
-    pet.setProfileImage(imageStorage.save(image));
+    pet.setActivityLevel(request.activityLevel());
 
+    if (request.age() != null) {
+      pet.setBirthDate(LocalDate.now().minusYears(request.age()));
+    }
+
+    pet.setProfileImage(imageStorage.save(image));
     petRepository.save(pet);
   }
 
@@ -71,7 +77,22 @@ public class PetService {
         pet.getName(),
         pet.getBreed() == null ? "" : pet.getBreed(),
         sizeLabel(pet.getSize()),
-        pet.ageInYears());
+        pet.ageInYears(),
+        pet.getProfileImage(),
+        activityLevelLabel(pet.getActivityLevel()));
+  }
+
+  private String activityLevelLabel(String activityLevel) {
+    if (activityLevel == null || activityLevel.isBlank()) {
+      return "";
+    }
+
+    return switch (activityLevel) {
+      case "LOW" -> "낮음";
+      case "MEDIUM" -> "보통";
+      case "HIGH" -> "높음";
+      default -> activityLevel;
+    };
   }
 
   private String sizeLabel(String size) {

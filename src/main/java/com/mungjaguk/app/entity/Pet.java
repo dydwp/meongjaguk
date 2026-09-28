@@ -48,6 +48,9 @@ public class Pet {
     @Column(name = "size", length = 20)
     private String size;
 
+    @Column(name = "activity_level", length = 20)
+    private String activityLevel;
+
     @Column(name = "gender", length = 20)
     private String gender;
 
