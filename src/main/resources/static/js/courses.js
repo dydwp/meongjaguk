@@ -9,12 +9,9 @@ async function loadCourses() {
 
     const courses = await response.json();
 
-    console.log("받은 데이터:", courses);
-    console.log("배열인지:", Array.isArray(courses));
-    console.log("목록 요소:", document.querySelector("#course-list"));
-
     if (courses.length === 0) {
-      courseList.textContent = "등록된 코스가 없습니다.";
+      courseList.textContent = "등록된 추천 산책로가 없습니다.";
+      return;
     }
 
     const cards = courses.map(createCoursesCard);
@@ -35,7 +32,7 @@ function createCoursesCard(courses) {
 
   card.className = "route-item";
 
-  card.href = `/courses-detail?coursesId=${encodeURIComponent(courses.courseId)}`;
+  card.href = `/course-detail?courseId=${encodeURIComponent(courses.courseId)}`;
 
   card.innerHTML = `
       <div class="route-thumb">🐾</div>

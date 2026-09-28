@@ -30,3 +30,15 @@ out/
 
 ### 비밀 설정 파일 (절대 커밋 금지) ###
 src/main/resources/application-secret.properties
+
+# 반려견 업로드 사진은 로컬에 보관
+/src/main/resources/static/images/pets/*
+!/src/main/resources/static/images/pets/.gitkeep
+
+### AI ###
+# Python 캐시
+__pycache__/
+*.py[cod]
+
+# 한국 전체 OpenStreetMap 원본 데이터 파일
+/ai-server/data/south-korea-latest.osm.pbf

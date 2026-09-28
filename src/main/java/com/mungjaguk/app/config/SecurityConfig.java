@@ -21,29 +21,26 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
         http
-            .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/error").permitAll()
-                .requestMatchers("/", "/login").permitAll()
-                .requestMatchers("/routes", "/course-detail").permitAll()
-                .requestMatchers("/board", "/course-detail-shared").permitAll()
-                // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
-                .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
-                // 추가(김환중): 산책로 게시판 목록/상세 조회 API는 비회원도 볼 수 있게
-                .requestMatchers(HttpMethod.GET, "/api/meetings/**").permitAll()
-                .anyRequest().authenticated()
-            )
-            .oauth2Login(oauth -> oauth
-                .loginPage("/login")
-                .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
-                .defaultSuccessUrl("/", false)
-                .failureUrl("/login?error")
-            )
-            .logout(logout -> logout
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/")
-                .invalidateHttpSession(true)
-                .deleteCookies("JSESSIONID")
-            );
+                .authorizeHttpRequests(auth -> auth
+                        .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/error").permitAll()
+                        .requestMatchers("/", "/login").permitAll()
+                        .requestMatchers("/routes", "/course-detail").permitAll()
+                        .requestMatchers("/board", "/course-detail-shared").permitAll()
+                        // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
+                        .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
+                        // 추가(김환중): 산책로 게시판 목록/상세/댓글 조회 API는 비회원도 볼 수 있게
+                        .requestMatchers(HttpMethod.GET, "/api/meetings/**").permitAll()
+                        .anyRequest().authenticated())
+                .oauth2Login(oauth -> oauth
+                        .loginPage("/login")
+                        .userInfoEndpoint(userInfo -> userInfo.userService(customOAuth2UserService))
+                        .defaultSuccessUrl("/", false)
+                        .failureUrl("/login?error"))
+                .logout(logout -> logout
+                        .logoutUrl("/logout")
+                        .logoutSuccessUrl("/")
+                        .invalidateHttpSession(true)
+                        .deleteCookies("JSESSIONID"));
 
         return http.build();
     }

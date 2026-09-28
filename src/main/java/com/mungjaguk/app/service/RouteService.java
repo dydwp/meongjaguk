@@ -21,4 +21,9 @@ public class RouteService {
   public List<Route> getCoursesList() {
     return repository.findAll();
   }
+
+  @Transactional
+  public Route getCourseInfo(Long course_id) {
+    return repository.findByCourseId(course_id);
+  }
 }
