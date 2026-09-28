@@ -39,7 +39,7 @@ def recommend_route(
         routes = recommend_routes(
             latitude=request.latitude,
             longitude=request.longitude,
-            top_k=4
+            top_k=6
         )
 
         return {

@@ -10,7 +10,7 @@
   <body>
     <main
       id="course-detail"
-      th:attr="data-api-base=@{/api/courses/}"
+      th:attr="data-api-base=@{/api/courses/},data-save-url=@{/detail},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token}"
       aria-busy="true"
     >
       <div
@@ -52,7 +52,7 @@
           ></p>
           <div class="btn-row mt-16">
             <a th:href="@{/walk-record}" class="btn btn-primary">산책 시작</a>
-            <a href="#" class="btn btn-outline">공유하기</a>
+            <button id="course-share" type="button" class="btn btn-outline" disabled>공유하기</button>
           </div>
         </section>
         <a th:href="@{/routes}" class="btn btn-outline mt-16">추천 목록으로</a>
