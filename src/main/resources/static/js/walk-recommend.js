@@ -44,7 +44,7 @@
   function renderRoutes(routes) {
     list.replaceChildren(...routes.map(createWalkRouteCard));
     list.setAttribute("aria-busy", "false");
-    retry.hidden = false;
+    retry.disabled = loading;
   }
 
   function restoreRoutes() {
@@ -141,7 +141,7 @@
     loading = true;
     const previousCards = [...list.childNodes];
     list.setAttribute("aria-busy", "true");
-    retry.hidden = true;
+    retry.disabled = true;
     showLoadingCards();
     status.textContent =
       "현재 위치를 확인하고 있어요. 위치 접근을 허용해주세요.";
@@ -189,7 +189,7 @@
     } finally {
       loading = false;
       list.setAttribute("aria-busy", "false");
-      retry.hidden = false;
+      retry.disabled = false;
     }
   }
 
