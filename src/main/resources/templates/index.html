@@ -50,7 +50,7 @@
     </div>
   </section>
 
-  <div class="two-col">
+  <div class="two-col home-cols">
     <!-- 왼쪽: 추천 산책로 -->
     <section>
       <div class="block-label-row">
@@ -58,39 +58,34 @@
         <a th:href="@{/routes}" class="section-link">전체 보기 ›</a>
       </div>
 
-      <a th:href="@{/course-detail}" class="route-item">
+      <!-- courses 테이블에서 가져온 추천 산책로 (최대 3개) -->
+      <a th:each="route, stat : ${recommendRoutes}"
+         th:href="@{/course-detail(courseId=${route.courseId})}"
+         class="route-item"
+         th:classappend="${stat.last} ? 'mb-0'">
         <div class="route-thumb">🐾</div>
         <div>
-          <h3>한강 벚꽃길 코스 <span class="tag">추천</span></h3>
-          <p>강변을 따라 걷는 평탄한 코스예요. 소형견도 부담 없이 걸을 수 있어요.</p>
-          <span class="meta">2.3km · 약 35분</span>
+          <h3>[[${route.courseName}]]
+            <span th:if="${route.feature != null}" class="tag"
+                  th:text="${#strings.trim(#strings.arraySplit(route.feature, ',')[0])}">평지</span>
+          </h3>
+          <p th:text="${route.description}">코스 설명</p>
+          <span class="meta"
+                th:text="|${#numbers.formatDecimal(route.distanceM / 1000.0, 1, 1)}km · 약 ${route.estimatedMinutes}분|">3.2km · 약 50분</span>
         </div>
       </a>
 
-      <a th:href="@{/course-detail}" class="route-item">
-        <div class="route-thumb">🐾</div>
-        <div>
-          <h3>동네 뒷산 산책로 <span class="tag-secondary">활력 코스</span></h3>
-          <p>가벼운 오르막이 있는 흙길 코스예요. 활동성이 좋은 아이에게 추천해요.</p>
-          <span class="meta">3.1km · 약 50분</span>
-        </div>
-      </a>
-
-      <a th:href="@{/course-detail}" class="route-item mb-0">
-        <div class="route-thumb">🐾</div>
-        <div>
-          <h3>호수공원 둘레길</h3>
-          <p>넓은 공원을 크게 도는 코스예요. 대형견과 함께라면 이 코스를 추천해요.</p>
-          <span class="meta">4.0km · 약 1시간</span>
-        </div>
-      </a>
+      <!-- DB에 코스가 하나도 없을 때 -->
+      <p th:if="${#lists.isEmpty(recommendRoutes)}" class="small text-muted">
+        등록된 추천 산책로가 없어요.
+      </p>
     </section>
 
     <!-- 오른쪽: 바로 산책하기 -->
-    <section>
+    <section class="home-walk">
       <h2 class="block-label">바로 산책하기</h2>
       <div class="card card-pad">
-      <div class="map-preview" style="height:180px;">
+      <div class="map-preview">
         <svg viewBox="0 0 300 180" preserveAspectRatio="none">
           <path d="M40 150 C 90 120, 120 140, 150 100 S 220 60, 260 35"
                 fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
@@ -119,7 +114,9 @@
           </div>
         </div>
         <div class="btn-row mt-8">
-          <button type="button" class="btn btn-outline-primary" data-end-walk>산책 종료</button>
+          <!-- 비회원이면 data-login-required="true" → 종료 시 로그인 안내 -->
+          <button type="button" class="btn btn-outline-primary" data-end-walk
+                  th:attr="data-login-required=${loginUser == null}">산책 종료</button>
           <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
         </div>
       </div>
@@ -133,40 +130,33 @@
       <a th:href="@{/board}" class="section-link">더보기 ›</a>
     </div>
 
-    <div class="meet-grid">
-      <a th:href="@{/course-detail-shared}" class="meet-card">
+    <!-- 같이 걷기 모집 카드 (지금은 임시 데이터, 최대 3개) -->
+    <div class="meet-grid" th:unless="${#lists.isEmpty(meetCards)}">
+      <a th:each="meet : ${meetCards}"
+         th:href="@{/course-detail-shared(meetingId=${meet.meetingId})}"
+         class="meet-card">
         <div class="meet-top">
-          <span class="meet-status">모집중</span>
-          <span class="meet-date">9/27(토) 오후 4:00</span>
+          <span class="meet-status"
+                th:classappend="${meet.closed} ? 'closed'"
+                th:text="${meet.closed} ? '마감' : '모집중'">모집중</span>
+          <span class="meet-date" th:text="${meet.meetingDateText}">9/27(토) 오후 4:00</span>
         </div>
-        <h4>토요일 한강 벚꽃길 같이 걸어요</h4>
-        <p class="meet-cond">한강 벚꽃길 코스 · 소형견 환영</p>
-        <div class="progress-bar"><i style="width:60%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>3 / 5명</b></div>
-      </a>
-
-      <a th:href="@{/course-detail-shared}" class="meet-card">
-        <div class="meet-top">
-          <span class="meet-status">모집중</span>
-          <span class="meet-date">9/28(일) 오전 8:00</span>
+        <h4 th:text="${meet.title}">모집 제목</h4>
+        <p class="meet-cond" th:text="|${meet.courseName} · ${meet.participationCondition}|">코스 · 참여 조건</p>
+        <div class="progress-bar" th:classappend="${meet.progressPercent >= 100} ? 'is-full'">
+          <i th:style="|width:${meet.progressPercent}%|"></i>
         </div>
-        <h4>아침 뒷산 산책 메이트 구해요</h4>
-        <p class="meet-cond">동네 뒷산 산책로 · 활동량 많은 친구</p>
-        <div class="progress-bar"><i style="width:50%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>2 / 4명</b></div>
-      </a>
-
-      <a th:href="@{/course-detail-shared}" class="meet-card">
-        <div class="meet-top">
-          <span class="meet-status closed">마감</span>
-          <span class="meet-date">9/25(목) 오후 7:30</span>
+        <div class="meet-count">
+          <span>참여 인원</span>
+          <b th:text="|${meet.currentParticipants} / ${meet.maxParticipants}명|">3 / 5명</b>
         </div>
-        <h4>퇴근 후 호수공원 한 바퀴</h4>
-        <p class="meet-cond">호수공원 둘레길 · 대형견 가능</p>
-        <div class="progress-bar is-full"><i style="width:100%"></i></div>
-        <div class="meet-count"><span>참여 인원</span><b>6 / 6명</b></div>
       </a>
     </div>
+
+    <!-- 모집 글이 하나도 없을 때 -->
+    <p th:if="${#lists.isEmpty(meetCards)}" class="small text-muted">
+      아직 모집 중인 산책이 없어요.
+    </p>
   </section>
 </main>
 
