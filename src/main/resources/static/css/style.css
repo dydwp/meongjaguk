@@ -369,7 +369,7 @@ button.btn { font-family: inherit; }
   justify-content: center;
 }
 
-.map-preview svg { width: 100%; height: 100%; display: block; }
+.map-preview > svg { width: 100%; height: 100%; display: block; }
 
 .map-chip {
   position: absolute;
@@ -845,4 +845,18 @@ button.btn { font-family: inherit; }
 
 @media (max-width: 640px) {
   .home-walk .map-preview { flex: none; height: 180px; } /* 모바일은 원래 높이 */
+}
+
+/* ---------- 산책 지도 (카카오맵) - 담당: 박용제 ---------- */
+.walk-map { position: absolute; inset: 0; }
+.map-preview .map-chip { z-index: 2; }                 /* 칩이 지도 위에 보이게 */
+.map-preview.has-map > svg { display: none; }          /* 지도가 뜨면 그림만 숨김 (지도 선은 유지) */
+.map-preview.has-map .map-chip {                       /* 지도가 뜨면 칩은 왼쪽 아래로 */
+  top: auto; left: 16px; bottom: 16px; transform: none;
+}
+.walk-map-dot {                                        /* 현재 위치 점 */
+  width: 14px; height: 14px; border-radius: 50%;
+  background: var(--color-accent);
+  border: 3px solid #fff;
+  box-shadow: 0 0 0 2px rgba(0, 0, 0, 0.15);
 }

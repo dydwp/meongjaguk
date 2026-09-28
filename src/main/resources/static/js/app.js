@@ -134,6 +134,7 @@
     localStorage.setItem(WALK_ACTIVE_KEY, "false");
     localStorage.removeItem(WALK_START_KEY);
     localStorage.removeItem(WALK_POINTS_KEY);
+    window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도에서 경로 지우기 (walk-map.js)
   }
 
   /* ----- GPS 좌표 저장/거리 계산 (담당: 박용제) ----- */
@@ -256,6 +257,10 @@
       watchId = navigator.geolocation.watchPosition(
         function (position) {
           addWalkPoint(position);
+          // 지도에 현재 위치·경로 다시 그리기 (walk-map.js)
+          window.dispatchEvent(new CustomEvent("walk:position", {
+            detail: { lat: position.coords.latitude, lng: position.coords.longitude }
+          }));
           setChip("실시간 위치 추적 중");
           tick();
         },
@@ -309,6 +314,13 @@
 
     if (startBtn) {
       startBtn.addEventListener("click", function () {
+        // [비회원] 산책 기록은 회원만 가능 → 로그인으로 안내 (담당: 박용제)
+        if (startBtn.getAttribute("data-login-required") === "true") {
+          if (confirm("산책을 기록하려면 로그인이 필요해요. 로그인할까요?")) {
+            window.location.href = "/login";
+          }
+          return;
+        }
         startWalking();
         render();
       });
