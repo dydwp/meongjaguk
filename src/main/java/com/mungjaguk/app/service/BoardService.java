@@ -6,6 +6,7 @@ import com.mungjaguk.app.dto.CommentDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.Board;
 import com.mungjaguk.app.entity.BoardComment;
+import com.mungjaguk.app.entity.BoardStatus;
 import com.mungjaguk.app.entity.CompanionRequest;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.User;
@@ -63,7 +64,7 @@ public class BoardService {
         List<BoardCardDto> cards = new ArrayList<>();
         for (Board board : boards) {
             Route course = board.getCourse();
-            int accepted = acceptedCounts.getOrDefault(board.getMeetingId(), 0L).intValue();
+            long accepted = acceptedCounts.getOrDefault(board.getMeetingId(), 0L);
             cards.add(new BoardCardDto(
                     board.getMeetingId(),
                     board.getTitle(),
@@ -73,9 +74,9 @@ public class BoardService {
                     board.getMeetingTime(),
                     course.getDistanceM(),
                     course.getEstimatedMinutes(),
-                    1 + accepted,
+                    1 + (int) accepted,
                     board.getMaxParticipants(),
-                    board.getStatus().name()));
+                    displayStatus(board, accepted)));
         }
         return cards;
     }
@@ -116,7 +117,7 @@ public class BoardService {
                 participants,
                 participants.size(),
                 board.getMaxParticipants(),
-                board.getStatus().name(),
+                displayStatus(board, accepted.size()),
                 isHost,
                 myStatus);
     }
@@ -176,6 +177,18 @@ public class BoardService {
                 author.getUserId().equals(loginUserId),
                 comment.getContent(),
                 comment.getCreatedAt());
+    }
+
+    /**
+     * 화면 표시용 모집 상태
+     * - DB가 모집 중(RECRUITING)이어도 정원이 찼으면 모집 마감(CLOSED)으로 표시
+     *   (정원 충족 시 DB 상태를 CLOSED로 바꾸는 자동 마감은 수락 기능에서 Board.close()로 처리)
+     */
+    private String displayStatus(Board board, long acceptedCount) {
+        if (board.getStatus() == BoardStatus.RECRUITING && board.isFull(acceptedCount)) {
+            return BoardStatus.CLOSED.name();
+        }
+        return board.getStatus().name();
     }
 
     private Board findBoard(Long meetingId) {

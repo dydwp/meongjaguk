@@ -84,6 +84,21 @@ public class Board {
         return host != null && host.getUserId().equals(userId);
     }
 
+    /**
+     * 모집 마감: 모집 중(RECRUITING)일 때만 CLOSED로 변경
+     * - 정원 충족 시 자동 마감, 작성자 수동 마감에서 호출
+     */
+    public void close() {
+        if (this.status == BoardStatus.RECRUITING) {
+            this.status = BoardStatus.CLOSED;
+        }
+    }
+
+    /** 정원이 찼는지 (현재 인원 = 작성자 1명 + 수락된 신청자 수) */
+    public boolean isFull(long acceptedCount) {
+        return 1 + acceptedCount >= maxParticipants;
+    }
+
     public Long getMeetingId() { return meetingId; }
     public User getHost() { return host; }
     public Route getCourse() { return course; }

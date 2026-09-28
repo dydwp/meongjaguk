@@ -36,6 +36,7 @@ public class CompanionService {
      * 동행 신청
      * - 본인이 공유한 모집에는 신청 불가
      * - RECRUITING 상태에서만 신청 가능
+     * - 정원이 찼으면 신청 불가 (작성자 1명 + 수락된 신청자 수 기준)
      * - 같은 모집에 중복 신청 불가
      * - 신청 후 상태는 PENDING
      */
@@ -49,6 +50,10 @@ public class CompanionService {
         }
         if (board.getStatus() != BoardStatus.RECRUITING) {
             throw new IllegalStateException("모집이 마감되어 신청할 수 없어요.");
+        }
+        long accepted = companionRequestRepository.countByMeetingIdAndStatus(meetingId, ApplicationStatus.ACCEPTED);
+        if (board.isFull(accepted)) {
+            throw new IllegalStateException("정원이 다 차서 신청할 수 없어요.");
         }
         if (companionRequestRepository.existsByMeetingIdAndApplicant_UserId(meetingId, userId)) {
             throw new IllegalStateException("이미 신청한 모집이에요.");
