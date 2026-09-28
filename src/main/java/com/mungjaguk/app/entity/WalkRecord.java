@@ -35,7 +35,7 @@ public class WalkRecord {
     private Long userId;
 
     @Column(name = "course_id")
-    private Long courseId;              // 자유 산책이면 null
+    private Long courseId; // 자유 산책이면 null
 
     @Column(name = "status", nullable = false, length = 20)
     private String status;
@@ -62,8 +62,8 @@ public class WalkRecord {
 
     /** 끝난 산책 기록 만들기 */
     public static WalkRecord completed(Long userId, Long courseId,
-                                       LocalDateTime startedAt, LocalDateTime endedAt,
-                                       int durationSeconds, int distanceM) {
+            LocalDateTime startedAt, LocalDateTime endedAt,
+            int durationSeconds, int distanceM) {
         WalkRecord record = new WalkRecord();
         record.userId = userId;
         record.courseId = courseId;

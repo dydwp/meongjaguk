@@ -2,6 +2,7 @@ package com.mungjaguk.app.entity;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.Period;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -32,8 +33,7 @@ public class Pet {
     private Long petId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false,
-            foreignKey = @ForeignKey(name = "fk_pets_user"))
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_pets_user"))
     private User user;
 
     @Column(name = "name", nullable = false, length = 50)
@@ -72,5 +72,12 @@ public class Pet {
     @PreUpdate
     protected void onUpdate() {
         this.updatedAt = LocalDateTime.now();
+    }
+
+    public int ageInYears() {
+        if (birthDate == null) {
+            return 0;
+        }
+        return Period.between(birthDate, LocalDate.now()).getYears();
     }
 }
