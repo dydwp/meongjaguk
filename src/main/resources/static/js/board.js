@@ -156,6 +156,7 @@
     var csrfHeader = detailRoot.getAttribute("data-csrf-header");
     var csrfToken = detailRoot.getAttribute("data-csrf-token");
     var applyBtn = detailRoot.querySelector("[data-apply-btn]");
+    var meetingClosed = false; // 모집 중(RECRUITING)이 아니면 true (정원 충족 시 서버가 CLOSED로 내려줌)
 
     fetch("/api/meetings/" + encodeURIComponent(meetingId))
       .then(function (res) {
@@ -169,8 +170,9 @@
       .then(function (meeting) {
         if (!meeting) return;
         renderDetail(meeting);
+        meetingClosed = meeting.status !== "RECRUITING";
         if (meeting.isHost) {
-          renderHostButton();
+          renderDisabledButton("HOST", "내가 공유한 모집이에요");
         } else {
           renderApplyButton(meeting.myApplicationStatus);
         }
@@ -228,18 +230,28 @@
         });
     }
 
-    // 신청 상태별 버튼: 없음 → 동행 신청 / PENDING → 신청 완료(다시 누르면 취소) / ACCEPTED·REJECTED → 비활성
-    // 내가 공유한 모집: 신청 대신 안내 문구, 누를 수 없음 (디자인 시스템 Gray = 비활성)
-    function renderHostButton() {
-      applyBtn.setAttribute("data-application-status", "HOST");
+    // 신청할 수 없는 상태: 안내 문구, 누를 수 없음 (디자인 시스템 Gray = 비활성)
+    // - HOST  : 내가 공유한 모집
+    // - CLOSED: 모집 마감 (정원 충족 포함), 아직 신청하지 않은 사람
+    function renderDisabledButton(mark, text) {
+      applyBtn.setAttribute("data-application-status", mark);
+      applyBtn.classList.remove("is-done");
       applyBtn.disabled = true;
       applyBtn.style.background = "var(--color-border)";
       applyBtn.style.color = "var(--color-text-muted)";
       applyBtn.style.cursor = "default";
-      applyBtn.textContent = "내가 공유한 모집이에요";
+      applyBtn.textContent = text;
     }
 
+    // 신청 상태별 버튼: 없음 → 동행 신청(마감이면 비활성) / PENDING → 신청 완료(다시 누르면 취소) / ACCEPTED·REJECTED → 비활성
     function renderApplyButton(status) {
+      if (!status && meetingClosed) {
+        renderDisabledButton("CLOSED", "동행 모집 마감");
+        return;
+      }
+      applyBtn.style.background = "";
+      applyBtn.style.color = "";
+      applyBtn.style.cursor = "";
       applyBtn.setAttribute("data-application-status", status || "");
       applyBtn.classList.toggle("is-done", !!status);
       applyBtn.disabled = status === "ACCEPTED" || status === "REJECTED";
