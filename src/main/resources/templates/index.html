@@ -92,13 +92,17 @@
           <circle cx="40" cy="150" r="5" fill="var(--color-primary)"/>
           <circle cx="260" cy="35" r="5" fill="var(--color-accent)"/>
         </svg>
+        <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 -->
+        <div class="walk-map" data-walk-map></div>
         <span class="map-chip" data-walk-chip>지도 미리보기</span>
       </div>
 
       <!-- 산책 전: 시작 버튼만 -->
       <div data-walk-idle>
         <p class="small text-muted mt-16">특정 코스 없이 자유롭게 걷고 기록만 남기고 싶을 때 눌러주세요.</p>
-        <button type="button" class="btn btn-primary mt-8" data-start-walk>산책 시작</button>
+        <!-- 비회원이면 data-login-required="true" → 산책 시작 시 로그인 안내 -->
+        <button type="button" class="btn btn-primary mt-8" data-start-walk
+                th:attr="data-login-required=${loginUser == null}">산책 시작</button>
       </div>
 
       <!-- 산책 중: 실시간 거리/시간 + 종료·상세 버튼 -->
@@ -158,6 +162,8 @@
       아직 모집 중인 산책이 없어요.
     </p>
   </section>
+  <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
+  <script th:src="@{/js/walk-map.js}"></script>
 </main>
 
 </body>

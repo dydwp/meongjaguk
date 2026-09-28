@@ -18,6 +18,8 @@
       <circle cx="830" cy="45" r="9" fill="var(--color-accent)" opacity="0.3"/>
       <circle cx="830" cy="45" r="6" fill="var(--color-accent)"/>
     </svg>
+    <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 (walk-map.js) -->
+    <div class="walk-map" data-walk-map></div>
     <span class="map-chip floating" data-walk-chip>실시간 위치 추적 중</span>
   </div>
 
@@ -33,6 +35,9 @@
   </div>
 
   <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
+
+  <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
+  <script th:src="@{/js/walk-map.js}"></script>
 </main>
 
 </body>
