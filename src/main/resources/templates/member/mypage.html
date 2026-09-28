@@ -152,14 +152,16 @@
 
       <a th:each="item : ${walkHistory}" th:href="@{/activity-detail(id=${item.id()})}" class="route-item">
 
-        <div class="route-thumb">🐾</div>
+        <div class="route-thumb route-distance">
+          <span class="route-distance-value"
+                th:text="${#strings.trim(#strings.replace(item.distanceLabel(), 'km', ''))}">0.8</span>
+          <span class="route-distance-unit">km</span>
+        </div>
 
         <div>
           <h3>
             <span th:text="${item.title()}">한강 벚꽃길 코스</span>
-            <span class="tag-neutral" th:text="${item.tagLabel()}">
-              개인 산책
-            </span>
+            <span class="tag-neutral" th:text="${item.tagLabel()}">개인 산책</span>
           </h3>
 
           <p>
