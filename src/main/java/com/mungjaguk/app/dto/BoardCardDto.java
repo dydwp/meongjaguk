@@ -8,7 +8,7 @@ import java.time.LocalTime;
  * 산책로 게시판 카드
  * currentParticipants = 작성자 1명 + 수락된 신청자 수
  */
-public record MeetingCardDto(
+public record BoardCardDto(
     Long meetingId,
     String title,
     String hostNickname,

@@ -6,11 +6,11 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * 같이 걷기 모집 (walk_meetings)
+ * 산책로 게시판 게시글 = 같이 걷기 모집 (walk_meetings)
  */
 @Entity
 @Table(name = "walk_meetings")
-public class WalkMeeting {
+public class Board {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -50,7 +50,7 @@ public class WalkMeeting {
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false, length = 20, columnDefinition = "varchar(20)")
-    private MeetingStatus status;
+    private BoardStatus status;
 
     @Column(name = "started_at")
     private LocalDateTime startedAt;
@@ -64,14 +64,14 @@ public class WalkMeeting {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected WalkMeeting() {}
+    protected Board() {}
 
     @PrePersist
     protected void onCreate() {
         this.createdAt = LocalDateTime.now();
         this.updatedAt = this.createdAt;
         if (this.status == null) {
-            this.status = MeetingStatus.RECRUITING;
+            this.status = BoardStatus.RECRUITING;
         }
     }
 
@@ -94,7 +94,7 @@ public class WalkMeeting {
     public int getMaxParticipants() { return maxParticipants; }
     public boolean isPetRequired() { return petRequired; }
     public String getParticipationCondition() { return participationCondition; }
-    public MeetingStatus getStatus() { return status; }
+    public BoardStatus getStatus() { return status; }
     public LocalDateTime getStartedAt() { return startedAt; }
     public LocalDateTime getEndedAt() { return endedAt; }
     public LocalDateTime getCreatedAt() { return createdAt; }

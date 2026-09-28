@@ -12,7 +12,7 @@ import java.util.List;
  * isHost               : 로그인 사용자가 작성자인지
  * myApplicationStatus  : 로그인 사용자의 신청 상태 (신청 안 했거나 비로그인이면 null)
  */
-public record MeetingDetailDto(
+public record BoardDetailDto(
     Long meetingId,
     String title,
     String description,

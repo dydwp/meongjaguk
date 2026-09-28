@@ -4,11 +4,11 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 공유 산책로(모집글) 댓글 (walk_meeting_comments)
+ * 산책로 게시판 게시글 댓글 (walk_meeting_comments)
  */
 @Entity
 @Table(name = "walk_meeting_comments")
-public class WalkMeetingComment {
+public class BoardComment {
 
     public static final int MAX_CONTENT_LENGTH = 500;
 
@@ -20,7 +20,7 @@ public class WalkMeetingComment {
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "meeting_id", nullable = false,
                 foreignKey = @ForeignKey(name = "fk_walk_meeting_comments_meeting"))
-    private WalkMeeting meeting;
+    private Board board;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
     @JoinColumn(name = "user_id", nullable = false,
@@ -36,11 +36,11 @@ public class WalkMeetingComment {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected WalkMeetingComment() {}
+    protected BoardComment() {}
 
-    public static WalkMeetingComment create(WalkMeeting meeting, User user, String content) {
-        WalkMeetingComment comment = new WalkMeetingComment();
-        comment.meeting = meeting;
+    public static BoardComment create(Board board, User user, String content) {
+        BoardComment comment = new BoardComment();
+        comment.board = board;
         comment.user = user;
         comment.content = content;
         return comment;
@@ -58,7 +58,7 @@ public class WalkMeetingComment {
     }
 
     public Long getCommentId() { return commentId; }
-    public WalkMeeting getMeeting() { return meeting; }
+    public Board getBoard() { return board; }
     public User getUser() { return user; }
     public String getContent() { return content; }
     public LocalDateTime getCreatedAt() { return createdAt; }

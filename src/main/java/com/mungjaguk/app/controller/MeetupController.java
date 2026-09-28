@@ -1,26 +1,7 @@
 package com.mungjaguk.app.controller;
 
-import com.mungjaguk.app.dto.CommentDto;
-import com.mungjaguk.app.dto.CommentRequest;
-import com.mungjaguk.app.dto.MeetingCardDto;
-import com.mungjaguk.app.dto.MeetingDetailDto;
-import com.mungjaguk.app.security.LoginUser;
-import com.mungjaguk.app.service.MeetupService;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
-import org.springframework.security.access.AccessDeniedException;
-import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
-import org.springframework.web.bind.annotation.DeleteMapping;
-import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-
-import java.util.List;
-import java.util.Map;
-import java.util.NoSuchElementException;
 
 /**
  * 담당 영역: 같이 걷기 게시판
@@ -30,114 +11,13 @@ import java.util.NoSuchElementException;
 @Controller
 public class MeetupController {
 
-    private final MeetupService meetupService;
-
-    public MeetupController(MeetupService meetupService) {
-        this.meetupService = meetupService;
-    }
-
-    // ---------- 화면 ----------
-
     @GetMapping("/board")
     public String board() {
         return "board/list";
     }
 
-    /** 공유 산책로 상세: /course-detail-shared?meetingId={id} (데이터는 JS에서 API로 조회) */
     @GetMapping("/course-detail-shared")
     public String courseDetailShared() {
         return "board/detail";
-    }
-
-    // ---------- API ----------
-
-    /** 산책로 게시판 목록 (최신순 6개) */
-    @GetMapping("/api/meetings")
-    public ResponseEntity<List<MeetingCardDto>> meetings() {
-        return ResponseEntity.ok(meetupService.getRecentMeetings());
-    }
-
-    /** 공유 산책로 상세 */
-    @GetMapping("/api/meetings/{meetingId}")
-    public ResponseEntity<MeetingDetailDto> meeting(@PathVariable Long meetingId,
-                                                    @AuthenticationPrincipal LoginUser loginUser) {
-        Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
-        return ResponseEntity.ok(meetupService.getMeeting(meetingId, loginUserId));
-    }
-
-    /** 동행 신청 */
-    @PostMapping("/api/meetings/{meetingId}/applications")
-    public ResponseEntity<Map<String, String>> apply(@PathVariable Long meetingId,
-                                                     @AuthenticationPrincipal LoginUser loginUser) {
-        if (loginUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
-        }
-        meetupService.apply(meetingId, loginUser.getUserId());
-        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("status", "PENDING"));
-    }
-
-    /** 동행 신청 취소 */
-    @DeleteMapping("/api/meetings/{meetingId}/applications")
-    public ResponseEntity<Void> cancel(@PathVariable Long meetingId,
-                                       @AuthenticationPrincipal LoginUser loginUser) {
-        if (loginUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        meetupService.cancel(meetingId, loginUser.getUserId());
-        return ResponseEntity.noContent().build();
-    }
-
-    /** 댓글 목록 (비회원도 조회 가능) */
-    @GetMapping("/api/meetings/{meetingId}/comments")
-    public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId,
-                                                     @AuthenticationPrincipal LoginUser loginUser) {
-        Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
-        return ResponseEntity.ok(meetupService.getComments(meetingId, loginUserId));
-    }
-
-    /** 댓글 작성 (로그인 회원만) */
-    @PostMapping("/api/meetings/{meetingId}/comments")
-    public ResponseEntity<?> addComment(@PathVariable Long meetingId,
-                                        @RequestBody CommentRequest request,
-                                        @AuthenticationPrincipal LoginUser loginUser) {
-        if (loginUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
-        }
-        CommentDto saved = meetupService.addComment(meetingId, loginUser.getUserId(), request.content());
-        return ResponseEntity.status(HttpStatus.CREATED).body(saved);
-    }
-
-    /** 댓글 삭제 (본인 댓글만) */
-    @DeleteMapping("/api/meetings/{meetingId}/comments/{commentId}")
-    public ResponseEntity<Void> deleteComment(@PathVariable Long meetingId,
-                                              @PathVariable Long commentId,
-                                              @AuthenticationPrincipal LoginUser loginUser) {
-        if (loginUser == null) {
-            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
-        }
-        meetupService.deleteComment(meetingId, commentId, loginUser.getUserId());
-        return ResponseEntity.noContent().build();
-    }
-
-    // ---------- 예외 처리 (이 컨트롤러에만 적용) ----------
-
-    @ExceptionHandler(NoSuchElementException.class)
-    public ResponseEntity<Map<String, String>> handleNotFound(NoSuchElementException e) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(Map.of("message", e.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalArgumentException.class)
-    public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException e) {
-        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
-    }
-
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<Map<String, String>> handleForbidden(AccessDeniedException e) {
-        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
-    }
-
-    @ExceptionHandler(IllegalStateException.class)
-    public ResponseEntity<Map<String, String>> handleBadState(IllegalStateException e) {
-        return ResponseEntity.status(HttpStatus.CONFLICT).body(Map.of("message", e.getMessage()));
     }
 }
