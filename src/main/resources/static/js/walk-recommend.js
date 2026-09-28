@@ -51,9 +51,17 @@
     card.addEventListener("click", rememberRoute);
     card.addEventListener("auxclick", rememberRoute);
     const thumb = document.createElement("div");
-    thumb.className = "route-thumb";
-    thumb.textContent = "🐾";
-    thumb.setAttribute("aria-hidden", "true");
+    thumb.className = "route-thumb route-distance";
+    const distance = Number.isFinite(route.distance_m) && route.distance_m >= 0
+      ? (route.distance_m / 1000).toFixed(1) : "—";
+    const distanceValue = document.createElement("strong");
+    distanceValue.className = "route-distance-value";
+    distanceValue.textContent = distance;
+    const distanceUnit = document.createElement("span");
+    distanceUnit.className = "route-distance-unit";
+    distanceUnit.textContent = "KM";
+    thumb.setAttribute("aria-label", distance === "—" ? "거리 정보 없음" : `거리 ${distance}킬로미터`);
+    thumb.append(distanceValue, distanceUnit);
 
     const info = document.createElement("div");
     const title = document.createElement("h3");
