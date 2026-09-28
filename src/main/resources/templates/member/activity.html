@@ -73,7 +73,7 @@
     </p>
   </div>
 
-  <a th:href="@{/mypage}" class="btn btn-outline mt-24">닫기</a>
+  <a th:href="@{/mypage(tab='activity')}" class="btn btn-outline mt-24">닫기</a>
 
   <script th:if="${!#strings.isEmpty(kakaoMapsJavaScriptKey)}"
           th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapsJavaScriptKey}|"></script>
