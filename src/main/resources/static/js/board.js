@@ -169,7 +169,11 @@
       .then(function (meeting) {
         if (!meeting) return;
         renderDetail(meeting);
-        renderApplyButton(meeting.myApplicationStatus);
+        if (meeting.isHost) {
+          renderHostButton();
+        } else {
+          renderApplyButton(meeting.myApplicationStatus);
+        }
         detailRoot.hidden = false;
         loadComments();
       })
@@ -225,6 +229,16 @@
     }
 
     // 신청 상태별 버튼: 없음 → 동행 신청 / PENDING → 신청 완료(다시 누르면 취소) / ACCEPTED·REJECTED → 비활성
+    // 내가 공유한 모집: 신청 대신 안내 문구, 누를 수 없음 (디자인 시스템 Gray = 비활성)
+    function renderHostButton() {
+      applyBtn.setAttribute("data-application-status", "HOST");
+      applyBtn.disabled = true;
+      applyBtn.style.background = "var(--color-border)";
+      applyBtn.style.color = "var(--color-text-muted)";
+      applyBtn.style.cursor = "default";
+      applyBtn.textContent = "내가 공유한 모집이에요";
+    }
+
     function renderApplyButton(status) {
       applyBtn.setAttribute("data-application-status", status || "");
       applyBtn.classList.toggle("is-done", !!status);
