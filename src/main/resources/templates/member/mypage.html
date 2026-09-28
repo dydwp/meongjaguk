@@ -65,7 +65,10 @@
     <!-- 내가 공유한 글 -->
     <div data-tab-panel="shared" th:attr="hidden=${activeTab != 'shared'} ? 'hidden' : null">
 
-      <div th:each="meeting : ${sharedMeetings}" class="route-item static">
+      <a th:each="meeting : ${sharedMeetings}"
+        th:href="@{/course-detail-shared(meetingId=${meeting.meetingId()})}"
+        class="route-item">
+
         <div class="route-thumb">🐾</div>
 
         <div>
@@ -84,7 +87,8 @@
             수락 2 / 정원 5
           </span>
         </div>
-      </div>
+
+      </a>
 
       <p class="text-muted" th:if="${#lists.isEmpty(sharedMeetings)}">
         아직 공유한 산책 모집 글이 없습니다.
