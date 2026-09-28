@@ -22,14 +22,25 @@
   /* ---------- 탭 전환: 마이페이지 ---------- */
   document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
     var tabs = tabsEl.querySelectorAll(".tab");
+
     tabs.forEach(function (tab) {
       tab.addEventListener("click", function () {
         var target = tab.getAttribute("data-tab-target");
-        tabs.forEach(function (t) { t.classList.remove("active"); });
+
+        tabs.forEach(function (t) {
+          t.classList.remove("active");
+        });
         tab.classList.add("active");
+
         document.querySelectorAll("[data-tab-panel]").forEach(function (panel) {
           panel.hidden = panel.getAttribute("data-tab-panel") !== target;
         });
+
+        if (target !== "requests") {
+          document.querySelectorAll('[data-tab-panel="requests"] .mypage-message').forEach(function (message) {
+            message.remove();
+          });
+        }
       });
     });
   });
@@ -115,7 +126,9 @@
   var WALK_POINTS_KEY = "mungjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
 
   // GPS 오차 걸러내기 기준 (담당: 박용제)
-  var MAX_ACCURACY_M = 50;  // 정확도가 50m보다 나쁜 위치는 버림
+  // 데스크톱 브라우저의 낮은 위치 정확도를 고려해 200m 이하 좌표를 기록
+  var MAX_ACCURACY_M = 200;
+  // var MAX_ACCURACY_M = 50;  // 정확도가 50m보다 나쁜 위치는 버림
   var MIN_MOVE_M = 5;       // 직전 좌표에서 5m 이상 움직였을 때만 기록 (제자리 흔들림 무시)
 
   function isWalking() {
@@ -152,8 +165,8 @@
     var dLat = (b.lat - a.lat) * toRad;
     var dLng = (b.lng - a.lng) * toRad;
     var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-            Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) *
-            Math.sin(dLng / 2) * Math.sin(dLng / 2);
+      Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) *
+      Math.sin(dLng / 2) * Math.sin(dLng / 2);
     return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
   // 지금까지 걸은 거리(m) = 좌표들 사이 거리를 모두 더한 값

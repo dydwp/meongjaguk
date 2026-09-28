@@ -11,7 +11,7 @@ CREATE TABLE users (
 
     email VARCHAR(255) NULL,
     nickname VARCHAR(50) NOT NULL,
-    profile_image VARCHAR(500) NULL,
+    profile_image VARCHAR(2048) NULL,
 
     role VARCHAR(20) NOT NULL DEFAULT 'USER',
     status VARCHAR(20) NOT NULL DEFAULT 'ACTIVE',
