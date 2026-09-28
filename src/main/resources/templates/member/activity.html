@@ -30,19 +30,22 @@
       한강 벚꽃길 코스
     </h1>
 
-    <p class="small mb-0" style="font-weight:700;"
-        th:text="${detail.plannedDistanceLabel()}">
-      거리 · 2.3km
-    </p>
+    <div th:if="${detail.hasRoute()}">
+      <p class="small mb-0" style="font-weight:700;"
+          th:text="${detail.plannedDistanceLabel()}">
+        거리 · 2.3km
+      </p>
 
-    <p class="small" style="font-weight:700; margin-top:2px;"
-        th:text="${detail.plannedDurationLabel()}">
-      예상 소요시간 · 약 35분
-    </p>
+      <p class="small" style="font-weight:700; margin-top:2px;"
+          th:text="${detail.plannedDurationLabel()}">
+        예상 소요시간 · 약 35분
+      </p>
 
-    <p class="text-muted mt-16" th:text="${detail.description()}">
-      한강공원을 따라 이어지는 평탄한 산책로예요.
-    </p>
+      <p class="text-muted mt-16" th:text="${detail.description()}">
+        한강공원을 따라 이어지는 평탄한 산책로예요.
+      </p>
+    </div>
+    
   </div>
 
   <!-- 실제 산책 기록 -->

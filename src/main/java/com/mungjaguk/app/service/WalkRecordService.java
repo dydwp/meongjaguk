@@ -73,6 +73,7 @@ public class WalkRecordService {
                 record.getWalkRecordId(),
                 title,
                 "개인 산책",
+                route.isPresent(),
                 description,
                 "거리 · " + plannedDistance,
                 "예상 소요시간 · " + plannedDuration,
