@@ -208,7 +208,8 @@
         courseId: null,                 // 자유 산책
         startedAt: startedAt,
         endedAt: endedAt,
-        distanceM: distanceM            // 실제 GPS로 잰 거리
+        distanceM: distanceM,           // 실제 GPS로 잰 거리
+        points: getWalkPoints()         // 지나간 좌표 목록 [{lat, lng, t}, ...]
       })
     }).then(function (res) {
       if (!res.ok) throw new Error("저장 실패: " + res.status);
