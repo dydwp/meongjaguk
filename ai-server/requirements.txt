@@ -1,0 +1,12 @@
+fastapi
+uvicorn[standard]
+
+xgboost
+pandas
+numpy
+scikit-learn
+
+osmnx
+networkx
+geopandas
+shapely
