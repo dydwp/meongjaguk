@@ -14,6 +14,7 @@ import com.mungjaguk.app.repository.WalkApplicationRepository;
 import com.mungjaguk.app.repository.WalkMeetingCommentRepository;
 import com.mungjaguk.app.repository.WalkMeetingRepository;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,7 +25,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 같이 걷기 게시판: 목록/상세 조회, 동행 신청/취소, 댓글 조회/작성
+ * 같이 걷기 게시판: 목록/상세 조회, 동행 신청/취소, 댓글 조회/작성/삭제
  */
 @Service
 @Transactional(readOnly = true)
@@ -167,12 +168,12 @@ public class MeetupService {
         applicationRepository.delete(application);
     }
 
-    /** 댓글 목록: 오래된 순 */
-    public List<CommentDto> getComments(Long meetingId) {
+    /** 댓글 목록: 오래된 순 (loginUserId는 비로그인이면 null) */
+    public List<CommentDto> getComments(Long meetingId, Long loginUserId) {
         WalkMeeting meeting = findMeeting(meetingId);
         return commentRepository.findByMeeting_MeetingIdOrderByCreatedAtAscCommentIdAsc(meetingId)
                 .stream()
-                .map(comment -> toCommentDto(comment, meeting))
+                .map(comment -> toCommentDto(comment, meeting, loginUserId))
                 .toList();
     }
 
@@ -193,15 +194,33 @@ public class MeetupService {
         WalkMeeting meeting = findMeeting(meetingId);
         User user = userService.findById(userId);
         WalkMeetingComment saved = commentRepository.save(WalkMeetingComment.create(meeting, user, trimmed));
-        return toCommentDto(saved, meeting);
+        return toCommentDto(saved, meeting, userId);
     }
 
-    private CommentDto toCommentDto(WalkMeetingComment comment, WalkMeeting meeting) {
+    /**
+     * 댓글 삭제
+     * - 본인이 작성한 댓글만 삭제 가능
+     */
+    @Transactional
+    public void deleteComment(Long meetingId, Long commentId, Long userId) {
+        WalkMeetingComment comment = commentRepository.findById(commentId)
+                .filter(c -> c.getMeeting().getMeetingId().equals(meetingId))
+                .orElseThrow(() -> new NoSuchElementException("댓글을 찾을 수 없어요."));
+
+        if (!comment.getUser().getUserId().equals(userId)) {
+            throw new AccessDeniedException("본인이 작성한 댓글만 삭제할 수 있어요.");
+        }
+
+        commentRepository.delete(comment);
+    }
+
+    private CommentDto toCommentDto(WalkMeetingComment comment, WalkMeeting meeting, Long loginUserId) {
         User author = comment.getUser();
         return new CommentDto(
                 comment.getCommentId(),
                 author.getNickname(),
                 meeting.isHostedBy(author.getUserId()),
+                author.getUserId().equals(loginUserId),
                 comment.getContent(),
                 comment.getCreatedAt());
     }

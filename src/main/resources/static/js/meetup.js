@@ -303,6 +303,45 @@
         });
     }
 
+    // 댓글 삭제 (본인 댓글만 버튼이 보임)
+    commentList.addEventListener("click", function (e) {
+      var btn = e.target.closest("[data-comment-delete]");
+      if (!btn || btn.disabled) return;
+      if (!confirm("댓글을 삭제할까요?")) return;
+
+      var headers = {};
+      if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+      btn.disabled = true;
+      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/comments/" +
+            encodeURIComponent(btn.getAttribute("data-comment-delete")), {
+        method: "DELETE",
+        headers: headers
+      })
+        .then(function (res) {
+          if (res.redirected || res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          if (res.ok) {
+            btn.closest(".comment").remove();
+            commentCount.textContent = String(Math.max(0, parseInt(commentCount.textContent || "0", 10) - 1));
+            return;
+          }
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) {
+              alert(body.message || "댓글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+              btn.disabled = false;
+            });
+        })
+        .catch(function (err) {
+          console.error("댓글 삭제 실패", err);
+          alert("댓글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+          btn.disabled = false;
+        });
+    });
+
     commentBtn.addEventListener("click", submitComment);
     commentInput.addEventListener("keydown", function (e) {
       // 한글 입력 조합 중 Enter는 무시 (중복 등록 방지)
@@ -318,6 +357,14 @@
     var body = document.createElement("div");
     var name = el("span", "name", comment.authorNickname);
     name.appendChild(el("span", "time", "· " + formatRelative(comment.createdAt)));
+    // 내가 쓴 댓글에만 삭제 버튼
+    if (comment.mine) {
+      var del = el("button", "time", "삭제");
+      del.type = "button";
+      del.setAttribute("data-comment-delete", comment.commentId);
+      del.style.cssText = "background:none; border:0; padding:0; cursor:pointer; text-decoration:underline;";
+      name.appendChild(del);
+    }
     body.appendChild(name);
     body.appendChild(el("p", null, comment.content));
     item.appendChild(body);

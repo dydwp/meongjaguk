@@ -8,6 +8,7 @@ import com.mungjaguk.app.security.LoginUser;
 import com.mungjaguk.app.service.MeetupService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -88,8 +89,10 @@ public class MeetupController {
 
     /** 댓글 목록 (비회원도 조회 가능) */
     @GetMapping("/api/meetings/{meetingId}/comments")
-    public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId) {
-        return ResponseEntity.ok(meetupService.getComments(meetingId));
+    public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId,
+                                                     @AuthenticationPrincipal LoginUser loginUser) {
+        Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
+        return ResponseEntity.ok(meetupService.getComments(meetingId, loginUserId));
     }
 
     /** 댓글 작성 (로그인 회원만) */
@@ -104,6 +107,18 @@ public class MeetupController {
         return ResponseEntity.status(HttpStatus.CREATED).body(saved);
     }
 
+    /** 댓글 삭제 (본인 댓글만) */
+    @DeleteMapping("/api/meetings/{meetingId}/comments/{commentId}")
+    public ResponseEntity<Void> deleteComment(@PathVariable Long meetingId,
+                                              @PathVariable Long commentId,
+                                              @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        meetupService.deleteComment(meetingId, commentId, loginUser.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
     // ---------- 예외 처리 (이 컨트롤러에만 적용) ----------
 
     @ExceptionHandler(NoSuchElementException.class)
@@ -114,6 +129,11 @@ public class MeetupController {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+    }
+
+    @ExceptionHandler(AccessDeniedException.class)
+    public ResponseEntity<Map<String, String>> handleForbidden(AccessDeniedException e) {
+        return ResponseEntity.status(HttpStatus.FORBIDDEN).body(Map.of("message", e.getMessage()));
     }
 
     @ExceptionHandler(IllegalStateException.class)
