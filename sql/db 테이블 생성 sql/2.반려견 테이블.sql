@@ -11,6 +11,7 @@ CREATE TABLE pets (
     breed VARCHAR(50) NULL,
     birth_date DATE NULL,
     size VARCHAR(20) NULL,
+    activity_level VARCHAR(20) NULL,
     gender VARCHAR(20) NULL,
 
     profile_image VARCHAR(500) NULL,

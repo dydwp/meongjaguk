@@ -5,7 +5,9 @@ public record PetCardView(
         String name,
         String breed,
         String sizeLabel,
-        int ageInYears
+        int ageInYears,
+        String profileImage,
+        String activityLevelLabel
 ) {
     public String summaryLine() {
         return breed + " · " + sizeLabel + " · " + ageInYears + "세";

@@ -7,14 +7,14 @@ import com.mungjaguk.app.entity.CompanionRequest;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
+import java.util.NoSuchElementException;
 import org.springframework.dao.DataIntegrityViolationException;
+import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-import java.util.NoSuchElementException;
-
 /**
- * 동행 신청 / 신청 취소
+ * 동행 신청 / 취소 / 수락 / 거절
  */
 @Service
 @Transactional(readOnly = true)
@@ -24,8 +24,7 @@ public class CompanionService {
     private final CompanionRequestRepository companionRequestRepository;
     private final UserService userService;
 
-    public CompanionService(BoardRepository boardRepository,
-                            CompanionRequestRepository companionRequestRepository,
+    public CompanionService(BoardRepository boardRepository, CompanionRequestRepository companionRequestRepository,
                             UserService userService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
@@ -60,10 +59,10 @@ public class CompanionService {
         }
 
         User user = userService.findById(userId);
+
         try {
             companionRequestRepository.saveAndFlush(CompanionRequest.create(board, user));
         } catch (DataIntegrityViolationException e) {
-            // 동시에 두 번 요청된 경우 유니크 제약(uk_walk_applications_meeting_user)에 걸림
             throw new IllegalStateException("이미 신청한 모집이에요.");
         }
     }
@@ -71,7 +70,7 @@ public class CompanionService {
     /**
      * 동행 신청 취소
      * - PENDING 상태에서만 취소 가능
-     * - 취소 시 신청 행 삭제 (유니크 제약 때문에 재신청이 가능하도록)
+     * - 취소 시 신청 행 삭제
      */
     @Transactional
     public void cancel(Long meetingId, Long userId) {
@@ -84,5 +83,53 @@ public class CompanionService {
         }
 
         companionRequestRepository.delete(request);
+    }
+
+    /**
+     * 모집 작성자가 동행 신청 수락
+     */
+    @Transactional
+    public void acceptForHost(Long applicationId, Long hostUserId) {
+        CompanionRequest request = findAuthorizedRequest(applicationId, hostUserId);
+
+        if (request.getStatus() != ApplicationStatus.PENDING) {
+            return;
+        }
+
+        long acceptedCount = companionRequestRepository
+                .countByMeetingIdAndStatus(request.getMeetingId(), ApplicationStatus.ACCEPTED);
+
+        if (1 + acceptedCount >= request.getBoard().getMaxParticipants()) {
+            throw new IllegalStateException("모집 정원이 가득 찼습니다.");
+        }
+
+        request.accept();
+    }
+
+    /**
+     * 모집 작성자가 동행 신청 거절
+     */
+    @Transactional
+    public void rejectForHost(Long applicationId, Long hostUserId) {
+        CompanionRequest request = findAuthorizedRequest(applicationId, hostUserId);
+
+        if (request.getStatus() == ApplicationStatus.PENDING) {
+            request.reject();
+        }
+    }
+
+    private CompanionRequest findRequest(Long applicationId) {
+        return companionRequestRepository.findById(applicationId)
+                .orElseThrow(() -> new IllegalArgumentException("동행 신청을 찾을 수 없습니다."));
+    }
+
+    private CompanionRequest findAuthorizedRequest(Long applicationId, Long hostUserId) {
+        CompanionRequest request = findRequest(applicationId);
+
+        if (!request.getBoard().isHostedBy(hostUserId)) {
+            throw new AccessDeniedException("해당 동행 신청을 처리할 권한이 없습니다.");
+        }
+
+        return request;
     }
 }
