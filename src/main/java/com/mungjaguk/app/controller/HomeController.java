@@ -18,14 +18,13 @@ import org.springframework.web.bind.annotation.GetMapping;
 @RequiredArgsConstructor
 public class HomeController {
 
-    private static final int RECOMMEND_COUNT = 3; // 메인에 보여줄 추천 산책로 수
     private static final int MEET_COUNT = 3;      // 메인에 보여줄 모집 카드 수
 
     private final MainService mainService;
 
     @GetMapping("/")
     public String home(Model model, @AuthenticationPrincipal LoginUser loginUser) {
-        model.addAttribute("recommendRoutes", mainService.getRecommendRoutes(RECOMMEND_COUNT));
+        // 추천 산책로 3개는 화면에서 내 위치 기준 AI 추천으로 불러옴 (home-routes.js)
         model.addAttribute("meetCards", mainService.getRecentMeets(MEET_COUNT));
         // 로그인 회원만: 이번 주 산책 요약, 인사말에 넣을 반려견 이름
         if (loginUser != null) {

@@ -12,7 +12,7 @@ import java.util.Locale;
 /**
  * 메인 하단 - 같이 걷기 모집 카드 (담당: 박용제)
  * 필드 이름은 walk_meetings 테이블 컬럼에 맞춰 두었습니다.
- * 환중님 엔티티가 나오면 엔티티 → 이 DTO로 변환만 하면 됩니다.
+ * MainService.getRecentMeets()에서 Board 엔티티 → 이 DTO로 변환합니다.
  */
 @Getter
 @AllArgsConstructor
@@ -27,7 +27,7 @@ public class MeetCardDto {
     private String participationCondition;  // participation_condition
     private LocalDate meetingDate;          // meeting_date
     private LocalTime meetingTime;          // meeting_time
-    private int currentParticipants;        // 신청 수락된 인원
+    private int currentParticipants;        // 작성자 1명 + 신청 수락된 인원
     private int maxParticipants;            // max_participants
     private String status;                  // RECRUITING, CLOSED 등
 

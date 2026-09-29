@@ -24,12 +24,14 @@ public class CompanionService {
     private final BoardRepository boardRepository;
     private final CompanionRequestRepository companionRequestRepository;
     private final UserService userService;
+    private final NotificationService notificationService;
 
     public CompanionService(BoardRepository boardRepository, CompanionRequestRepository companionRequestRepository,
-            UserService userService) {
+                            UserService userService, NotificationService notificationService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.userService = userService;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -70,6 +72,7 @@ public class CompanionService {
         } catch (DataIntegrityViolationException e) {
             throw new IllegalStateException("이미 신청한 모집이에요.");
         }
+        notificationService.notifyCompanionRequested(board, user); // 추가(박용제): 모집 작성자에게 알림
     }
 
     /**
@@ -92,6 +95,7 @@ public class CompanionService {
 
     /**
      * 모집 작성자가 동행 신청 수락
+     * - 수락되면 신청자에게 알림 (추가: 박용제)
      */
     @Transactional
     public void acceptForHost(Long applicationId, Long hostUserId) {
@@ -113,6 +117,7 @@ public class CompanionService {
         }
 
         request.accept();
+        notificationService.notifyCompanionAccepted(request);
     }
 
     /**
