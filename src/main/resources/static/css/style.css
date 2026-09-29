@@ -1194,6 +1194,43 @@ button.btn {
 
 /* ---------- 동행 신청 관리 (마이페이지) ---------- */
 
+.request-count {
+  margin-left: 6px;
+  font-size: 12px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+}
+
+.request-list-toggle {
+  margin: 6px auto 0;
+  display: block;
+  font-size: 12.5px;
+  font-weight: 700;
+}
+
+.past-request-group {
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.past-request-group summary {
+  cursor: pointer;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--color-text-muted);
+}
+
+.past-request-group summary span {
+  margin-left: 4px;
+  font-size: 12px;
+  font-weight: 500;
+}
+
+.past-request-group[open] summary {
+  margin-bottom: 12px;
+}
+
 .request-status {
   display: inline-flex;
   align-items: center;

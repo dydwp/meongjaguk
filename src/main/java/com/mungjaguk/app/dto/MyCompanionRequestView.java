@@ -1,6 +1,7 @@
 package com.mungjaguk.app.dto;
 
 import java.time.LocalDate;
+import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
@@ -29,7 +30,15 @@ public record MyCompanionRequestView(
         return hostNickname.substring(0, 1);
     }
 
+    public boolean past() {
+        return !LocalDateTime.now().isBefore(LocalDateTime.of(meetingDate, meetingTime));
+    }
+
     public String statusLabel() {
+        if (past() && "PENDING".equals(status)) {
+            return "마감됨";
+        }
+
         return switch (status) {
             case "PENDING" -> "신청 대기";
             case "ACCEPTED" -> "수락됨";
@@ -39,6 +48,10 @@ public record MyCompanionRequestView(
     }
 
     public String statusClass() {
+        if (past() && "PENDING".equals(status)) {
+            return "closed";
+        }
+
         return switch (status) {
             case "ACCEPTED" -> "accepted";
             case "REJECTED" -> "rejected";

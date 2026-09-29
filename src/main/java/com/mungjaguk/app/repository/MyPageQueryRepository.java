@@ -56,12 +56,28 @@ public class MyPageQueryRepository {
                     wm.title AS meeting_title,
                     u.nickname AS applicant_nickname,
                     wa.message,
+                    wm.meeting_date,
+                    wm.meeting_time,
                     wa.status
                 FROM walk_applications wa
                 JOIN walk_meetings wm ON wa.meeting_id = wm.meeting_id
                 JOIN users u ON wa.user_id = u.user_id
                 WHERE wm.host_user_id = ?
-                ORDER BY wa.created_at DESC
+                ORDER BY
+                    CASE
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'PENDING' THEN 0
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'ACCEPTED' THEN 1
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'REJECTED' THEN 2
+                        ELSE 3
+                    END,
+                    CASE
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                        THEN TIMESTAMP(wm.meeting_date, wm.meeting_time)
+                    END ASC,
+                    wa.created_at DESC
                 """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new MeetingRequestView(
@@ -70,6 +86,8 @@ public class MyPageQueryRepository {
                 rs.getString("meeting_title"),
                 rs.getString("applicant_nickname"),
                 rs.getString("message"),
+                rs.getDate("meeting_date").toLocalDate(),
+                rs.getTime("meeting_time").toLocalTime(),
                 rs.getString("status")
         ), userId);
     }
@@ -90,7 +108,25 @@ public class MyPageQueryRepository {
                 JOIN courses c ON wm.course_id = c.course_id
                 JOIN users host ON wm.host_user_id = host.user_id
                 WHERE wa.user_id = ?
-                ORDER BY wa.created_at DESC
+                ORDER BY
+                    CASE
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'ACCEPTED' THEN 0
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'PENDING' THEN 1
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                            AND wa.status = 'REJECTED' THEN 2
+                        ELSE 3
+                    END,
+                    CASE
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) >= NOW()
+                        THEN TIMESTAMP(wm.meeting_date, wm.meeting_time)
+                    END ASC,
+                    CASE
+                        WHEN TIMESTAMP(wm.meeting_date, wm.meeting_time) < NOW()
+                        THEN TIMESTAMP(wm.meeting_date, wm.meeting_time)
+                    END DESC,
+                    wa.created_at DESC
                 """;
 
         return jdbcTemplate.query(sql, (rs, rowNum) -> new MyCompanionRequestView(

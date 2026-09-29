@@ -34,7 +34,7 @@
         th:classappend="${activeTab == 'pets'} ? ' active' : ''">반려견</button>
       <button type="button" class="tab" data-tab-target="shared"
         th:classappend="${activeTab == 'shared'} ? ' active' : ''">내가 공유한 글</button>
-      <button type="button" class="tab" data-tab-target="requests"
+      <button type="button" class="tab" data-tab-target="requests" th:attr="data-refresh-url=@{/mypage(tab='requests')}"
         th:classappend="${activeTab == 'requests'} ? ' active' : ''">동행 신청</button>
       <button type="button" class="tab" data-tab-target="activity"
         th:classappend="${activeTab == 'activity'} ? ' active' : ''">활동 내역</button>
@@ -117,79 +117,165 @@
 
       <!-- 받은 신청 -->
       <section class="companion-request-section">
-        <h3 class="mypage-section-title">받은 신청</h3>
+        <h3 class="mypage-section-title">
+          받은 신청
+          <span class="request-count" th:text="|${#lists.size(meetingRequests)}건 · 대기 ${pendingMeetingRequestCount}건|">
+            3건 · 대기 1건
+          </span>
+        </h3>
 
-        <div class="request-item" th:each="request : ${meetingRequests}">
-          <div class="avatar avatar-sm avatar-muted" th:text="${request.avatarInitial()}">김</div>
+        <div data-expandable-list data-visible-count="5">
+          <div class="request-item" th:each="request : ${meetingRequests}" data-expandable-item>
 
-          <div class="who">
-            <div class="name" th:text="${request.applicantNickname()}">김민준</div>
+            <div class="avatar avatar-sm avatar-muted" th:text="${request.avatarInitial()}">김</div>
 
-            <div class="route">
-              <span th:text="|${request.meetingTitle()} 동행을 신청했어요|">
-                저녁 산책 모임 동행을 신청했어요
-              </span>
+            <div class="who">
+              <div class="name" th:text="${request.applicantNickname()}">김민준</div>
+
+              <div class="route">
+                <span th:text="|${request.meetingTitle()} 동행을 신청했어요|">
+                  저녁 산책 모임 동행을 신청했어요
+                </span>
+              </div>
+
+              <div class="route" th:if="${request.message() != null and !#strings.isEmpty(request.message())}"
+                th:text="${request.message()}">
+                같이 산책하고 싶어요.
+              </div>
             </div>
 
-            <div class="route" th:if="${request.message() != null and !#strings.isEmpty(request.message())}"
-              th:text="${request.message()}">
-              같이 산책하고 싶어요.
+            <div class="request-actions" th:if="${request.actionable()}">
+              <form th:action="@{/mypage/requests/{id}/accept(id=${request.applicationId()})}" method="post">
+                <button type="submit" class="btn-accept">수락</button>
+              </form>
+
+              <form th:action="@{/mypage/requests/{id}/reject(id=${request.applicationId()})}" method="post">
+                <button type="submit" class="btn-reject">거절</button>
+              </form>
+            </div>
+
+            <div th:unless="${request.actionable()}">
+              <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">수락됨</span>
             </div>
           </div>
 
-          <div class="request-actions" th:if="${request.pending()}">
-            <form th:action="@{/mypage/requests/{id}/accept(id=${request.applicationId()})}" method="post">
-              <button type="submit" class="btn-accept">수락</button>
-            </form>
-
-            <form th:action="@{/mypage/requests/{id}/reject(id=${request.applicationId()})}" method="post">
-              <button type="submit" class="btn-reject">거절</button>
-            </form>
-          </div>
-
-          <div th:unless="${request.pending()}">
-            <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">수락됨</span>
-          </div>
+          <button type="button" class="request-list-toggle text-link" data-expandable-toggle hidden>
+            더보기
+          </button>
         </div>
 
         <p class="text-muted" th:if="${#lists.isEmpty(meetingRequests)}">
-          아직 받은 참여 신청이 없습니다.
+          예정된 받은 신청이 없습니다.
         </p>
+
+        <!-- 지난 받은 신청 -->
+        <details class="past-request-group" th:if="${!#lists.isEmpty(pastMeetingRequests)}">
+          <summary>
+            지난 받은 신청
+            <span th:text="|${#lists.size(pastMeetingRequests)}건|">3건</span>
+          </summary>
+
+          <div class="request-item" th:each="request : ${pastMeetingRequests}">
+            <div class="avatar avatar-sm avatar-muted" th:text="${request.avatarInitial()}">김</div>
+
+            <div class="who">
+              <div class="name" th:text="${request.applicantNickname()}">김민준</div>
+
+              <div class="route">
+                <span th:text="|${request.meetingTitle()} 동행을 신청했어요|">
+                  저녁 산책 모임 동행을 신청했어요
+                </span>
+              </div>
+
+              <div class="route" th:if="${request.message() != null and !#strings.isEmpty(request.message())}"
+                th:text="${request.message()}">
+                같이 산책하고 싶어요.
+              </div>
+            </div>
+
+            <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">마감됨</span>
+          </div>
+        </details>
       </section>
 
       <!-- 내가 신청한 동행 -->
       <section class="companion-request-section">
-        <h3 class="mypage-section-title">내가 신청한 동행</h3>
-
-        <a class="request-item my-request-item" th:each="request : ${myCompanionRequests}"
-          th:href="@{/course-detail-shared(meetingId=${request.meetingId()})}">
-
-          <div class="avatar avatar-sm avatar-muted" th:text="${request.hostAvatarInitial()}">홍</div>
-
-          <div class="who">
-            <div class="name" th:text="${request.meetingTitle()}">
-              서울숲 저녁 산책
-            </div>
-
-            <div class="route">
-              <span th:text="${request.courseName()}">서울숲 반려견 산책 코스</span>
-              ·
-              <span th:text="${request.scheduleLabel()}">2026.10.02 19:00</span>
-            </div>
-
-            <div class="route" th:text="|모집자 ${request.hostNickname()}|">
-              모집자 홍길동
-            </div>
-          </div>
-
-          <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">
-            신청 대기
+        <h3 class="mypage-section-title">
+          내가 신청한 동행
+          <span class="request-count" th:text="|${#lists.size(myCompanionRequests)}건|">
+            3건
           </span>
-        </a>
+        </h3>
+
+        <div data-expandable-list data-visible-count="5">
+          <a class="request-item my-request-item" th:each="request : ${myCompanionRequests}"
+            th:href="@{/course-detail-shared(meetingId=${request.meetingId()})}" data-expandable-item>
+
+            <div class="avatar avatar-sm avatar-muted" th:text="${request.hostAvatarInitial()}">홍</div>
+
+            <div class="who">
+              <div class="name" th:text="${request.meetingTitle()}">
+                서울숲 저녁 산책
+              </div>
+
+              <div class="route">
+                <span th:text="${request.courseName()}">서울숲 반려견 산책 코스</span>
+                ·
+                <span th:text="${request.scheduleLabel()}">2026.10.02 19:00</span>
+              </div>
+
+              <div class="route" th:text="|모집자 ${request.hostNickname()}|">
+                모집자 홍길동
+              </div>
+            </div>
+
+            <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">
+              신청 대기
+            </span>
+          </a>
+
+          <button type="button" class="request-list-toggle text-link" data-expandable-toggle hidden>
+            더보기
+          </button>
+        </div>
 
         <p class="text-muted" th:if="${#lists.isEmpty(myCompanionRequests)}">
-          아직 신청한 동행이 없습니다.
+          예정된 신청 동행이 없습니다.
         </p>
+
+        <!-- 지난 동행 -->
+        <details class="past-request-group" th:if="${!#lists.isEmpty(pastMyCompanionRequests)}">
+          <summary>
+            지난 동행
+            <span th:text="|${#lists.size(pastMyCompanionRequests)}건|">3건</span>
+          </summary>
+
+          <a class="request-item my-request-item" th:each="request : ${pastMyCompanionRequests}"
+            th:href="@{/course-detail-shared(meetingId=${request.meetingId()})}">
+
+            <div class="avatar avatar-sm avatar-muted" th:text="${request.hostAvatarInitial()}">홍</div>
+
+            <div class="who">
+              <div class="name" th:text="${request.meetingTitle()}">
+                서울숲 저녁 산책
+              </div>
+
+              <div class="route">
+                <span th:text="${request.courseName()}">서울숲 반려견 산책 코스</span>
+                ·
+                <span th:text="${request.scheduleLabel()}">2026.09.28 19:00</span>
+              </div>
+
+              <div class="route" th:text="|모집자 ${request.hostNickname()}|">
+                모집자 홍길동
+              </div>
+            </div>
+
+            <span th:class="|request-status ${request.statusClass()}|" th:text="${request.statusLabel()}">
+              수락됨
+            </span>
+          </a>
+        </details>
       </section>
 
     </div>

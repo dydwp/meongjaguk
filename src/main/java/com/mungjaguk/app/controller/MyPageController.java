@@ -1,5 +1,7 @@
 package com.mungjaguk.app.controller;
 
+import com.mungjaguk.app.dto.MeetingRequestView;
+import com.mungjaguk.app.dto.MyCompanionRequestView;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.security.LoginUser;
 import com.mungjaguk.app.service.CompanionService;
@@ -8,6 +10,7 @@ import com.mungjaguk.app.service.PetService;
 import com.mungjaguk.app.service.UserService;
 import com.mungjaguk.app.service.WalkRecordService;
 import java.time.format.DateTimeFormatter;
+import java.util.List;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
@@ -39,22 +42,51 @@ public class MyPageController {
 
     @GetMapping("/mypage")
     public String mypage(@AuthenticationPrincipal LoginUser loginUser,
-                         @RequestParam(defaultValue = "pets") String tab, Model model) {
+                        @RequestParam(defaultValue = "pets") String tab, Model model) {
         Long userId = loginUser.getUserId();
         User user = userService.findById(userId);
+
+        List<MeetingRequestView> allMeetingRequests = myPageService.getMeetingRequests(userId);
+        List<MyCompanionRequestView> allMyCompanionRequests = myPageService.getMyCompanionRequests(userId);
+
+        List<MeetingRequestView> meetingRequests = allMeetingRequests.stream()
+                .filter(request -> !request.closed())
+                .toList();
+
+        List<MeetingRequestView> pastMeetingRequests = allMeetingRequests.stream()
+                .filter(MeetingRequestView::closed)
+                .toList();
+
+        List<MyCompanionRequestView> myCompanionRequests = allMyCompanionRequests.stream()
+                .filter(request -> !request.past())
+                .toList();
+
+        List<MyCompanionRequestView> pastMyCompanionRequests = allMyCompanionRequests.stream()
+                .filter(MyCompanionRequestView::past)
+                .toList();
+
+        long pendingMeetingRequestCount = meetingRequests.stream()
+                .filter(MeetingRequestView::actionable)
+                .count();
 
         model.addAttribute("nickname", user.getNickname());
         model.addAttribute("avatarInitial", avatarInitial(user.getNickname()));
         model.addAttribute("joinedLabel", joinedLabel(user));
         model.addAttribute("pets", petService.getMyPets(userId));
         model.addAttribute("sharedMeetings", myPageService.getMySharedMeetings(userId));
-        model.addAttribute("meetingRequests", myPageService.getMeetingRequests(userId));
-        model.addAttribute("myCompanionRequests", myPageService.getMyCompanionRequests(userId));
+
+        model.addAttribute("meetingRequests", meetingRequests);
+        model.addAttribute("pastMeetingRequests", pastMeetingRequests);
+        model.addAttribute("pendingMeetingRequestCount", pendingMeetingRequestCount);
+        model.addAttribute("myCompanionRequests", myCompanionRequests);
+        model.addAttribute("pastMyCompanionRequests", pastMyCompanionRequests);
+
         model.addAttribute("walkHistory", walkRecordService.getMyWalkHistory(userId));
         model.addAttribute("activeTab", validTab(tab));
 
         return "member/mypage";
     }
+
 
     @PostMapping("/mypage/requests/{applicationId}/accept")
     public String acceptRequest(@PathVariable Long applicationId,
@@ -74,8 +106,12 @@ public class MyPageController {
     public String rejectRequest(@PathVariable Long applicationId,
                                 @AuthenticationPrincipal LoginUser loginUser,
                                 RedirectAttributes redirectAttributes) {
-        companionService.rejectForHost(applicationId, loginUser.getUserId());
-        redirectAttributes.addFlashAttribute("rejectMessage", "참여 신청을 거절했습니다.");
+        try {
+            companionService.rejectForHost(applicationId, loginUser.getUserId());
+            redirectAttributes.addFlashAttribute("rejectMessage", "참여 신청을 거절했습니다.");
+        } catch (IllegalStateException e) {
+            redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
+        }
 
         return "redirect:/mypage?tab=requests";
     }

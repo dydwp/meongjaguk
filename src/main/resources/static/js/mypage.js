@@ -8,12 +8,10 @@
     });
   }
 
-  // 알림은 5초 후 자동 제거
   if (document.querySelector(".mypage-message")) {
     setTimeout(clearMypageMessages, 5000);
   }
 
-  // 뒤로가기/앞으로가기로 캐시된 마이페이지가 복원될 때 이전 알림 제거
   window.addEventListener("pageshow", function (event) {
     if (event.persisted) {
       clearMypageMessages();
@@ -27,6 +25,14 @@
     tabs.forEach(function (tab) {
       tab.addEventListener("click", function () {
         var target = tab.getAttribute("data-tab-target");
+        var refreshUrl = tab.getAttribute("data-refresh-url");
+
+        clearMypageMessages();
+
+        if (refreshUrl) {
+          window.location.href = refreshUrl;
+          return;
+        }
 
         tabs.forEach(function (item) {
           item.classList.remove("active");
@@ -36,9 +42,56 @@
         document.querySelectorAll("[data-tab-panel]").forEach(function (panel) {
           panel.hidden = panel.getAttribute("data-tab-panel") !== target;
         });
-
-        clearMypageMessages();
       });
     });
+  });
+
+  /* ---------- 동행 신청 목록 더보기 ---------- */
+  document.querySelectorAll("[data-expandable-list]").forEach(function (list) {
+    var desktopLimit = parseInt(list.getAttribute("data-visible-count") || "5", 10);
+    var items = Array.from(list.children).filter(function (item) {
+      return item.hasAttribute("data-expandable-item");
+    });
+    var toggle = list.querySelector("[data-expandable-toggle]");
+    var expanded = false;
+
+    function getLimit() {
+      return window.matchMedia("(max-width: 520px)").matches ? 3 : desktopLimit;
+    }
+
+    function render() {
+      var limit = getLimit();
+
+      items.forEach(function (item, index) {
+        item.hidden = !expanded && index >= limit;
+      });
+
+      if (!toggle) {
+        return;
+      }
+
+      if (items.length <= limit) {
+        toggle.hidden = true;
+        return;
+      }
+
+      toggle.hidden = false;
+      toggle.textContent = expanded
+        ? "접기"
+        : "더보기 (" + (items.length - limit) + ")";
+    }
+
+    if (!toggle) {
+      return;
+    }
+
+    toggle.addEventListener("click", function () {
+      expanded = !expanded;
+      render();
+    });
+
+    window.addEventListener("resize", render);
+
+    render();
   });
 })();
