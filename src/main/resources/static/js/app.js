@@ -147,7 +147,8 @@
     localStorage.setItem(WALK_ACTIVE_KEY, "false");
     localStorage.removeItem(WALK_START_KEY);
     localStorage.removeItem(WALK_POINTS_KEY);
-    window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도에서 경로 지우기 (walk-map.js)
+    localStorage.removeItem("mungjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
+    window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도 경로·체크 표시 지우기 (walk-map.js, home-widgets.js)
   }
 
   /* ----- GPS 좌표 저장/거리 계산 (담당: 박용제) ----- */
@@ -232,18 +233,20 @@
   }
 
   (function initWalkWidget() {
-    var idle = document.querySelector("[data-walk-idle]");
-    var active = document.querySelector("[data-walk-active]");
+    // 메인은 왼쪽 버튼 + 오른쪽 카드 두 곳이 같이 바뀌므로 모두 토글
+    var idles = document.querySelectorAll("[data-walk-idle]");
+    var actives = document.querySelectorAll("[data-walk-active]");
     var startBtn = document.querySelector("[data-start-walk]");
     var endBtn = document.querySelector("[data-end-walk]");
-    var distanceEl = document.querySelector("[data-walk-distance]");
+    var distanceEl = document.querySelector("[data-walk-distance]");        // "0.00 km" (산책 기록 화면)
+    var distanceNumEl = document.querySelector("[data-walk-distance-num]"); // 숫자만, 단위는 화면에 따로 (메인)
     var elapsedEl = document.querySelector("[data-walk-elapsed]");
     var chipEl = document.querySelector("[data-walk-chip]");
     var autoStartHost = document.querySelector("[data-auto-start-walk]");
     var timer = null;
     var watchId = null;   // GPS 추적 번호 (담당: 박용제)
 
-    if (!idle && !active && !startBtn && !endBtn && !autoStartHost) return;
+    if (!idles.length && !actives.length && !startBtn && !endBtn && !autoStartHost) return;
 
     if (autoStartHost && !isWalking()) startWalking();
 
@@ -251,6 +254,7 @@
       var elapsed = Date.now() - walkStartedAt();
       if (elapsedEl) elapsedEl.textContent = formatElapsed(elapsed);
       if (distanceEl) distanceEl.textContent = formatDistance(walkedMeters());
+      if (distanceNumEl) distanceNumEl.textContent = (walkedMeters() / 1000).toFixed(2);
     }
 
     function stopTimer() {
@@ -296,8 +300,8 @@
 
     function render() {
       var walking = isWalking();
-      if (idle) idle.hidden = walking;
-      if (active) active.hidden = !walking;
+      idles.forEach(function (el) { el.hidden = walking; });
+      actives.forEach(function (el) { el.hidden = !walking; });
       if (chipEl) {
         chipEl.textContent = walking ? "위치를 찾는 중이에요" : "지도 미리보기";
         chipEl.classList.toggle("floating", walking);
