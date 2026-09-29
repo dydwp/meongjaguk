@@ -19,7 +19,7 @@
         th:attr="data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token},data-success-url=@{/mypage}"
       >
         <div style="display: flex; align-items: center; justify-content: space-between; gap: 16px; margin-bottom: 16px;">
-          <h2 class="block-label" style="font-size: 16px; margin: 0;">반려견 프로필</h2>
+          <h2 id="pet-form-title" class="block-label" style="font-size: 16px; margin: 0;">반려견 프로필</h2>
           <a th:href="@{/mypage}" class="text-link small" style="flex-shrink: 0;">뒤로가기</a>
         </div>
 
@@ -185,9 +185,14 @@
           aria-live="polite"
           hidden
         ></p>
-        <button id="pet-submit" type="submit" class="btn btn-focus mt-8">
-          저장하기
-        </button>
+        <div class="btn-row mt-8">
+          <button id="pet-submit" type="submit" class="btn btn-focus">
+            저장하기
+          </button>
+          <button id="pet-delete" type="button" class="btn btn-outline" hidden>
+            삭제하기
+          </button>
+        </div>
       </form>
       <script th:src="@{/js/pet-profile.js}" defer></script>
     </main>

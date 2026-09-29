@@ -26,7 +26,7 @@ public class CompanionService {
     private final UserService userService;
 
     public CompanionService(BoardRepository boardRepository, CompanionRequestRepository companionRequestRepository,
-                            UserService userService) {
+            UserService userService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.userService = userService;
@@ -101,6 +101,10 @@ public class CompanionService {
             return;
         }
 
+        if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {
+            throw new IllegalStateException("모임 시간이 지나 신청을 처리할 수 없습니다.");
+        }
+
         long acceptedCount = companionRequestRepository
                 .countByMeetingIdAndStatus(request.getMeetingId(), ApplicationStatus.ACCEPTED);
 
@@ -118,9 +122,15 @@ public class CompanionService {
     public void rejectForHost(Long applicationId, Long hostUserId) {
         CompanionRequest request = findAuthorizedRequest(applicationId, hostUserId);
 
-        if (request.getStatus() == ApplicationStatus.PENDING) {
-            request.reject();
+        if (request.getStatus() != ApplicationStatus.PENDING) {
+            return;
         }
+
+        if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {
+            throw new IllegalStateException("모임 시간이 지나 신청을 처리할 수 없습니다.");
+        }
+
+        request.reject();
     }
 
     private CompanionRequest findRequest(Long applicationId) {
