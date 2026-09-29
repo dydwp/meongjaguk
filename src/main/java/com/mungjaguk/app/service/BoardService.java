@@ -305,11 +305,13 @@ public class BoardService {
 
     /**
      * 화면 표시용 모집 상태
-     * - DB가 모집 중(RECRUITING)이어도 정원이 찼으면 모집 마감(CLOSED)으로 표시
-     *   (정원 충족 시 DB 상태를 CLOSED로 바꾸는 자동 마감은 수락 기능에서 Board.close()로 처리)
+     * - DB가 모집 중(RECRUITING)이어도 아래 경우는 모집 마감(CLOSED)으로 표시
+     *   · 정원이 찼을 때 (DB를 CLOSED로 바꾸는 자동 마감은 수락 기능에서 Board.close()로 처리)
+     *   · 모임 일시가 지났을 때
      */
     private String displayStatus(Board board, long acceptedCount) {
-        if (board.getStatus() == BoardStatus.RECRUITING && board.isFull(acceptedCount)) {
+        if (board.getStatus() == BoardStatus.RECRUITING
+                && (board.isFull(acceptedCount) || board.isMeetingTimePassed(LocalDateTime.now()))) {
             return BoardStatus.CLOSED.name();
         }
         return board.getStatus().name();

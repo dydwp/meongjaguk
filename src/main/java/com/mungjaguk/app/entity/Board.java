@@ -121,6 +121,11 @@ public class Board {
         return 1 + acceptedCount >= maxParticipants;
     }
 
+    /** 모임 일시가 지났는지 (모임 시작 시각이 되면 지난 것으로 봄) */
+    public boolean isMeetingTimePassed(LocalDateTime now) {
+        return !now.isBefore(LocalDateTime.of(meetingDate, meetingTime));
+    }
+
     public Long getMeetingId() { return meetingId; }
     public User getHost() { return host; }
     public Route getCourse() { return course; }
