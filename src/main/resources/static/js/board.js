@@ -77,26 +77,75 @@
      ====================================================================== */
   var boardList = document.querySelector("[data-meeting-list]");
   if (boardList) {
-    loadMeetings();
+    initBoardList();
   }
 
-  function loadMeetings() {
-    fetch("/api/meetings")
-      .then(function (res) {
-        if (!res.ok) throw new Error("status " + res.status);
-        return res.json();
-      })
-      .then(function (meetings) {
-        if (meetings.length === 0) {
-          boardList.replaceChildren(el("p", "text-muted", "아직 공유된 산책로가 없어요."));
-          return;
-        }
-        boardList.replaceChildren.apply(boardList, meetings.map(createMeetingCard));
-      })
-      .catch(function (err) {
-        console.error("게시글을 불러오지 못했습니다.", err);
-        boardList.replaceChildren(el("p", "text-muted", "게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요."));
-      });
+  // 무한스크롤: 처음 PAGE_SIZE개를 보여주고, 맨 아래(sentinel)가 보이면 다음 PAGE_SIZE개를 이어서 불러옴
+  function initBoardList() {
+    var PAGE_SIZE = 6;
+    var statusText = document.querySelector("[data-meeting-status]");
+    var sentinel = document.querySelector("[data-meeting-sentinel]");
+    var cursor = null;       // 마지막으로 불러온 게시글 번호
+    var hasNext = true;
+    var loading = false;
+    var cardCount = 0;       // 지도 미리보기 경로를 돌려 쓰기 위한 순번
+
+    function showStatus(text) {
+      statusText.textContent = text;
+      statusText.hidden = !text;
+    }
+
+    function loadNextPage() {
+      if (loading || !hasNext) return;
+      loading = true;
+      showStatus("게시글을 불러오는 중이에요...");
+
+      var url = "/api/meetings?size=" + PAGE_SIZE + (cursor != null ? "&cursor=" + encodeURIComponent(cursor) : "");
+      fetch(url)
+        .then(function (res) {
+          if (!res.ok) throw new Error("status " + res.status);
+          return res.json();
+        })
+        .then(function (page) {
+          page.items.forEach(function (meeting) {
+            boardList.appendChild(createMeetingCard(meeting, cardCount++));
+          });
+          cursor = page.nextCursor;
+          hasNext = page.hasNext;
+
+          if (cardCount === 0) {
+            showStatus("아직 공유된 산책로가 없어요.");
+          } else {
+            showStatus("");
+          }
+          if (!hasNext) {
+            observer.disconnect();
+          }
+        })
+        .catch(function (err) {
+          console.error("게시글을 불러오지 못했습니다.", err);
+          hasNext = false;
+          observer.disconnect();
+          showStatus("게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+        })
+        .finally(function () {
+          loading = false;
+          // 불러온 뒤에도 맨 아래가 화면 안에 있으면(카드가 적어서 스크롤이 안 생기는 경우) 이어서 불러오기
+          if (hasNext && isSentinelVisible()) loadNextPage();
+        });
+    }
+
+    function isSentinelVisible() {
+      var rect = sentinel.getBoundingClientRect();
+      return rect.top < window.innerHeight;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) loadNextPage();
+    });
+
+    observer.observe(sentinel);
+    loadNextPage();
   }
 
   function createMeetingCard(meeting, index) {

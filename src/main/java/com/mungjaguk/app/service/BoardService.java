@@ -2,6 +2,7 @@ package com.mungjaguk.app.service;
 
 import com.mungjaguk.app.dto.BoardCardDto;
 import com.mungjaguk.app.dto.BoardDetailDto;
+import com.mungjaguk.app.dto.BoardPageDto;
 import com.mungjaguk.app.dto.CommentDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.Board;
@@ -13,6 +14,7 @@ import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardCommentRepository;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
+import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -45,9 +47,29 @@ public class BoardService {
         this.userService = userService;
     }
 
-    /** 산책로 게시판 목록: 최신순 6개 */
-    public List<BoardCardDto> getRecentBoards() {
-        List<Board> boards = boardRepository.findTop6ByOrderByCreatedAtDescMeetingIdDesc();
+    /**
+     * 산책로 게시판 목록 (무한스크롤)
+     * - cursor가 없으면 첫 페이지, 있으면 그 게시글 번호보다 오래된 글
+     * - size개 + 1개를 조회해서 다음 페이지가 있는지 판단
+     */
+    public BoardPageDto getBoards(Long cursor, int size) {
+        PageRequest limit = PageRequest.of(0, size + 1);
+        List<Board> boards = (cursor == null)
+                ? boardRepository.findByOrderByMeetingIdDesc(limit)
+                : boardRepository.findByMeetingIdLessThanOrderByMeetingIdDesc(cursor, limit);
+
+        boolean hasNext = boards.size() > size;
+        if (hasNext) {
+            boards = boards.subList(0, size);
+        }
+
+        List<BoardCardDto> items = toCards(boards);
+        Long nextCursor = boards.isEmpty() ? null : boards.get(boards.size() - 1).getMeetingId();
+        return new BoardPageDto(items, hasNext, nextCursor);
+    }
+
+    /** 게시글 목록 → 카드 (수락 인원은 한 번에 집계) */
+    private List<BoardCardDto> toCards(List<Board> boards) {
         if (boards.isEmpty()) {
             return List.of();
         }
