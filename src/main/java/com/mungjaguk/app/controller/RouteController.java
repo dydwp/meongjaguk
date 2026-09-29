@@ -8,18 +8,15 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 
 import com.mungjaguk.app.entity.Route;
-import com.mungjaguk.app.service.CourseDetailService;
 import com.mungjaguk.app.service.RouteService;
 
 @Controller
 public class RouteController {
 
     private final RouteService service;
-    private final CourseDetailService detailService;
 
-    public RouteController(RouteService service, CourseDetailService detailService) {
+    public RouteController(RouteService service) {
         this.service = service;
-        this.detailService = detailService;
     }
 
     @GetMapping("/routes")

@@ -1,5 +1,6 @@
 package com.mungjaguk.app.service;
 
+import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
@@ -15,8 +16,10 @@ import com.mungjaguk.app.dto.WalkHistoryItemView;
 import com.mungjaguk.app.dto.WalkPointView;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.WalkRecord;
+import com.mungjaguk.app.repository.CoursePointRepository;
 import com.mungjaguk.app.repository.RouteRepository;
 import com.mungjaguk.app.repository.WalkRecordPointRepository;
+import com.mungjaguk.app.repository.WalkRecordPlannedPointRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
 
 @Service
@@ -28,14 +31,20 @@ public class WalkRecordService {
 
     private final WalkRecordRepository walkRecordRepository;
     private final WalkRecordPointRepository walkRecordPointRepository;
+    private final WalkRecordPlannedPointRepository plannedPointRepository;
     private final RouteRepository routeRepository;
+    private final CoursePointRepository coursePointRepository;
 
     public WalkRecordService(WalkRecordRepository walkRecordRepository,
                              RouteRepository routeRepository,
-                             WalkRecordPointRepository walkRecordPointRepository) {
+                             WalkRecordPointRepository walkRecordPointRepository,
+                             WalkRecordPlannedPointRepository plannedPointRepository,
+                             CoursePointRepository coursePointRepository) {
         this.walkRecordRepository = walkRecordRepository;
         this.routeRepository = routeRepository;
         this.walkRecordPointRepository = walkRecordPointRepository;
+        this.plannedPointRepository = plannedPointRepository;
+        this.coursePointRepository = coursePointRepository;
     }
 
     public List<WalkHistoryItemView> getMyWalkHistory(Long userId) {
@@ -54,7 +63,8 @@ public class WalkRecordService {
 
         return new WalkHistoryItemView(
                 record.getWalkRecordId(),
-                route.map(Route::getCourseName).orElse("자유 산책"),
+                record.getPlannedTitle() != null ? record.getPlannedTitle()
+                        : route.map(Route::getCourseName).orElse("자유 산책"),
                 "개인 산책",
                 distanceLabel(record.getDistanceM()),
                 minuteDurationLabel(record.getDurationSeconds()),
@@ -65,17 +75,23 @@ public class WalkRecordService {
     private WalkDetailView toDetailView(WalkRecord record) {
         Optional<Route> route = findRoute(record.getCourseId());
 
-        String title = route.map(Route::getCourseName).orElse("자유 산책");
-        String description = route.map(Route::getDescription).orElse("");
-        String plannedDistance = route.map(Route::getDistanceM).map(this::distanceLabel).orElse("-");
-        String plannedDuration = route.map(Route::getEstimatedMinutes)
-                .map(minutes -> "약 " + minutes + "분").orElse("-");
+        String title = record.getPlannedTitle() != null ? record.getPlannedTitle()
+                : route.map(Route::getCourseName).orElse("자유 산책");
+        String description = record.getPlannedTitle() != null ? record.getPlannedDescription()
+                : route.map(Route::getDescription).orElse("");
+        String plannedDistance = record.getPlannedDistanceM() != null
+                ? distanceLabel(record.getPlannedDistanceM())
+                : route.map(Route::getDistanceM).map(this::distanceLabel).orElse("-");
+        String plannedDuration = record.getPlannedEstimatedMinutes() != null
+                ? "약 " + record.getPlannedEstimatedMinutes() + "분"
+                : route.map(Route::getEstimatedMinutes)
+                    .map(minutes -> "약 " + minutes + "분").orElse("-");
 
         return new WalkDetailView(
                 record.getWalkRecordId(),
                 title,
                 "개인 산책",
-                route.isPresent(),
+                record.getPlannedTitle() != null || route.isPresent(),
                 WalkRecord.STATUS_COMPLETED.equals(record.getStatus()),
                 description,
                 "거리 · " + plannedDistance,
@@ -134,6 +150,27 @@ public class WalkRecordService {
                 .toList();
     }
 
+    public List<WalkPointView> getPlannedPoints(Long walkRecordId, Long userId) {
+        Optional<WalkRecord> record = walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId);
+        if (record.isEmpty()) {
+            return List.of();
+        }
+
+        List<WalkPointView> points = plannedPointRepository.findByWalkRecordIdOrderBySequenceNoAsc(walkRecordId)
+                .stream()
+                .map(point -> new WalkPointView(point.getLatitude(), point.getLongitude()))
+                .toList();
+        if (!points.isEmpty() || record.get().getCourseId() == null
+                || record.get().getCourseId() > Integer.MAX_VALUE) {
+            return points;
+        }
+        return coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(
+                        record.get().getCourseId().intValue()).stream()
+                .map(point -> new WalkPointView(BigDecimal.valueOf(point.getLatitude()),
+                        BigDecimal.valueOf(point.getLongitude())))
+                .toList();
+    }
+
     @Transactional
     public void deleteMyCompletedWalkRecord(Long walkRecordId, Long userId) {
         WalkRecord record = walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId)
@@ -149,6 +186,7 @@ public class WalkRecordService {
             );
         }
 
+        plannedPointRepository.deleteByWalkRecordId(walkRecordId);
         walkRecordPointRepository.deleteByWalkRecordId(walkRecordId);
         walkRecordRepository.delete(record);
     }
