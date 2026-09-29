@@ -51,6 +51,7 @@ public class WalkController {
 
         model.addAttribute("detail", detail);
         model.addAttribute("walkPoints", walkRecordService.getWalkPoints(id, userId));
+        model.addAttribute("plannedPoints", walkRecordService.getPlannedPoints(id, userId));
         model.addAttribute("kakaoMapsJavaScriptKey", kakaoMapsJavaScriptKey);
 
         return "member/activity";

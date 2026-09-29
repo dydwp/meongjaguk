@@ -9,8 +9,12 @@
 
 <main id="activity-detail" class="page">
 
-  <!-- GPS 산책 경로 지도 -->
+  <!-- 추천 경로와 실제 산책 경로 지도 -->
   <div id="activity-map" style="width:100%; height:400px;" hidden></div>
+  <div id="activity-route-legend" class="walk-route-legend" hidden>
+    <span id="activity-planned-legend" hidden><i class="walk-route-swatch planned" aria-hidden="true"></i>추천 경로</span>
+    <span id="activity-actual-legend" hidden><i class="walk-route-swatch actual" aria-hidden="true"></i>실제 이동 경로</span>
+  </div>
 
   <p id="activity-map-status" class="small text-muted mt-16" role="status" hidden>
     산책 경로 정보가 없습니다.
@@ -18,6 +22,10 @@
 
   <div id="walk-point-data" hidden>
     <span th:each="point : ${walkPoints}"
+          th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
+  </div>
+  <div id="planned-point-data" hidden>
+    <span th:each="point : ${plannedPoints}"
           th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
   </div>
 

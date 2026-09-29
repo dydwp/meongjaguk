@@ -52,6 +52,18 @@ public class WalkRecord {
     @Column(name = "distance_m")
     private Integer distanceM;
 
+    @Column(name = "planned_title", length = 100)
+    private String plannedTitle;
+
+    @Column(name = "planned_description", length = 1000)
+    private String plannedDescription;
+
+    @Column(name = "planned_distance_m")
+    private Long plannedDistanceM;
+
+    @Column(name = "planned_estimated_minutes")
+    private Integer plannedEstimatedMinutes;
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -73,5 +85,13 @@ public class WalkRecord {
         record.durationSeconds = durationSeconds;
         record.distanceM = distanceM;
         return record;
+    }
+
+    public void setPlannedRoute(String title, String description,
+                                Long distanceM, Integer estimatedMinutes) {
+        this.plannedTitle = title;
+        this.plannedDescription = description;
+        this.plannedDistanceM = distanceM;
+        this.plannedEstimatedMinutes = estimatedMinutes;
     }
 }
