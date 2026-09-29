@@ -22,6 +22,7 @@ app.add_middleware(
 class RecommendRequest(BaseModel):
     latitude: float
     longitude: float
+    top_k: int = 3
 
 
 @app.get("/")
@@ -39,7 +40,7 @@ def recommend_route(
         routes = recommend_routes(
             latitude=request.latitude,
             longitude=request.longitude,
-            top_k=6
+            top_k=request.top_k
         )
 
         return {

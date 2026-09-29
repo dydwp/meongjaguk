@@ -109,6 +109,49 @@ a {
   margin: 0 0 20px;
 }
 
+.walk-recommend-header {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin: 4px 0;
+}
+.walk-recommend-header .page-title {
+  margin: 0;
+}
+.walk-recommend-refresh {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 34px;
+  height: 34px;
+  padding: 7px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+.walk-recommend-refresh svg {
+  width: 18px;
+  height: 18px;
+}
+.walk-recommend-refresh:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  background: var(--color-primary-soft);
+}
+.walk-recommend-refresh:active:not(:disabled) {
+  transform: translateY(1px);
+}
+.walk-recommend-refresh:disabled {
+  cursor: default;
+  opacity: 0.65;
+}
+.walk-recommend-refresh:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
 /* ---------- 메인 홈 배너 ---------- */
 
 .hero {
@@ -336,6 +379,19 @@ button.btn {
   color: var(--color-primary-dark);
 }
 
+#course-share:disabled {
+  cursor: default;
+  pointer-events: none;
+  opacity: 0.6;
+  transition: none;
+}
+#course-share:disabled:hover,
+#course-share:disabled:active {
+  border-color: var(--color-border);
+  color: var(--color-text);
+  transform: none;
+}
+
 .btn-outline-primary {
   background: var(--color-surface);
   color: var(--color-primary-dark);
@@ -527,6 +583,49 @@ button.btn {
   font-weight: 700;
   line-height: 1;
   letter-spacing: 1px;
+}
+
+.walk-recommend-loading-card {
+  pointer-events: none;
+}
+.walk-recommend-loading-distance,
+.walk-recommend-loading-line {
+  background: linear-gradient(100deg, var(--color-surface-muted) 35%, var(--color-primary-soft) 50%, var(--color-surface-muted) 65%);
+  background-size: 200% 100%;
+  animation: walk-recommend-shimmer 1.6s ease-in-out infinite;
+}
+.walk-recommend-loading-distance {
+  border-radius: var(--radius-sm);
+}
+.walk-recommend-loading-details {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  padding: 5px 0;
+}
+.walk-recommend-loading-line {
+  display: block;
+  max-width: 100%;
+  height: 11px;
+  border-radius: 6px;
+}
+.walk-recommend-loading-line:first-child {
+  height: 16px;
+}
+.walk-recommend-more-status {
+  margin: 20px 0;
+  text-align: center;
+}
+#walk-recommend-sentinel {
+  height: 1px;
+}
+@keyframes walk-recommend-shimmer {
+  to { background-position-x: -200%; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .walk-recommend-loading-distance,
+  .walk-recommend-loading-line { animation: none; }
 }
 
 .route-item h3 {
@@ -1688,6 +1787,32 @@ button.btn {
 .walk-map {
   position: absolute;
   inset: 0;
+}
+
+.walk-route-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.walk-route-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.walk-route-swatch {
+  display: inline-block;
+  width: 22px;
+  border-top: 4px solid;
+  border-radius: 2px;
+}
+.walk-route-swatch.planned {
+  border-color: var(--color-primary);
+}
+.walk-route-swatch.actual {
+  border-color: var(--color-accent-hover);
 }
 
 .map-preview .map-chip {
