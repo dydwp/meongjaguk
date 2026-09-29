@@ -49,6 +49,7 @@ public class MyPageController {
         model.addAttribute("pets", petService.getMyPets(userId));
         model.addAttribute("sharedMeetings", myPageService.getMySharedMeetings(userId));
         model.addAttribute("meetingRequests", myPageService.getMeetingRequests(userId));
+        model.addAttribute("myCompanionRequests", myPageService.getMyCompanionRequests(userId));
         model.addAttribute("walkHistory", walkRecordService.getMyWalkHistory(userId));
         model.addAttribute("activeTab", validTab(tab));
 
@@ -74,7 +75,7 @@ public class MyPageController {
                                 @AuthenticationPrincipal LoginUser loginUser,
                                 RedirectAttributes redirectAttributes) {
         companionService.rejectForHost(applicationId, loginUser.getUserId());
-        redirectAttributes.addFlashAttribute("successMessage", "참여 신청을 거절했습니다.");
+        redirectAttributes.addFlashAttribute("rejectMessage", "참여 신청을 거절했습니다.");
 
         return "redirect:/mypage?tab=requests";
     }

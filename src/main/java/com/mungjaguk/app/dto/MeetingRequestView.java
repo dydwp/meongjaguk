@@ -28,4 +28,12 @@ public record MeetingRequestView(
     public boolean pending() {
         return "PENDING".equals(status);
     }
+
+    public String statusClass() {
+        return switch (status) {
+            case "ACCEPTED" -> "accepted";
+            case "REJECTED" -> "rejected";
+            default -> "pending";
+        };
+    }
 }

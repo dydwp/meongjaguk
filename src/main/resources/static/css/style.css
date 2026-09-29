@@ -833,23 +833,29 @@ button.btn {
 }
 
 .pet-card {
+  min-height: 116px;
+  padding: 16px;
+  display: flex;
+  align-items: center;
+  gap: 14px;
   border: 1px solid var(--color-border);
   border-radius: var(--radius-md);
   background: var(--color-surface);
-  padding: 16px;
+  color: inherit;
   text-align: left;
+  text-decoration: none;
 }
 
 .pet-card .photo {
-  width: 56px;
-  height: 56px;
-  border-radius: 50%;
-  background: var(--color-surface-muted);
-  margin-bottom: 16px;
-  overflow: hidden;
+  width: 68px;
+  height: 68px;
+  flex-shrink: 0;
   display: flex;
   align-items: center;
   justify-content: center;
+  overflow: hidden;
+  border-radius: 50%;
+  background: var(--color-surface-muted);
 }
 
 .pet-card .photo img {
@@ -858,27 +864,47 @@ button.btn {
   object-fit: cover;
 }
 
-.pet-card h4 {
-  margin: 0 0 2px;
-  font-size: 14.5px;
+.pet-card .pet-info {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
 }
 
-.pet-card p {
-  margin: 0;
+.pet-card .pet-info strong {
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.4;
+}
+
+.pet-card .pet-info span {
   font-size: 12.5px;
+  line-height: 1.45;
   color: var(--color-text-muted);
 }
 
+.pet-card:not(.add) {
+  cursor: pointer;
+  transition: transform 0.2s ease, box-shadow 0.2s ease, border-color 0.2s ease;
+}
+
+.pet-card:not(.add):hover {
+  border-color: var(--color-primary);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+  transform: translateY(-2px);
+}
+
 .pet-card.add {
+  min-height: 116px;
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 4px;
   border-style: dashed;
   color: var(--color-primary-dark);
   font-size: 13px;
   font-weight: 700;
-  min-height: 128px;
   cursor: pointer;
 }
 
@@ -1025,7 +1051,62 @@ button.btn {
   margin: 0 0 2px;
 }
 
-/* ---------- 신청 목록 (마이페이지 · 신청 수락/거절) ---------- */
+/* ---------- 동행 신청 관리 (마이페이지) ---------- */
+
+.request-status {
+  display: inline-flex;
+  align-items: center;
+  padding: 4px 10px;
+  border-radius: var(--radius-full);
+  font-size: 11.5px;
+  font-weight: 700;
+}
+
+.request-status.pending {
+  background: var(--color-accent-soft);
+  color: var(--color-accent-hover);
+}
+
+.request-status.accepted {
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.request-status.rejected {
+  background: var(--color-status-reject-soft);
+  color: var(--color-status-reject);
+}
+
+.request-status.closed {
+  background: var(--color-surface-muted);
+  color: var(--color-text-muted);
+}
+
+.request-status::before {
+  content: "";
+  width: 6px;
+  height: 6px;
+  margin-right: 6px;
+  border-radius: 50%;
+  background: currentColor;
+}
+
+.companion-request-section + .companion-request-section {
+  margin-top: 28px;
+  padding-top: 24px;
+  border-top: 1px solid var(--color-border);
+}
+
+.my-request-item {
+  color: inherit;
+  text-decoration: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.my-request-item:hover {
+  border-color: var(--color-primary);
+  box-shadow: var(--shadow-sm);
+}
 
 .request-item {
   display: flex;
@@ -1087,6 +1168,12 @@ button.btn {
   border-color: var(--color-text-muted) !important;
 }
 
+.mypage-section-title {
+  margin: 0 0 12px;
+  font-size: 15px;
+  font-weight: 700;
+}
+
 .mypage-message {
   margin: 16px 0;
   padding: 12px 16px;
@@ -1095,13 +1182,20 @@ button.btn {
 }
 
 .mypage-message.success {
-  background: #eef7eb;
-  color: #46783e;
+  background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.mypage-message.reject {
+  background: var(--color-status-reject-soft);
+  color: var(--color-status-reject);
 }
 
 .mypage-message.error {
-  background: #fff1f1;
-  color: #b54747;
+  background: var(--color-status-reject-soft);
+  color: var(--color-status-reject);
+  border-left: 4px solid var(--color-status-reject);
+  font-weight: 600;
 }
 
 /* ---------- 댓글 ---------- */

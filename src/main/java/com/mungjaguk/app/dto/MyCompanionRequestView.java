@@ -4,14 +4,14 @@ import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 
-public record MySharedMeetingView(
+public record MyCompanionRequestView(
+        Long applicationId,
         Long meetingId,
-        String title,
+        String meetingTitle,
         String courseName,
+        String hostNickname,
         LocalDate meetingDate,
         LocalTime meetingTime,
-        int currentParticipants,
-        int maxParticipants,
         String status
 ) {
     private static final DateTimeFormatter DATE_FORMAT = DateTimeFormatter.ofPattern("yyyy.MM.dd");
@@ -21,16 +21,28 @@ public record MySharedMeetingView(
         return meetingDate.format(DATE_FORMAT) + " " + meetingTime.format(TIME_FORMAT);
     }
 
-    public String participantLabel() {
-        return "참여 " + currentParticipants + " / 정원 " + maxParticipants;
+    public String hostAvatarInitial() {
+        if (hostNickname == null || hostNickname.isBlank()) {
+            return "멍";
+        }
+
+        return hostNickname.substring(0, 1);
     }
 
     public String statusLabel() {
         return switch (status) {
-            case "RECRUITING" -> "모집 중";
-            case "CLOSED" -> "모집 마감";
-            case "COMPLETED" -> "산책 완료";
+            case "PENDING" -> "신청 대기";
+            case "ACCEPTED" -> "수락됨";
+            case "REJECTED" -> "거절됨";
             default -> status;
+        };
+    }
+
+    public String statusClass() {
+        return switch (status) {
+            case "ACCEPTED" -> "accepted";
+            case "REJECTED" -> "rejected";
+            default -> "pending";
         };
     }
 }

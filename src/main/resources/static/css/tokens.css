@@ -51,6 +51,10 @@
   --radius-sm: 10px;
   --radius-md: 16px;
   --radius-full: 999px;
+
+  /* ---- 상태 색상 ---- */
+  --color-status-reject: #D9534F;
+  --color-status-reject-soft: #FDECEC;
 }
 
 /* ==========================================================================
@@ -94,6 +98,9 @@
   --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.35);
   --shadow-md: 0 8px 22px rgba(0, 0, 0, 0.45);
   --shadow-lg: 0 24px 60px rgba(0, 0, 0, 0.55);
+
+  --color-status-reject: #F08080;
+  --color-status-reject-soft: #452626;
 }
 
 /* 참고: 시스템이 다크 모드여도 이 데모는 항상 라이트(연한 회색) 테마로 보여야 하므로
