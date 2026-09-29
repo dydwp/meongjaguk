@@ -5,17 +5,20 @@ import com.mungjaguk.app.dto.BoardCreateRequest;
 import com.mungjaguk.app.dto.BoardDetailDto;
 import com.mungjaguk.app.dto.BoardPageDto;
 import com.mungjaguk.app.dto.CommentDto;
+import com.mungjaguk.app.dto.CoursePointDto;
 import com.mungjaguk.app.dto.RouteDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.Board;
 import com.mungjaguk.app.entity.BoardComment;
 import com.mungjaguk.app.entity.BoardStatus;
 import com.mungjaguk.app.entity.CompanionRequest;
+import com.mungjaguk.app.entity.CoursePoint;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardCommentRepository;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
+import com.mungjaguk.app.repository.CoursePointRepository;
 import com.mungjaguk.app.repository.RouteRepository;
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
@@ -26,6 +29,7 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -43,17 +47,23 @@ public class BoardService {
     private final BoardCommentRepository commentRepository;
     private final UserService userService;
     private final RouteRepository routeRepository;
+    private final CoursePointRepository coursePointRepository;
+
+    /** 저장할 수 있는 경로 좌표 최대 개수 (비정상적으로 큰 요청 방지) */
+    private static final int MAX_COURSE_POINTS = 5000;
 
     public BoardService(BoardRepository boardRepository,
                         CompanionRequestRepository companionRequestRepository,
                         BoardCommentRepository commentRepository,
                         UserService userService,
-                        RouteRepository routeRepository) {
+                        RouteRepository routeRepository,
+                        CoursePointRepository coursePointRepository) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
         this.userService = userService;
         this.routeRepository = routeRepository;
+        this.coursePointRepository = coursePointRepository;
     }
 
     /**
@@ -92,6 +102,16 @@ public class BoardService {
             acceptedCounts.put((Long) row[0], (Long) row[1]);
         }
 
+        List<Integer> courseIds = new ArrayList<>();
+        for (Board board : boards) {
+            courseIds.add(board.getCourse().getCourseId());
+        }
+        Map<Integer, List<CoursePointDto>> pointsByCourse = new HashMap<>();
+        for (CoursePoint point : coursePointRepository.findByCourse_CourseIdInOrderByCourse_CourseIdAscSequenceNoAsc(courseIds)) {
+            pointsByCourse.computeIfAbsent(point.getCourse().getCourseId(), id -> new ArrayList<>())
+                    .add(toPointDto(point));
+        }
+
         List<BoardCardDto> cards = new ArrayList<>();
         for (Board board : boards) {
             Route course = board.getCourse();
@@ -107,7 +127,10 @@ public class BoardService {
                     course.getEstimatedMinutes(),
                     1 + (int) accepted,
                     board.getMaxParticipants(),
-                    displayStatus(board, accepted)));
+                    displayStatus(board, accepted),
+                    course.getStartLatitude(),
+                    course.getStartLongitude(),
+                    pointsByCourse.getOrDefault(course.getCourseId(), List.of())));
         }
         return cards;
     }
@@ -150,7 +173,11 @@ public class BoardService {
                 board.getMaxParticipants(),
                 displayStatus(board, accepted.size()),
                 isHost,
-                myStatus);
+                myStatus,
+                course.getStartLatitude(),
+                course.getStartLongitude(),
+                coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
+                        .stream().map(BoardService::toPointDto).toList());
     }
 
     /**
@@ -159,6 +186,7 @@ public class BoardService {
      * - 코스와 게시글은 한 트랜잭션으로 저장되어 등록 실패 시 코스도 남지 않음
      * - 제목 1~150자, 모임 일시는 현재 이후, 최대 인원 2~10명(본인 포함),
      *   참여 조건 500자 이하, 설명 600자 이하
+     * - 새 코스면 경로 좌표(points)도 course_points에 함께 저장 (추가: 김환중)
      */
     @Transactional
     public Long createBoard(Long userId, BoardCreateRequest request) {
@@ -209,6 +237,9 @@ public class BoardService {
 
         User host = userService.findById(userId);
         Route course = resolveCourse(request);
+        if (request.courseId() == null) {
+            saveCoursePoints(course, request.points());
+        }
         Board saved = boardRepository.save(Board.create(host, course, title, description,
                 meetingDate, meetingTime, maxParticipants,
                 Boolean.TRUE.equals(request.petRequired()), condition));
@@ -326,6 +357,40 @@ public class BoardService {
         }
         String trimmed = value.trim();
         return trimmed.isEmpty() ? null : trimmed;
+    }
+
+    /**
+     * 새 코스의 경로 좌표 저장 (추가: 김환중)
+     * - 좌표가 없으면 저장하지 않음 (게시판 지도는 출발 지점만 표시)
+     * - 좌표가 있으면 2개 이상, 위도·경도 범위 확인 후 sequence 순서대로 1부터 번호를 다시 매겨 저장
+     */
+    private void saveCoursePoints(Route course, List<CoursePointDto> points) {
+        if (points == null || points.isEmpty()) {
+            return;
+        }
+        if (points.size() < 2 || points.size() > MAX_COURSE_POINTS) {
+            throw new IllegalArgumentException("산책로 정보가 올바르지 않아요. 산책로를 다시 추천받아주세요.");
+        }
+        for (CoursePointDto p : points) {
+            if (p == null || p.sequence() == null || p.latitude() == null || p.longitude() == null
+                    || !Double.isFinite(p.latitude()) || !Double.isFinite(p.longitude())
+                    || Math.abs(p.latitude()) > 90 || Math.abs(p.longitude()) > 180) {
+                throw new IllegalArgumentException("산책로 정보가 올바르지 않아요. 산책로를 다시 추천받아주세요.");
+            }
+        }
+
+        List<CoursePointDto> sorted = new ArrayList<>(points);
+        sorted.sort(Comparator.comparing(CoursePointDto::sequence));
+        List<CoursePoint> entities = new ArrayList<>();
+        for (int i = 0; i < sorted.size(); i++) {
+            CoursePointDto p = sorted.get(i);
+            entities.add(CoursePoint.create(course, i + 1, p.latitude(), p.longitude()));
+        }
+        coursePointRepository.saveAll(entities);
+    }
+
+    private static CoursePointDto toPointDto(CoursePoint point) {
+        return new CoursePointDto(point.getSequenceNo(), point.getLatitude(), point.getLongitude());
     }
 
     private Board findBoard(Long meetingId) {

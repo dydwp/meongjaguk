@@ -27,12 +27,12 @@ public interface CompanionRequestRepository extends JpaRepository<CompanionReque
 
     boolean existsByMeetingIdAndApplicant_UserId(Long meetingId, Long userId);
 
-    /** 특정 모집글의 상태별 신청 수 (정원 확인용) */
-    long countByMeetingIdAndStatus(Long meetingId, ApplicationStatus status);
-
     /** 특정 모집글의 특정 상태 신청 목록 (신청자 함께 조회, 신청순) */
     @EntityGraph(attributePaths = {"applicant"})
     List<CompanionRequest> findByMeetingIdAndStatusOrderByCreatedAtAsc(Long meetingId, ApplicationStatus status);
+
+    /** 특정 모집글의 상태별 신청 수 */
+    long countByMeetingIdAndStatus(Long meetingId, ApplicationStatus status);
 
     /** 여러 모집글의 상태별 신청 수: [meetingId, count] */
     @Query("select r.meetingId, count(r) from CompanionRequest r " +
