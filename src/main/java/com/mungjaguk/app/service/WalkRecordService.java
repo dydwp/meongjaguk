@@ -4,7 +4,9 @@ import java.math.BigDecimal;
 import java.time.format.DateTimeFormatter;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 import java.util.Optional;
+import java.util.Set;
 
 import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,8 @@ import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.WalkRecord;
 import com.mungjaguk.app.repository.CoursePointRepository;
 import com.mungjaguk.app.repository.RouteRepository;
+import com.mungjaguk.app.repository.PetRepository;
+import com.mungjaguk.app.repository.WalkRecordPetRepository;
 import com.mungjaguk.app.repository.WalkRecordPointRepository;
 import com.mungjaguk.app.repository.WalkRecordPlannedPointRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
@@ -30,35 +34,67 @@ public class WalkRecordService {
             DateTimeFormatter.ofPattern("yyyy.MM.dd", Locale.KOREA);
 
     private final WalkRecordRepository walkRecordRepository;
+    private final WalkRecordPetRepository walkRecordPetRepository;
     private final WalkRecordPointRepository walkRecordPointRepository;
     private final WalkRecordPlannedPointRepository plannedPointRepository;
+    private final PetRepository petRepository;
     private final RouteRepository routeRepository;
     private final CoursePointRepository coursePointRepository;
 
     public WalkRecordService(WalkRecordRepository walkRecordRepository,
-                             RouteRepository routeRepository,
-                             WalkRecordPointRepository walkRecordPointRepository,
-                             WalkRecordPlannedPointRepository plannedPointRepository,
-                             CoursePointRepository coursePointRepository) {
+                            RouteRepository routeRepository,
+                            WalkRecordPointRepository walkRecordPointRepository,
+                            WalkRecordPlannedPointRepository plannedPointRepository,
+                            CoursePointRepository coursePointRepository,
+                            WalkRecordPetRepository walkRecordPetRepository,
+                            PetRepository petRepository) {
         this.walkRecordRepository = walkRecordRepository;
         this.routeRepository = routeRepository;
         this.walkRecordPointRepository = walkRecordPointRepository;
         this.plannedPointRepository = plannedPointRepository;
         this.coursePointRepository = coursePointRepository;
+        this.walkRecordPetRepository = walkRecordPetRepository;
+        this.petRepository = petRepository;
     }
 
     public List<WalkHistoryItemView> getMyWalkHistory(Long userId) {
-        return walkRecordRepository.findByUserIdOrderByStartedAtDesc(userId).stream()
-                .map(this::toHistoryItem)
+        return getMyWalkHistory(userId, null);
+    }
+
+    public List<WalkHistoryItemView> getMyWalkHistory(Long userId, Long petId) {
+        List<WalkRecord> records = walkRecordRepository.findByUserIdOrderByStartedAtDesc(userId);
+
+        if (petId != null) {
+            petRepository.findByPetIdAndUser_UserId(petId, userId)
+                    .orElseThrow(() -> new ResponseStatusException(
+                            HttpStatus.NOT_FOUND,
+                            "반려견 정보를 찾을 수 없습니다."
+                    ));
+
+            Set<Long> walkRecordIds = walkRecordPetRepository.findWalkRecordIdsByPetId(userId, petId);
+
+            records = records.stream()
+                    .filter(record -> walkRecordIds.contains(record.getWalkRecordId()))
+                    .toList();
+        }
+
+        Map<Long, List<String>> petNamesByWalkRecord =
+                walkRecordPetRepository.findPetNamesByUserId(userId);
+
+        return records.stream()
+                .map(record -> toHistoryItem(
+                        record,
+                        petNamesByWalkRecord.getOrDefault(record.getWalkRecordId(), List.of())
+                ))
                 .toList();
     }
 
     public Optional<WalkDetailView> getDetail(Long walkRecordId, Long userId) {
         return walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId)
-                .map(this::toDetailView);
+                .map(record -> toDetailView(record, userId));
     }
 
-    private WalkHistoryItemView toHistoryItem(WalkRecord record) {
+    private WalkHistoryItemView toHistoryItem(WalkRecord record, List<String> petNames) {
         Optional<Route> route = findRoute(record.getCourseId());
 
         return new WalkHistoryItemView(
@@ -66,13 +102,14 @@ public class WalkRecordService {
                 record.getPlannedTitle() != null ? record.getPlannedTitle()
                         : route.map(Route::getCourseName).orElse("자유 산책"),
                 "개인 산책",
+                String.join(" · ", petNames),
                 distanceLabel(record.getDistanceM()),
                 minuteDurationLabel(record.getDurationSeconds()),
                 record.getStartedAt().format(DATE_FORMAT)
         );
     }
 
-    private WalkDetailView toDetailView(WalkRecord record) {
+    private WalkDetailView toDetailView(WalkRecord record, Long userId) {
         Optional<Route> route = findRoute(record.getCourseId());
 
         String title = record.getPlannedTitle() != null ? record.getPlannedTitle()
@@ -86,6 +123,8 @@ public class WalkRecordService {
                 ? "약 " + record.getPlannedEstimatedMinutes() + "분"
                 : route.map(Route::getEstimatedMinutes)
                     .map(minutes -> "약 " + minutes + "분").orElse("-");
+        List<String> petNames = walkRecordPetRepository.findPetNamesByWalkRecordId(record.getWalkRecordId(), userId);
+        String petNamesLabel = String.join(" · ", petNames);
 
         return new WalkDetailView(
                 record.getWalkRecordId(),
@@ -96,6 +135,7 @@ public class WalkRecordService {
                 description,
                 "거리 · " + plannedDistance,
                 "예상 소요시간 · " + plannedDuration,
+                petNamesLabel,
                 distanceLabel(record.getDistanceM()),
                 clockDurationLabel(record.getDurationSeconds()),
                 record.getEndedAt() == null
@@ -189,5 +229,9 @@ public class WalkRecordService {
         plannedPointRepository.deleteByWalkRecordId(walkRecordId);
         walkRecordPointRepository.deleteByWalkRecordId(walkRecordId);
         walkRecordRepository.delete(record);
+    }
+
+    public boolean isMyPet(Long userId, Long petId) {
+        return petRepository.findByPetIdAndUser_UserId(petId, userId).isPresent();
     }
 }

@@ -42,8 +42,15 @@ public class MyPageController {
 
     @GetMapping("/mypage")
     public String mypage(@AuthenticationPrincipal LoginUser loginUser,
-                        @RequestParam(defaultValue = "pets") String tab, Model model) {
+                        @RequestParam(defaultValue = "pets") String tab,
+                        @RequestParam(required = false) Long petId, Model model) {
         Long userId = loginUser.getUserId();
+        Long selectedPetId = "activity".equals(tab) ? petId : null;
+
+        if (selectedPetId != null && !walkRecordService.isMyPet(userId, selectedPetId)) {
+            return "redirect:/mypage?tab=activity";
+        }
+
         User user = userService.findById(userId);
 
         List<MeetingRequestView> allMeetingRequests = myPageService.getMeetingRequests(userId);
@@ -73,6 +80,7 @@ public class MyPageController {
         model.addAttribute("avatarInitial", avatarInitial(user.getNickname()));
         model.addAttribute("joinedLabel", joinedLabel(user));
         model.addAttribute("pets", petService.getMyPets(userId));
+        model.addAttribute("selectedPetId", selectedPetId);
         model.addAttribute("sharedMeetings", myPageService.getMySharedMeetings(userId));
 
         model.addAttribute("meetingRequests", meetingRequests);
@@ -81,7 +89,7 @@ public class MyPageController {
         model.addAttribute("myCompanionRequests", myCompanionRequests);
         model.addAttribute("pastMyCompanionRequests", pastMyCompanionRequests);
 
-        model.addAttribute("walkHistory", walkRecordService.getMyWalkHistory(userId));
+        model.addAttribute("walkHistory", walkRecordService.getMyWalkHistory(userId, selectedPetId));
         model.addAttribute("activeTab", validTab(tab));
 
         return "member/mypage";

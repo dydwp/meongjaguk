@@ -3,7 +3,9 @@ package com.mungjaguk.app.service;
 import com.mungjaguk.app.entity.WalkRecord;
 import com.mungjaguk.app.entity.WalkRecordPlannedPoint;
 import com.mungjaguk.app.repository.CoursePointRepository;
+import com.mungjaguk.app.repository.PetRepository;
 import com.mungjaguk.app.repository.RouteRepository;
+import com.mungjaguk.app.repository.WalkRecordPetRepository;
 import com.mungjaguk.app.repository.WalkRecordPlannedPointRepository;
 import com.mungjaguk.app.repository.WalkRecordPointRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
@@ -29,8 +31,15 @@ class WalkRecordServiceTest {
         WalkRecordRepository records = mock(WalkRecordRepository.class);
         WalkRecordPointRepository actualPoints = mock(WalkRecordPointRepository.class);
         WalkRecordPlannedPointRepository plannedPoints = mock(WalkRecordPlannedPointRepository.class);
-        WalkRecordService service = new WalkRecordService(records, mock(RouteRepository.class),
-                actualPoints, plannedPoints, mock(CoursePointRepository.class));
+        WalkRecordService service = new WalkRecordService(
+                records,
+                mock(RouteRepository.class),
+                actualPoints,
+                plannedPoints,
+                mock(CoursePointRepository.class),
+                mock(WalkRecordPetRepository.class),
+                mock(PetRepository.class)
+        );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
         when(plannedPoints.findByWalkRecordIdOrderBySequenceNoAsc(42L)).thenReturn(List.of(
@@ -47,8 +56,15 @@ class WalkRecordServiceTest {
         WalkRecordRepository records = mock(WalkRecordRepository.class);
         WalkRecordPointRepository actualPoints = mock(WalkRecordPointRepository.class);
         WalkRecordPlannedPointRepository plannedPoints = mock(WalkRecordPlannedPointRepository.class);
-        WalkRecordService service = new WalkRecordService(records, mock(RouteRepository.class),
-                actualPoints, plannedPoints, mock(CoursePointRepository.class));
+        WalkRecordService service = new WalkRecordService(
+                records,
+                mock(RouteRepository.class),
+                actualPoints,
+                plannedPoints,
+                mock(CoursePointRepository.class),
+                mock(WalkRecordPetRepository.class),
+                mock(PetRepository.class)
+        );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
 
