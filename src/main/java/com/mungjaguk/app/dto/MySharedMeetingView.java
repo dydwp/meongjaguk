@@ -10,7 +10,7 @@ public record MySharedMeetingView(
         String courseName,
         LocalDate meetingDate,
         LocalTime meetingTime,
-        int acceptedCount,
+        int currentParticipants,
         int maxParticipants,
         String status
 ) {
@@ -22,7 +22,7 @@ public record MySharedMeetingView(
     }
 
     public String participantLabel() {
-        return "수락 " + acceptedCount + " / 정원 " + maxParticipants;
+        return "참여 " + currentParticipants + " / 정원 " + maxParticipants;
     }
 
     public String statusLabel() {

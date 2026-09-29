@@ -82,6 +82,25 @@ public class PetImageStorage {
         }
     }
 
+    public void deleteAfterCommit(String imageUrl) {
+        if (imageUrl == null || imageUrl.isBlank()) return;
+
+        String filename = Path.of(imageUrl).getFileName().toString();
+        Path file = directory.resolve(filename).normalize();
+        if (!file.startsWith(directory)) return;
+
+        if (TransactionSynchronizationManager.isSynchronizationActive()) {
+            TransactionSynchronizationManager.registerSynchronization(new TransactionSynchronization() {
+                @Override
+                public void afterCommit() {
+                    delete(file);
+                }
+            });
+        } else {
+            delete(file);
+        }
+    }
+
     private void delete(Path file) {
         try {
             Files.deleteIfExists(file);

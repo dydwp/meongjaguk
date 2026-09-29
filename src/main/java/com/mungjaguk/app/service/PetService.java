@@ -3,11 +3,14 @@ package com.mungjaguk.app.service;
 import java.time.LocalDate;
 import java.util.List;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.mungjaguk.app.dto.PetCardView;
+import com.mungjaguk.app.dto.PetEditView;
 import com.mungjaguk.app.dto.PetRequestDto;
 import com.mungjaguk.app.entity.Pet;
 import com.mungjaguk.app.entity.User;
@@ -34,21 +37,16 @@ public class PetService {
         .toList();
   }
 
-  public List<Pet> getPetList() {
-    return petRepository.findAll();
-  }
-
-  public Pet getPetInfo(String petId) {
-    Long id;
-
-    try {
-      id = Long.valueOf(petId);
-    } catch (NumberFormatException e) {
-      throw new IllegalArgumentException("잘못된 반려견 번호입니다.");
-    }
-
-    return petRepository.findById(id)
-        .orElseThrow(() -> new IllegalArgumentException("반려견 정보를 찾을 수 없습니다."));
+  public PetEditView getPetEditView(Long petId, Long userId) {
+    Pet pet = findMyPet(petId, userId);
+    return new PetEditView(
+        pet.getPetId(),
+        pet.getName(),
+        pet.getBreed(),
+        pet.getBirthDate() == null ? null : pet.ageInYears(),
+        pet.getSize(),
+        pet.getActivityLevel(),
+        pet.getProfileImage());
   }
 
   @Transactional
@@ -58,17 +56,46 @@ public class PetService {
 
     Pet pet = new Pet();
     pet.setUser(user);
+    applyPetInfo(pet, request);
+    pet.setProfileImage(imageStorage.save(image));
+    petRepository.save(pet);
+  }
+
+  @Transactional
+  public void updatePet(Long petId, PetRequestDto request, MultipartFile image, boolean removeImage, Long userId) {
+    Pet pet = findMyPet(petId, userId);
+    String previousImage = pet.getProfileImage();
+
+    applyPetInfo(pet, request);
+
+    if (removeImage) {
+      pet.setProfileImage(null);
+      imageStorage.deleteAfterCommit(previousImage);
+    } else if (image != null && !image.isEmpty()) {
+      pet.setProfileImage(imageStorage.save(image));
+      imageStorage.deleteAfterCommit(previousImage);
+    }
+  }
+
+  @Transactional
+  public void deletePet(Long petId, Long userId) {
+    Pet pet = findMyPet(petId, userId);
+    String profileImage = pet.getProfileImage();
+    petRepository.delete(pet);
+    imageStorage.deleteAfterCommit(profileImage);
+  }
+
+  private Pet findMyPet(Long petId, Long userId) {
+    return petRepository.findByPetIdAndUser_UserId(petId, userId)
+        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "반려견 정보를 찾을 수 없습니다."));
+  }
+
+  private void applyPetInfo(Pet pet, PetRequestDto request) {
     pet.setName(request.name());
     pet.setBreed(request.breed());
     pet.setSize(request.size());
     pet.setActivityLevel(request.activityLevel());
-
-    if (request.age() != null) {
-      pet.setBirthDate(LocalDate.now().minusYears(request.age()));
-    }
-
-    pet.setProfileImage(imageStorage.save(image));
-    petRepository.save(pet);
+    pet.setBirthDate(request.age() == null ? null : LocalDate.now().minusYears(request.age()));
   }
 
   private PetCardView toCardView(Pet pet) {
