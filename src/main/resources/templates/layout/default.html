@@ -26,6 +26,17 @@
       ><footer th:replace="~{fragments/footer :: footer}"></footer
     ></th:block>
 
+    <!-- 맨 위로 버튼 (모든 페이지 공통, scroll-top.js) -->
+    <button type="button" class="scroll-top" data-scroll-top aria-label="맨 위로" hidden>
+      <svg viewBox="0 0 24 24" width="22" height="22" aria-hidden="true">
+        <path d="M12 19V5M5 12l7-7 7 7" fill="none" stroke="currentColor" stroke-width="2.4"
+              stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+    </button>
+
     <script th:if="${showScript}" th:src="@{/js/app.js}"></script>
+    <script th:src="@{/js/scroll-top.js}" defer></script>
+    <!-- 헤더 알림 (로그인 회원만) -->
+    <script th:if="${loginUser != null}" th:src="@{/js/notifications.js}" defer></script>
   </body>
 </html>
