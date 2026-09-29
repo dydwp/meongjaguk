@@ -197,6 +197,11 @@
     <!-- 활동 내역 -->
     <div data-tab-panel="activity" th:attr="hidden=${activeTab != 'activity'} ? 'hidden' : null">
 
+      <div class="mypage-message success" th:if="${activityMessage}" th:text="${activityMessage}">
+        산책 기록을 삭제했습니다.
+      </div>
+
+      <!-- 기존 활동 목록 -->
       <a th:each="item : ${walkHistory}" th:href="@{/activity-detail(id=${item.id()})}" class="route-item">
 
         <div class="route-thumb route-distance">
@@ -230,6 +235,7 @@
 
     </div>
 
+    <script th:src="@{/js/mypage.js}" defer></script>
   </main>
 
 </body>

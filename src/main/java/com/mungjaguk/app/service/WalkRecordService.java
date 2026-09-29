@@ -5,8 +5,10 @@ import java.util.List;
 import java.util.Locale;
 import java.util.Optional;
 
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import com.mungjaguk.app.dto.WalkDetailView;
 import com.mungjaguk.app.dto.WalkHistoryItemView;
@@ -74,6 +76,7 @@ public class WalkRecordService {
                 title,
                 "개인 산책",
                 route.isPresent(),
+                WalkRecord.STATUS_COMPLETED.equals(record.getStatus()),
                 description,
                 "거리 · " + plannedDistance,
                 "예상 소요시간 · " + plannedDuration,
@@ -129,5 +132,24 @@ public class WalkRecordService {
         return walkRecordPointRepository.findByWalkRecordIdOrderBySequenceNoAsc(walkRecordId).stream()
                 .map(point -> new WalkPointView(point.getLatitude(), point.getLongitude()))
                 .toList();
+    }
+
+    @Transactional
+    public void deleteMyCompletedWalkRecord(Long walkRecordId, Long userId) {
+        WalkRecord record = walkRecordRepository.findByWalkRecordIdAndUserId(walkRecordId, userId)
+                .orElseThrow(() -> new ResponseStatusException(
+                        HttpStatus.NOT_FOUND,
+                        "산책 기록을 찾을 수 없습니다."
+                ));
+
+        if (!WalkRecord.STATUS_COMPLETED.equals(record.getStatus())) {
+            throw new ResponseStatusException(
+                    HttpStatus.BAD_REQUEST,
+                    "완료된 산책 기록만 삭제할 수 있습니다."
+            );
+        }
+
+        walkRecordPointRepository.deleteByWalkRecordId(walkRecordId);
+        walkRecordRepository.delete(record);
     }
 }
