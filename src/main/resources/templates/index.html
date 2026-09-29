@@ -5,49 +5,80 @@
 <body>
 
 <main class="page">
+  <!-- 배너: 인사말 + 산책 시작 / 오른쪽: 이번 주 나의 산책 (담당: 박용제) -->
   <section class="hero">
     <div class="hero-text">
-      <span class="hero-badge"><span class="paw">🐾</span> 오늘도 멍자국 남기러 가요</span>
-      <h1>오늘은 어디로<br>산책 나가볼까요?</h1>
-      <p>엄선한 산책로를 둘러보거나, 바로 자유롭게 걸어보세요.</p>
-      <div class="hero-actions">
-        <a th:href="@{/routes}" class="btn btn-primary">추천 코스 보기</a>
-        <a th:href="@{/board}" class="btn btn-outline">같이 걷기 모집 보기</a>
+      <h1 th:if="${loginUser != null}">
+        <span th:text="|${loginUser.nickname}님, 오늘도|">용제님, 오늘도</span><br>
+        <span th:text="${petWith != null} ? |${petWith} 같이 걸어요| : '같이 걸어요'">보리랑 같이 걸어요</span>
+      </h1>
+      <h1 th:unless="${loginUser != null}">오늘은 어디로<br>산책 나가볼까요?</h1>
+      <p>걸은 길이 지도에 남고, 기록이 쌓여요.</p>
+
+      <!-- 산책 전: 시작 버튼 (비회원이면 data-login-required="true" → 로그인 안내) -->
+      <div class="hero-actions" data-walk-idle>
+        <button type="button" class="btn btn-primary" data-start-walk
+                th:attr="data-login-required=${loginUser == null}">▷ 산책 시작</button>
+      </div>
+
+      <!-- 산책 중: 종료·상세 버튼 (실시간 거리/시간은 오른쪽 카드) -->
+      <div class="hero-actions" data-walk-active hidden>
+        <!-- 비회원이면 data-login-required="true" → 종료 시 로그인 안내 -->
+        <button type="button" class="btn btn-outline-primary" data-end-walk
+                th:attr="data-login-required=${loginUser == null}">산책 종료</button>
+        <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
       </div>
     </div>
-    <div class="hero-illustration" aria-hidden="true">
-      <svg viewBox="0 0 320 220" preserveAspectRatio="xMidYMid meet">
-        <circle cx="252" cy="46" r="30" fill="var(--color-accent)" opacity="0.85"/>
-        <g opacity="0.9">
-          <ellipse cx="200" cy="40" rx="26" ry="12" fill="var(--color-surface)"/>
-          <ellipse cx="222" cy="36" rx="18" ry="10" fill="var(--color-surface)"/>
-        </g>
-        <path d="M0 150 C 60 120, 120 170, 190 140 S 300 120, 320 150 L 320 220 L 0 220 Z" fill="var(--color-secondary)" opacity="0.55"/>
-        <path d="M0 175 C 70 155, 140 190, 210 165 S 300 150, 320 175 L 320 220 L 0 220 Z" fill="var(--color-primary)" opacity="0.45"/>
-        <g>
-          <rect x="46" y="118" width="6" height="30" rx="2" fill="var(--color-primary-dark)"/>
-          <circle cx="49" cy="106" r="22" fill="var(--color-primary)"/>
-        </g>
-        <g>
-          <rect x="262" y="108" width="6" height="34" rx="2" fill="var(--color-primary-dark)"/>
-          <circle cx="265" cy="94" r="26" fill="var(--color-secondary)"/>
-        </g>
-        <path d="M20 196 C 90 170, 170 210, 300 178" fill="none" stroke="var(--color-surface)" stroke-width="10" stroke-linecap="round" opacity="0.7"/>
-        <g transform="translate(120,145)">
-          <ellipse cx="50" cy="55" rx="36" ry="7" fill="var(--color-text)" opacity="0.08"/>
-          <path d="M84 26 C97 21 99 8 90 6 C88 14 84 20 78 26 Z" fill="var(--color-surface)"/>
-          <rect x="70" y="44" width="9" height="15" rx="4.5" fill="var(--color-surface)"/>
-          <rect x="28" y="44" width="9" height="15" rx="4.5" fill="var(--color-surface)"/>
-          <ellipse cx="54" cy="32" rx="32" ry="18" fill="var(--color-surface)"/>
-          <ellipse cx="48" cy="24" rx="11" ry="7" fill="var(--color-accent)"/>
-          <circle cx="18" cy="22" r="16" fill="var(--color-surface)"/>
-          <ellipse cx="4" cy="27" rx="10" ry="7" fill="var(--color-surface)"/>
-          <path d="M14 6 C4 4 -6 12 -4 22 C2 18 9 12 14 6 Z" fill="var(--color-accent)"/>
-          <circle cx="11" cy="18" r="1.8" fill="var(--color-text)"/>
-          <ellipse cx="-4" cy="28" rx="3.5" ry="2.8" fill="var(--color-accent-hover)"/>
-        </g>
-      </svg>
-    </div>
+
+    <aside class="hero-weekly card card-pad">
+      <!-- 산책 중: 지금 산책 (이동 거리 / 경과 시간 실시간 갱신은 app.js) -->
+      <div data-walk-active hidden>
+        <div class="hero-live-head">
+          <h2 class="hero-live-title">지금 산책</h2>
+          <span class="live-badge">기록 중</span>
+        </div>
+        <div class="hero-live-stats">
+          <div class="hero-live-stat">
+            <div class="hero-live-label">이동 거리</div>
+            <div class="hero-live-value"><span data-walk-distance-num>0.00</span><span class="unit">km</span></div>
+          </div>
+          <div class="hero-live-divider" aria-hidden="true"></div>
+          <div class="hero-live-stat">
+            <div class="hero-live-label">경과 시간</div>
+            <div class="hero-live-value" data-walk-elapsed>00:00</div>
+          </div>
+        </div>
+        <div class="hero-weekly-foot hero-live-foot">
+          <span th:if="${weeklyWalk != null}"
+                th:text="|이번 주 ${weeklyWalk.walkCount}회 · ${#numbers.formatDecimal(weeklyWalk.distanceKm, 1, 1)}km · ${weeklyWalk.minutes}분|">이번 주 3회 · 5.2km · 96분</span>
+          <span th:unless="${weeklyWalk != null}"></span>
+          <a th:href="@{/mypage}" class="section-link">마이페이지 ›</a>
+        </div>
+      </div>
+
+      <!-- 산책 전: 이번 주 나의 산책 -->
+      <div data-walk-idle>
+        <h2 class="hero-weekly-title">이번 주 나의 산책</h2>
+        <th:block th:if="${weeklyWalk != null}">
+          <div class="hero-weekly-stats">
+            <div><b th:text="${weeklyWalk.walkCount}">3</b>회</div>
+            <div><b th:text="${#numbers.formatDecimal(weeklyWalk.distanceKm, 1, 1)}">5.2</b>km</div>
+            <div><b th:text="${weeklyWalk.minutes}">96</b>분</div>
+          </div>
+          <div class="hero-weekly-foot">
+            <span th:text="${weeklyWalk.lastWalkLabel != null} ? |마지막 산책 · ${weeklyWalk.lastWalkLabel}| : '아직 산책 기록이 없어요'">마지막 산책 · 오늘 2.1km</span>
+            <a th:href="@{/mypage}" class="section-link">마이페이지 ›</a>
+          </div>
+        </th:block>
+        <th:block th:if="${weeklyWalk == null}">
+          <p class="small text-muted">로그인하면 이번 주 산책 기록을 볼 수 있어요.</p>
+          <div class="hero-weekly-foot">
+            <span></span>
+            <a th:href="@{/login}" class="section-link">로그인 ›</a>
+          </div>
+        </th:block>
+      </div>
+    </aside>
   </section>
 
   <div class="two-col home-cols">
@@ -81,9 +112,9 @@
       </p>
     </section>
 
-    <!-- 오른쪽: 바로 산책하기 -->
+    <!-- 오른쪽: 산책 지도 (산책 시작 버튼은 배너로 이동, 지도만 크게) -->
     <section class="home-walk">
-      <h2 class="block-label">바로 산책하기</h2>
+      <h2 class="block-label">산책 지도</h2>
       <div class="card card-pad">
       <div class="map-preview">
         <svg viewBox="0 0 300 180" preserveAspectRatio="none">
@@ -95,34 +126,6 @@
         <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 -->
         <div class="walk-map" data-walk-map></div>
         <span class="map-chip" data-walk-chip>지도 미리보기</span>
-      </div>
-
-      <!-- 산책 전: 시작 버튼만 -->
-      <div data-walk-idle>
-        <p class="small text-muted mt-16">특정 코스 없이 자유롭게 걷고 기록만 남기고 싶을 때 눌러주세요.</p>
-        <!-- 비회원이면 data-login-required="true" → 산책 시작 시 로그인 안내 -->
-        <button type="button" class="btn btn-primary mt-8" data-start-walk
-                th:attr="data-login-required=${loginUser == null}">산책 시작</button>
-      </div>
-
-      <!-- 산책 중: 실시간 거리/시간 + 종료·상세 버튼 -->
-      <div data-walk-active hidden>
-        <div class="stat-row" style="margin:16px 0 0;">
-          <div class="stat-card">
-            <div class="label">이동 거리</div>
-            <div class="value" data-walk-distance>0.0 km</div>
-          </div>
-          <div class="stat-card">
-            <div class="label">경과 시간</div>
-            <div class="value" data-walk-elapsed>00:00</div>
-          </div>
-        </div>
-        <div class="btn-row mt-8">
-          <!-- 비회원이면 data-login-required="true" → 종료 시 로그인 안내 -->
-          <button type="button" class="btn btn-outline-primary" data-end-walk
-                  th:attr="data-login-required=${loginUser == null}">산책 종료</button>
-          <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
-        </div>
       </div>
       </div>
     </section>
@@ -162,8 +165,41 @@
       아직 모집 중인 산책이 없어요.
     </p>
   </section>
+  <!-- 산책 날씨 / 나가기 전 체크 (담당: 박용제, home-widgets.js) -->
+  <div class="home-extras">
+    <section class="card card-pad" data-weather>
+      <div class="block-label-row">
+        <h2 class="block-label">오늘의 산책 날씨 <span class="tag">새 기능</span></h2>
+      </div>
+      <p class="small text-muted mb-0" data-weather-status role="status">날씨를 불러오는 중이에요.</p>
+      <div class="weather-body" data-weather-body hidden>
+        <span class="weather-icon" data-weather-icon aria-hidden="true">☀️</span>
+        <div>
+          <div class="weather-main">
+            <b data-weather-temp>21°</b>
+            <span class="tag" data-weather-grade>산책 좋음</span>
+          </div>
+          <p class="small text-muted mb-0" data-weather-detail>미세먼지 보통 · 오후 5~7시 추천</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad" data-walk-checklist>
+      <div class="block-label-row">
+        <h2 class="block-label">나가기 전 체크 <span class="tag">새 기능</span></h2>
+      </div>
+      <ul class="check-list">
+        <li><label><input type="checkbox" value="leash"> 목줄·인식표</label></li>
+        <li><label><input type="checkbox" value="poop-bag"> 배변봉투</label></li>
+        <li><label><input type="checkbox" value="water"> 물·물그릇</label></li>
+        <li><label><input type="checkbox" value="snack"> 간식</label></li>
+      </ul>
+    </section>
+  </div>
+
   <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
   <script th:src="@{/js/walk-map.js}"></script>
+  <script th:src="@{/js/home-widgets.js}" defer></script>
 </main>
 
 </body>
