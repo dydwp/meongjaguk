@@ -27,49 +27,81 @@ a {
   padding: 0 24px 64px;
 }
 
-/* ---------- 공통 헤더: 중앙 로고 + 우측 메뉴 ---------- */
+/* ---------- 공통 헤더: 왼쪽 메뉴 + 중앙 로고 + 오른쪽 사용자 ---------- */
 
 .app-header {
   display: grid;
   grid-template-columns: 1fr auto 1fr;
   align-items: center;
+  column-gap: 16px;
   max-width: 980px;
-  margin: 0 auto;
-  padding: 28px 24px 20px;
-  border-bottom: 3px solid var(--color-primary);
-  margin-bottom: 24px;
+  margin: 0 auto 24px;
+  padding: 22px 24px 0;
 }
 
+/* 로고: 왼쪽 고리 + 초록 알약(흰 점, 글자, 주황 발자국) */
 .logo {
+  position: relative;
   grid-column: 2;
+  justify-self: center;
   display: flex;
   align-items: center;
-  gap: 10px;
-  justify-self: center;
-  font-weight: 800;
-  font-size: 40px;
-  color: var(--color-text);
   text-decoration: none;
 }
 
-.logo .paw {
-  color: var(--color-primary);
-  font-size: 28px;
+/* 고리는 로고 폭에서 빼서(absolute) 초록 알약이 정확히 가운데 오도록, 알약 왼쪽 끝에 9px 걸침 */
+.logo-ring {
+  position: absolute;
+  right: calc(100% - 9px);
+  top: 50%;
+  z-index: 1;
+  width: 26px;
+  height: 26px;
+  margin-top: -13px;
+  border: 3px solid var(--color-text-muted);
+  border-radius: 50%;
+  opacity: 0.55;
 }
 
-.app-nav {
-  grid-column: 3;
-  justify-self: end;
-  align-self: start;
+.logo-pill {
   display: flex;
-  gap: 20px;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 16px 6px 14px;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  font-size: 26px;
+  font-weight: 800;
+  line-height: 1.2;
+}
+
+.logo-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: var(--color-on-primary);
+}
+
+.logo-paw {
+  width: 16px;
+  height: 18px;
+  fill: var(--color-accent);
+}
+
+/* 왼쪽 메뉴 */
+.app-nav {
+  grid-column: 1;
+  justify-self: start;
+  display: flex;
+  gap: 24px;
   list-style: none;
   margin: 0;
   padding: 0;
 }
 
 .app-nav a {
-  font-size: 12px;
+  font-size: 14px;
   color: var(--color-text-muted);
   text-decoration: none;
   font-weight: 500;
@@ -84,16 +116,215 @@ a {
   color: var(--color-primary-dark);
 }
 
-.app-nav a.nav-login {
-  color: var(--color-primary-dark);
-  font-weight: 700;
-  border: 1px solid var(--color-primary);
-  padding: 5px 14px;
-  border-radius: var(--radius-full);
+/* 오른쪽: 아바타 + 닉네임 + 로그아웃 / 로그인 */
+.app-user {
+  grid-column: 3;
+  justify-self: end;
+  display: flex;
+  align-items: center;
+  gap: 10px;
 }
 
-.app-nav a.nav-login:hover {
+/* 뒤쪽 .avatar / .avatar-sm 규칙보다 우선하도록 두 클래스로 지정 */
+.avatar.nav-avatar {
+  width: 32px;
+  height: 32px;
+  font-size: 13px;
+  background: var(--color-accent);
+  color: var(--color-on-accent-white);
+  font-weight: 800;
+}
+
+.nav-user {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--color-text);
+  white-space: nowrap;
+}
+
+/* 알림: 종 아이콘 + 안 읽은 수 배지 + 아래로 열리는 알림 창 (담당: 박용제) */
+/* 알림 창은 종이 아니라 오른쪽 영역(.app-user) 끝에 맞춰서, 좁은 화면에서도 밖으로 안 나가게 */
+.app-user {
+  position: relative;
+}
+
+.nav-bell {
+  position: relative;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  border: none;
+  border-radius: 50%;
+  background: none;
+  color: var(--color-text-muted);
+  cursor: pointer;
+}
+
+.nav-bell:hover,
+.nav-bell[aria-expanded="true"] {
   background: var(--color-primary-soft);
+  color: var(--color-primary-dark);
+}
+
+.nav-bell:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 1px;
+}
+
+/* 새 알림: 종 오른쪽 위 작은 빨간 점 (테두리는 배경색이라 종과 살짝 떨어져 보임) */
+.nav-bell-badge {
+  position: absolute;
+  top: 6px;
+  right: 7px;
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--color-notify);
+  box-shadow: 0 0 0 2px var(--color-bg);
+}
+
+.notification-panel {
+  position: absolute;
+  top: calc(100% + 8px);
+  right: 0;
+  z-index: 1000;
+  width: min(320px, calc(100vw - 32px));
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  box-shadow: var(--shadow-lg);
+  overflow: hidden;
+}
+
+.notification-head {
+  padding: 14px 16px 10px;
+  border-bottom: 1px solid var(--color-border);
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.notification-empty {
+  margin: 0;
+  padding: 24px 16px;
+  font-size: 13px;
+  text-align: center;
+  color: var(--color-text-muted);
+}
+
+.notification-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  max-height: 360px;
+  overflow-y: auto;
+}
+
+.notification-list li + li {
+  border-top: 1px solid var(--color-border);
+}
+
+.notification-item {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding: 12px 16px;
+  color: var(--color-text);
+  text-decoration: none;
+}
+
+a.notification-item:hover {
+  background: var(--color-surface-muted);
+}
+
+/* 이번에 처음 보는(안 읽은) 알림은 연한 초록 배경 + 왼쪽 초록 점 */
+.notification-item.is-unread {
+  background: var(--color-primary-soft);
+}
+
+.notification-item strong {
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.notification-item.is-unread strong::before {
+  content: "";
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  margin: 0 6px 2px 0;
+  border-radius: 50%;
+  background: var(--color-primary);
+  vertical-align: middle;
+}
+
+.notification-message {
+  font-size: 13px;
+  color: var(--color-text-muted);
+}
+
+.notification-time {
+  font-size: 11.5px;
+  color: var(--color-text-muted);
+}
+
+.nav-logout-form {
+  margin: 0;
+}
+
+.nav-logout,
+.nav-login {
+  display: inline-block;
+  padding: 6px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-full);
+  background: var(--color-surface);
+  font: inherit;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--color-text-muted);
+  text-decoration: none;
+  white-space: nowrap;
+  cursor: pointer;
+}
+
+.nav-logout:hover {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+}
+
+/* 로그인 버튼: 모든 페이지에서 같은 초록 테두리 버튼 */
+.nav-login {
+  border-color: var(--color-primary);
+  color: var(--color-primary-dark);
+  font-weight: 700;
+}
+
+.nav-login:hover {
+  background: var(--color-primary-soft);
+}
+
+/* 아래: 점선 + 가운데 발자국 두 개 */
+.header-trail {
+  grid-column: 1 / -1;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin-top: 16px;
+}
+
+.header-trail::before,
+.header-trail::after {
+  content: "";
+  flex: 1;
+  border-top: 3px dotted var(--color-secondary);
+}
+
+.header-trail svg {
+  width: 40px;
+  height: 24px;
+  fill: var(--color-primary);
 }
 
 /* ---------- 타이틀 영역 ---------- */
@@ -109,55 +340,102 @@ a {
   margin: 0 0 20px;
 }
 
-/* ---------- 메인 홈 배너 ---------- */
+/* ---------- 메인 홈 배너 (담당: 박용제) ---------- */
 
-.hero {
+.main-banner {
   position: relative;
   overflow: hidden;
   display: flex;
-  align-items: center;
   justify-content: space-between;
+  align-items: center;
   gap: 24px;
-  background: linear-gradient(135deg,
-      var(--color-secondary-soft),
-      var(--color-primary-soft));
-  border-radius: 24px;
-  padding: 44px 44px;
+  padding: 56px 56px;
   margin: 20px 0 40px;
+  border-radius: 24px;
+  background: #DDEBCB;
 }
 
-.hero-text {
+.banner-text,
+.banner-stat {
   position: relative;
-  z-index: 1;
+  z-index: 2;
+}
+
+.banner-text {
   max-width: 480px;
 }
 
-.hero-badge {
-  display: inline-flex;
-  align-items: center;
-  gap: 6px;
-  background: var(--color-surface);
-  color: var(--color-text);
-  font-size: 13px;
-  font-weight: 700;
-  padding: 8px 16px;
-  border-radius: var(--radius-full);
-  box-shadow: var(--shadow-sm);
-  margin-bottom: 20px;
-}
-
-.hero-text h1 {
+.banner-text h1 {
   font-size: 32px;
   font-weight: 800;
   line-height: 1.28;
   margin: 0 0 14px;
-  color: var(--color-text);
+  color: #22361A;
 }
 
-.hero-text p {
+.banner-text p {
   font-size: 15px;
-  color: var(--color-text-muted);
+  color: #4A6238;
   margin: 0 0 26px;
+}
+
+/* 발자국 트레일 (장식용) */
+/* 오른쪽 카드(폭 340px + 배너 여백 56px) 바로 왼쪽에 붙여서 카드와 겹치지 않게 */
+.banner-trail {
+  position: absolute;
+  right: calc(56px + 340px + 12px);
+  top: 50%;
+  width: 220px;
+  height: 196px;
+  transform: translateY(-50%);
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* 배너가 좁아지면 인사말·카드 사이 공간이 부족해서 트레일 숨김 */
+@media (max-width: 960px) {
+  .banner-trail {
+    display: none;
+  }
+}
+
+.trail-line {
+  fill: none;
+  stroke: #C9DEB0;
+  stroke-width: 3;
+  stroke-dasharray: 4 8;
+  stroke-linecap: round;
+}
+
+.trail-paws {
+  fill: #F4A36B;
+}
+
+.trail-pin {
+  fill: #5B8C3E;
+}
+
+/* 헤더 로고도 .paw 클래스를 쓰므로 배너 안으로 범위 한정 */
+.banner-trail .paw {
+  opacity: 0;
+  transform-box: fill-box;
+  transform-origin: center;
+  animation: paw-step 5s infinite;
+}
+
+@keyframes paw-step {
+  0% { opacity: 0; transform: scale(.6); }
+  6% { opacity: 1; transform: scale(1); }
+  75% { opacity: 1; }
+  90%, 100% { opacity: 0; }
+}
+
+/* 모션 줄이기 설정한 사용자는 애니메이션 없이 표시 */
+@media (prefers-reduced-motion: reduce) {
+  .banner-trail .paw {
+    animation: none;
+    opacity: 1;
+  }
 }
 
 .hero-actions {
@@ -172,8 +450,6 @@ a {
 
 /* 배너 오른쪽: 이번 주 나의 산책 (담당: 박용제) */
 .hero-weekly {
-  position: relative;
-  z-index: 1;
   flex: none;
   width: 340px;
 }
@@ -210,23 +486,25 @@ a {
   color: var(--color-text-muted);
 }
 
-@media (max-width: 860px) {
-  .hero {
-    padding: 32px 28px;
-  }
-
-  .hero {
+/* 모바일: 세로 배치, 트레일 숨김 */
+@media (max-width: 768px) {
+  .main-banner {
     flex-direction: column;
-    align-items: stretch;
+    align-items: flex-start;
+    padding: 32px 24px;
   }
 
-  .hero-weekly {
-    width: auto;
+  .banner-trail {
+    display: none;
+  }
+
+  .banner-stat {
+    width: 100%;
   }
 }
 
 @media (max-width: 480px) {
-  .hero-text h1 {
+  .banner-text h1 {
     font-size: 26px;
   }
 
@@ -320,6 +598,11 @@ button.btn {
   background: var(--color-accent-hover);
 }
 
+/* 주황 버튼이지만 글자는 검정 대신 진한 갈색으로 부드럽게 (산책 취소) */
+.btn-highlight.btn-soft-text {
+  color: var(--color-on-accent-soft);
+}
+
 .btn-highlight.is-done {
   background: var(--color-secondary-soft);
   color: var(--color-primary-dark);
@@ -356,18 +639,36 @@ button.btn {
   color: var(--color-on-naver);
 }
 
-.btn-naver:hover {
-  opacity: 0.92;
-}
-
 .btn-google {
   background: var(--color-surface);
   color: var(--color-text);
   border: 1px solid var(--color-border);
 }
 
+/* 소셜 로그인 버튼 hover: 세 버튼 모두 살짝 떠오르며 그림자 + 배경 조금 진하게 */
+.btn-kakao,
+.btn-naver,
+.btn-google {
+  transition:
+    filter 0.15s ease,
+    box-shadow 0.15s ease,
+    transform 0.15s ease;
+}
+
+.btn-kakao:hover,
+.btn-naver:hover,
 .btn-google:hover {
-  border-color: var(--color-text-muted);
+  filter: brightness(0.96);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-kakao:hover,
+  .btn-naver:hover,
+  .btn-google:hover {
+    transform: none;
+  }
 }
 
 .oauth-icon {
@@ -382,6 +683,14 @@ button.btn {
   font-weight: 800;
   background: var(--color-surface);
   color: var(--color-naver);
+}
+
+/* 소셜 로그인 버튼 안의 로고 이미지 (카카오톡) */
+.oauth-img {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  border-radius: 4px;
 }
 
 .oauth-group {
@@ -834,6 +1143,98 @@ button.btn {
   box-shadow: var(--shadow-md);
 }
 
+/* ---------- 로그인 화면: 왼쪽 소개 + 오른쪽 소셜 로그인 (담당: 박용제) ---------- */
+
+.login-page {
+  display: flex;
+  justify-content: center;
+  padding-top: 16px;
+}
+
+.login-card {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  width: 100%;
+  max-width: 776px;
+  min-height: 380px;
+  border-radius: 24px;
+  overflow: hidden;
+  background: var(--color-surface);
+  box-shadow: var(--shadow-md);
+}
+
+/* 왼쪽: 메인 배너와 같은 연두 배경·글자색 */
+.login-intro {
+  position: relative;
+  padding: 36px 30px;
+  background: #DDEBCB;
+}
+
+.login-eyebrow {
+  margin: 0 0 12px;
+  font-size: 13px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+  color: #5B8C3E;
+}
+
+.login-intro h1 {
+  margin: 0;
+  font-size: 26px;
+  font-weight: 700;
+  line-height: 1.4;
+  color: #22361A;
+}
+
+.login-trail {
+  position: absolute;
+  left: 60px;
+  bottom: 20px;
+  width: 200px;
+  height: 180px;
+  pointer-events: none;
+}
+
+/* 오른쪽: 소셜 로그인 */
+.login-form {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 36px 32px;
+}
+
+.login-form h2 {
+  margin: 0 0 6px;
+  font-size: 20px;
+  font-weight: 700;
+}
+
+.login-sub {
+  margin: 0 0 24px;
+}
+
+.login-note {
+  margin: 18px 0 0;
+  text-align: center;
+}
+
+/* 좁은 화면: 위아래로 쌓고 트레일은 숨김 */
+@media (max-width: 640px) {
+  .login-card {
+    grid-template-columns: 1fr;
+    min-height: 0;
+  }
+
+  .login-trail {
+    display: none;
+  }
+
+  .login-intro,
+  .login-form {
+    padding: 28px 22px;
+  }
+}
+
 /* 포커스 화면 전용 버튼 — 서브 컬러(#A7C957) */
 
 .btn-focus {
@@ -1276,55 +1677,29 @@ button.btn {
   display: none !important;
 }
 
-.nav-logout-form {
-  margin: 0;
-}
-
-.nav-logout {
-  background: none;
-  border: 0;
-  padding: 0;
-  font: inherit;
-  font-size: 12px;
-  font-weight: 500;
-  color: var(--color-text-muted);
-  cursor: pointer;
-}
-
-.nav-logout:hover {
-  color: var(--color-primary-dark);
-}
-
-.nav-user {
-  font-size: 12px;
-  font-weight: 600;
-  color: var(--color-text);
-}
-
 /* ---------- 반응형 ---------- */
 
 @media (max-width: 760px) {
+  /* 좁은 화면: 1행 로고, 2행 왼쪽 메뉴 + 오른쪽 사용자 */
   .app-header {
-    grid-template-columns: 1fr;
+    grid-template-columns: 1fr auto;
     row-gap: 14px;
   }
 
   .logo {
-    grid-column: 1;
+    grid-column: 1 / -1;
     grid-row: 1;
-    justify-self: center;
   }
 
   .app-nav {
     grid-column: 1;
     grid-row: 2;
-    justify-self: center;
-    align-self: center;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    flex-wrap: wrap;
-    gap: 10px 16px;
+    gap: 16px;
+  }
+
+  .app-user {
+    grid-column: 2;
+    grid-row: 2;
   }
 }
 
@@ -1345,17 +1720,22 @@ button.btn {
   }
 
   .app-header {
-    padding: 24px 16px 18px;
+    padding: 18px 16px 0;
   }
 
   .app-nav {
-    gap: 8px 12px;
+    gap: 12px;
   }
 
   .app-nav a,
-  .nav-user,
-  .nav-logout {
-    font-size: 11.5px;
+  .nav-logout,
+  .nav-login {
+    font-size: 12.5px;
+  }
+
+  /* 공간이 부족하면 닉네임은 숨기고 아바타만 */
+  .nav-user {
+    display: none;
   }
 }
 
@@ -1616,4 +1996,42 @@ button.btn {
 
 .error-actions .btn {
   width: auto;
+}
+
+/* ---------- 맨 위로 버튼 (모든 페이지 공통) - 담당: 박용제 ---------- */
+
+.scroll-top {
+  position: fixed;
+  right: 24px;
+  bottom: 24px;
+  z-index: 1000; /* 카카오맵보다 위 */
+  width: 48px;
+  height: 48px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  border-radius: var(--radius-full);
+  background: var(--color-primary);
+  color: var(--color-on-primary);
+  box-shadow: var(--shadow-md);
+  cursor: pointer;
+}
+
+.scroll-top:hover {
+  background: var(--color-primary-hover);
+}
+
+.scroll-top:focus-visible {
+  outline: 2px solid var(--color-secondary);
+  outline-offset: 2px;
+}
+
+@media (max-width: 640px) {
+  .scroll-top {
+    right: 16px;
+    bottom: 16px;
+    width: 44px;
+    height: 44px;
+  }
 }

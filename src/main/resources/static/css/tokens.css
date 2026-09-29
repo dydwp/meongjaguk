@@ -34,6 +34,9 @@
   --color-on-primary: #FFFFFF;      /* 3.91:1 — 굵고 큰 버튼 라벨 기준(3:1) 통과, hover 시 5.14:1 */
   --color-on-secondary: #252525;    /* 8.13:1 */
   --color-on-accent: #252525;       /* 7.44:1 */
+  --color-on-accent-soft: #4A250B;  /* 부드러운 갈색 라벨 (산책 취소) — 6.53:1, hover 시 5.26:1 */
+  --color-on-accent-white: #FFFFFF; /* 헤더 아바타 이니셜 — 2.1:1, 장식용 한 글자라 디자인 우선 */
+  --color-notify: #E5484D;          /* 새 알림 빨간 점 */
 
   /* ---- 브랜드 로그인(카카오/네이버) — 외부 브랜드 규정색, 고정값 ---- */
   --color-kakao: #FEE500;
@@ -83,6 +86,9 @@
   --color-on-primary: #14180F;
   --color-on-secondary: #14180F;
   --color-on-accent: #14180F;
+  --color-on-accent-soft: #4A250B;  /* hover 시 7.22:1 */
+  --color-on-accent-white: #FFFFFF;
+  --color-notify: #FF6369;
 
   --color-kakao: #FEE500;
   --color-on-kakao: #191919;

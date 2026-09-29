@@ -40,17 +40,20 @@ public class BoardService {
     private final BoardCommentRepository commentRepository;
     private final UserService userService;
     private final RouteRepository routeRepository;
+    private final NotificationService notificationService;
 
     public BoardService(BoardRepository boardRepository,
                         CompanionRequestRepository companionRequestRepository,
                         BoardCommentRepository commentRepository,
                         UserService userService,
-                        RouteRepository routeRepository) {
+                        RouteRepository routeRepository,
+                        NotificationService notificationService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
         this.userService = userService;
         this.routeRepository = routeRepository;
+        this.notificationService = notificationService;
     }
 
     /** 산책로 게시판 목록: 최신순 6개 */
@@ -218,6 +221,7 @@ public class BoardService {
         Board board = findBoard(meetingId);
         User user = userService.findById(userId);
         BoardComment saved = commentRepository.save(BoardComment.create(board, user, trimmed));
+        notificationService.notifyCommentAdded(board, user, trimmed); // 추가(박용제): 모집 작성자에게 알림
         return toCommentDto(saved, board, userId);
     }
 

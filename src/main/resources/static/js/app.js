@@ -238,6 +238,7 @@
     var actives = document.querySelectorAll("[data-walk-active]");
     var startBtn = document.querySelector("[data-start-walk]");
     var endBtn = document.querySelector("[data-end-walk]");
+    var cancelBtn = document.querySelector("[data-cancel-walk]"); // 저장 없이 취소 (산책 기록 화면)
     var distanceEl = document.querySelector("[data-walk-distance]");        // "0.00 km" (산책 기록 화면)
     var distanceNumEl = document.querySelector("[data-walk-distance-num]"); // 숫자만, 단위는 화면에 따로 (메인)
     var elapsedEl = document.querySelector("[data-walk-elapsed]");
@@ -316,12 +317,11 @@
       }
     }
 
-    // 산책 종료 처리 (저장 여부와 상관없이 공통)
-    function finishWalk() {
+    // 산책 종료 처리 (저장·취소 여부와 상관없이 공통). redirect가 있으면 그 화면으로 이동
+    function finishWalk(redirect) {
       stopTracking();
       stopWalking();
       stopTimer();
-      var redirect = endBtn.getAttribute("data-end-redirect");
       if (redirect) {
         window.location.href = redirect;
       } else {
@@ -357,7 +357,7 @@
             window.location.href = "/login";
             return;
           }
-          finishWalk(); // 취소 → 저장 없이 종료
+          finishWalk(endBtn.getAttribute("data-end-redirect")); // 취소 → 저장 없이 종료
           return;
         }
 
@@ -366,7 +366,7 @@
         saveWalkRecord(walkStartedAt(), Date.now(), walkedMeters())
           .then(function () {
             alert("산책 기록을 저장했어요!");
-            finishWalk();
+            finishWalk(endBtn.getAttribute("data-end-redirect"));
           })
           .catch(function (err) {
             console.error(err);
@@ -375,6 +375,14 @@
           .finally(function () {
             endBtn.disabled = false;
           });
+      });
+    }
+
+    // 산책 취소: 기록을 저장하지 않고 산책을 끝냄 (회원·비회원 공통)
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        if (!confirm("산책을 취소할까요? 지금까지 걸은 기록은 저장되지 않아요.")) return;
+        finishWalk(cancelBtn.getAttribute("data-cancel-redirect"));
       });
     }
 

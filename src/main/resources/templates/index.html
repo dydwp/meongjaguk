@@ -6,8 +6,33 @@
 
 <main class="page">
   <!-- 배너: 인사말 + 산책 시작 / 오른쪽: 이번 주 나의 산책 (담당: 박용제) -->
-  <section class="hero">
-    <div class="hero-text">
+  <section class="main-banner">
+    <!-- 발자국 트레일 (장식용) -->
+    <svg class="banner-trail" viewBox="210 10 180 160" aria-hidden="true">
+      <defs>
+        <g id="banner-paw">
+          <ellipse cx="0" cy="5" rx="7" ry="6"/>
+          <circle cx="-7" cy="-5" r="2.8"/>
+          <circle cx="-2.5" cy="-9" r="2.8"/>
+          <circle cx="2.5" cy="-9" r="2.8"/>
+          <circle cx="7" cy="-5" r="2.8"/>
+        </g>
+      </defs>
+      <path class="trail-line" d="M230 160 Q260 110 300 100 T360 40"/>
+      <g class="trail-paws">
+        <g transform="translate(236,148) rotate(35)"><use href="#banner-paw" class="paw" style="animation-delay:0s"/></g>
+        <g transform="translate(262,120) rotate(55)"><use href="#banner-paw" class="paw" style="animation-delay:.5s"/></g>
+        <g transform="translate(296,104) rotate(70)"><use href="#banner-paw" class="paw" style="animation-delay:1s"/></g>
+        <g transform="translate(328,84) rotate(40)"><use href="#banner-paw" class="paw" style="animation-delay:1.5s"/></g>
+        <g transform="translate(348,56) rotate(20)"><use href="#banner-paw" class="paw" style="animation-delay:2s"/></g>
+      </g>
+      <g transform="translate(372,30)">
+        <path class="trail-pin" d="M0 -8 C-10 -8 -14 0 -14 5 C-14 14 0 24 0 24 C0 24 14 14 14 5 C14 0 10 -8 0 -8Z"/>
+        <circle cx="0" cy="5" r="5" fill="#fff"/>
+      </g>
+    </svg>
+
+    <div class="banner-text">
       <h1 th:if="${loginUser != null}">
         <span th:text="|${loginUser.nickname}님, 오늘도|">용제님, 오늘도</span><br>
         <span th:text="${petWith != null} ? |${petWith} 같이 걸어요| : '같이 걸어요'">보리랑 같이 걸어요</span>
@@ -30,7 +55,7 @@
       </div>
     </div>
 
-    <aside class="hero-weekly card card-pad">
+    <aside class="banner-stat hero-weekly card card-pad">
       <!-- 산책 중: 지금 산책 (이동 거리 / 경과 시간 실시간 갱신은 app.js) -->
       <div data-walk-active hidden>
         <div class="hero-live-head">
@@ -169,7 +194,7 @@
   <div class="home-extras">
     <section class="card card-pad" data-weather>
       <div class="block-label-row">
-        <h2 class="block-label">오늘의 산책 날씨 <span class="tag">새 기능</span></h2>
+        <h2 class="block-label">오늘의 산책 날씨</h2>
       </div>
       <p class="small text-muted mb-0" data-weather-status role="status">날씨를 불러오는 중이에요.</p>
       <div class="weather-body" data-weather-body hidden>
@@ -186,7 +211,7 @@
 
     <section class="card card-pad" data-walk-checklist>
       <div class="block-label-row">
-        <h2 class="block-label">나가기 전 체크 <span class="tag">새 기능</span></h2>
+        <h2 class="block-label">나가기 전 체크</h2>
       </div>
       <ul class="check-list">
         <li><label><input type="checkbox" value="leash"> 목줄·인식표</label></li>

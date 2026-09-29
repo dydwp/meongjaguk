@@ -34,7 +34,11 @@
     </div>
   </div>
 
-  <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
+  <div class="btn-row">
+    <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
+    <!-- 저장 없이 산책 취소 (시작 직후 마음이 바뀐 경우) -->
+    <button type="button" class="btn btn-highlight btn-soft-text" data-cancel-walk data-cancel-redirect="/">산책 취소</button>
+  </div>
 
   <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
   <script th:src="@{/js/walk-map.js}"></script>
