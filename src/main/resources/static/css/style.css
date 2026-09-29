@@ -581,6 +581,13 @@ button.btn {
 .walk-recommend-loading-line:first-child {
   height: 16px;
 }
+.walk-recommend-more-status {
+  margin: 20px 0;
+  text-align: center;
+}
+#walk-recommend-sentinel {
+  height: 1px;
+}
 @keyframes walk-recommend-shimmer {
   to { background-position-x: -200%; }
 }
@@ -1480,6 +1487,32 @@ button.btn {
 .walk-map {
   position: absolute;
   inset: 0;
+}
+
+.walk-route-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 10px;
+  color: var(--color-text-muted);
+  font-size: 12px;
+}
+.walk-route-legend span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.walk-route-swatch {
+  display: inline-block;
+  width: 22px;
+  border-top: 4px solid;
+  border-radius: 2px;
+}
+.walk-route-swatch.planned {
+  border-color: var(--color-primary);
+}
+.walk-route-swatch.actual {
+  border-color: var(--color-accent-hover);
 }
 
 .map-preview .map-chip {

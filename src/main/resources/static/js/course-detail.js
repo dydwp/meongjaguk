@@ -7,6 +7,7 @@
   const courseId = params.get("courseId");
   const isRecommended = params.has("route");
   const shareButton = document.querySelector("#course-share");
+  const startLink = document.querySelector("#course-start");
   let loadedCourse = null;
 
   // 공유하기: 코스는 저장하지 않고 등록 페이지로 이동 (코스는 게시글 등록 시 함께 저장됨)
@@ -222,6 +223,9 @@
       document.title = `${course.courseName ?? "산책로 상세"} — 멍자국`;
       content.hidden = false;
       loadedCourse = course;
+      if (isRecommended) {
+        startLink.href = `${startLink.getAttribute("href")}?route=${encodeURIComponent(params.get("route"))}`;
+      }
       shareButton.disabled = false;
       status.hidden = true;
       if (isRecommended) showRecommendedMap(course.points);
