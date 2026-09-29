@@ -1,0 +1,121 @@
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 추천 산책로 등록', active='board', content=~{::main}, showFooter=false, showScript=false)}"
+>
+  <head>
+    <title>멍자국 — 추천 산책로 등록</title>
+  </head>
+  <body>
+    <main
+      id="board-form-page"
+      class="page"
+      th:attr="data-api-base=@{/api/courses/},data-submit-url=@{/api/meetings},data-detail-url=@{/course-detail-shared},data-course-detail-url=@{/course-detail},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token}"
+      aria-busy="true"
+    >
+      <h1 class="page-title">추천 산책로 등록</h1>
+      <p class="page-sub">함께 걸을 이웃을 모집해보세요</p>
+
+      <p id="board-form-status" role="status" aria-live="polite">
+        산책로 정보를 불러오는 중이에요.
+      </p>
+
+      <section id="board-form-course" class="card card-pad" hidden>
+        <span id="board-form-feature" class="tag">추천 코스</span>
+        <h2 id="board-form-course-name" style="font-size: 18px; margin: 12px 0 8px"></h2>
+        <p id="board-form-region" class="small text-muted mb-0" hidden></p>
+        <p id="board-form-distance" class="small mb-0" style="font-weight: 700"></p>
+        <p id="board-form-duration" class="small mb-0" style="font-weight: 700; margin-top: 2px"></p>
+      </section>
+
+      <form id="board-form" class="mt-24" novalidate hidden>
+        <div class="field">
+          <label for="board-title">제목</label>
+          <input
+            id="board-title"
+            name="title"
+            type="text"
+            placeholder="모집 글 제목을 입력하세요."
+            maxlength="150"
+            required
+          />
+        </div>
+
+        <div class="field-row">
+          <div class="field">
+            <label for="board-date">모임 날짜</label>
+            <input id="board-date" name="meetingDate" type="date" required />
+          </div>
+          <div class="field">
+            <label for="board-time">모임 시간</label>
+            <input id="board-time" name="meetingTime" type="time" required />
+          </div>
+        </div>
+
+        <div class="field">
+          <label for="board-max">최대 인원 (본인 포함, 2~10명)</label>
+          <input
+            id="board-max"
+            name="maxParticipants"
+            type="number"
+            min="2"
+            max="10"
+            step="1"
+            value="4"
+            required
+          />
+        </div>
+
+        <div class="field">
+          <label
+            for="board-pet-required"
+            style="display: flex; align-items: center; gap: 8px; color: var(--color-text)"
+          >
+            <input id="board-pet-required" name="petRequired" type="checkbox" />
+            반려견 동반 필수
+          </label>
+        </div>
+
+        <div class="field">
+          <label for="board-condition">참여 조건 (선택)</label>
+          <input
+            id="board-condition"
+            name="participationCondition"
+            type="text"
+            placeholder="예) 소형견만, 사회성 좋은 친구"
+            maxlength="500"
+          />
+        </div>
+
+        <div class="field">
+          <label for="board-description">설명 (선택)</label>
+          <textarea
+            id="board-description"
+            name="description"
+            placeholder="모임 장소, 준비물 등을 자유롭게 적어주세요."
+            maxlength="600"
+          ></textarea>
+        </div>
+
+        <p id="board-form-error" class="mypage-message error" role="alert" hidden></p>
+
+        <div class="btn-row">
+          <button id="board-form-submit" type="submit" class="btn btn-primary">등록</button>
+          <a id="board-form-cancel" th:href="@{/routes}" class="btn btn-outline">취소</a>
+        </div>
+      </form>
+
+      <a
+        id="board-form-back"
+        th:href="@{/routes}"
+        class="btn btn-outline mt-16"
+        style="width: auto"
+        hidden
+        >추천 목록으로</a
+      >
+
+      <script th:src="@{/js/board-form.js}" defer></script>
+    </main>
+  </body>
+</html>

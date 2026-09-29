@@ -581,7 +581,11 @@ button.btn {
   margin-bottom: 6px;
 }
 
-.field input[type="text"] {
+.field input[type="text"],
+.field input[type="date"],
+.field input[type="time"],
+.field input[type="number"],
+.field textarea {
   width: 100%;
   border: 1px solid var(--color-border);
   background: var(--color-surface);
@@ -592,7 +596,13 @@ button.btn {
   font-family: inherit;
 }
 
-.field input:focus {
+.field textarea {
+  min-height: 120px;
+  resize: vertical;
+}
+
+.field input:focus,
+.field textarea:focus {
   outline: 2px solid var(--color-secondary);
   outline-offset: 1px;
 }

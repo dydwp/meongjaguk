@@ -1,8 +1,10 @@
 package com.mungjaguk.app.service;
 
 import com.mungjaguk.app.dto.BoardCardDto;
+import com.mungjaguk.app.dto.BoardCreateRequest;
 import com.mungjaguk.app.dto.BoardDetailDto;
 import com.mungjaguk.app.dto.CommentDto;
+import com.mungjaguk.app.dto.RouteDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.Board;
 import com.mungjaguk.app.entity.BoardComment;
@@ -12,10 +14,14 @@ import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardCommentRepository;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
+import com.mungjaguk.app.repository.RouteRepository;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -23,7 +29,7 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 산책로 게시판: 목록/상세 조회, 댓글 조회/작성/삭제
+ * 산책로 게시판: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
  */
 @Service
 @Transactional(readOnly = true)
@@ -33,15 +39,18 @@ public class BoardService {
     private final CompanionRequestRepository companionRequestRepository;
     private final BoardCommentRepository commentRepository;
     private final UserService userService;
+    private final RouteRepository routeRepository;
 
     public BoardService(BoardRepository boardRepository,
                         CompanionRequestRepository companionRequestRepository,
                         BoardCommentRepository commentRepository,
-                        UserService userService) {
+                        UserService userService,
+                        RouteRepository routeRepository) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
         this.userService = userService;
+        this.routeRepository = routeRepository;
     }
 
     /** 산책로 게시판 목록: 최신순 6개 */
@@ -121,6 +130,68 @@ public class BoardService {
                 myStatus);
     }
 
+    /**
+     * 산책로 게시글(동행 모집) 등록 (로그인 회원만)
+     * - courseId가 있으면 기존 코스를 사용, 없으면 추천 코스(course)를 게시글과 함께 저장
+     * - 코스와 게시글은 한 트랜잭션으로 저장되어 등록 실패 시 코스도 남지 않음
+     * - 제목 1~150자, 모임 일시는 현재 이후, 최대 인원 2~10명(본인 포함),
+     *   참여 조건 500자 이하, 설명 600자 이하
+     */
+    @Transactional
+    public Long createBoard(Long userId, BoardCreateRequest request) {
+        if (request == null) {
+            throw new IllegalArgumentException("등록할 내용을 입력해주세요.");
+        }
+
+        String title = trimToNull(request.title());
+        if (title == null) {
+            throw new IllegalArgumentException("제목을 입력해주세요.");
+        }
+        if (title.length() > Board.MAX_TITLE_LENGTH) {
+            throw new IllegalArgumentException("제목은 " + Board.MAX_TITLE_LENGTH + "자까지 입력할 수 있어요.");
+        }
+
+        LocalDate meetingDate = request.meetingDate();
+        LocalTime meetingTime = request.meetingTime();
+        if (meetingDate == null) {
+            throw new IllegalArgumentException("모임 날짜를 선택해주세요.");
+        }
+        if (meetingTime == null) {
+            throw new IllegalArgumentException("모임 시간을 선택해주세요.");
+        }
+        if (meetingDate.isBefore(LocalDate.now())) {
+            throw new IllegalArgumentException("지난 날짜는 선택할 수 없어요.");
+        }
+        if (!LocalDateTime.of(meetingDate, meetingTime).isAfter(LocalDateTime.now())) {
+            throw new IllegalArgumentException("지난 시간은 선택할 수 없어요.");
+        }
+
+        Integer maxParticipants = request.maxParticipants();
+        if (maxParticipants == null) {
+            throw new IllegalArgumentException("최대 인원을 입력해주세요.");
+        }
+        if (maxParticipants < Board.MIN_PARTICIPANTS || maxParticipants > Board.MAX_PARTICIPANTS) {
+            throw new IllegalArgumentException("최대 인원은 " + Board.MIN_PARTICIPANTS + "명부터 "
+                    + Board.MAX_PARTICIPANTS + "명까지 설정할 수 있어요.");
+        }
+
+        String condition = trimToNull(request.participationCondition());
+        if (condition != null && condition.length() > Board.MAX_CONDITION_LENGTH) {
+            throw new IllegalArgumentException("참여 조건은 " + Board.MAX_CONDITION_LENGTH + "자까지 입력할 수 있어요.");
+        }
+        String description = trimToNull(request.description());
+        if (description != null && description.length() > Board.MAX_DESCRIPTION_LENGTH) {
+            throw new IllegalArgumentException("설명은 " + Board.MAX_DESCRIPTION_LENGTH + "자까지 입력할 수 있어요.");
+        }
+
+        User host = userService.findById(userId);
+        Route course = resolveCourse(request);
+        Board saved = boardRepository.save(Board.create(host, course, title, description,
+                meetingDate, meetingTime, maxParticipants,
+                Boolean.TRUE.equals(request.petRequired()), condition));
+        return saved.getMeetingId();
+    }
+
     /** 댓글 목록: 오래된 순 (loginUserId는 비로그인이면 null) */
     public List<CommentDto> getComments(Long meetingId, Long loginUserId) {
         Board board = findBoard(meetingId);
@@ -176,6 +247,50 @@ public class BoardService {
                 author.getUserId().equals(loginUserId),
                 comment.getContent(),
                 comment.getCreatedAt());
+    }
+
+    /** 게시글에 연결할 코스: 기존 코스 조회 또는 추천 코스 새로 저장 */
+    private Route resolveCourse(BoardCreateRequest request) {
+        if (request.courseId() != null) {
+            return routeRepository.findById(request.courseId())
+                    .orElseThrow(() -> new NoSuchElementException("산책로를 찾을 수 없어요."));
+        }
+
+        RouteDto dto = request.course();
+        if (dto == null) {
+            throw new IllegalArgumentException("공유할 산책로 정보가 없어요.");
+        }
+        String name = trimToNull(dto.name());
+        if (name == null || name.length() > 100
+                || dto.distanceM() == null || dto.distanceM() <= 0
+                || dto.estimatedMinutes() == null || dto.estimatedMinutes() <= 0
+                || dto.startLatitude() == null || Math.abs(dto.startLatitude()) > 90
+                || dto.startLongitude() == null || Math.abs(dto.startLongitude()) > 180
+                || (dto.feature() != null && dto.feature().length() > 500)
+                || (dto.region() != null && dto.region().length() > 100)) {
+            throw new IllegalArgumentException("산책로 정보가 올바르지 않아요. 산책로를 다시 추천받아주세요.");
+        }
+
+        Route route = new Route();
+        route.setCourseName(name);
+        route.setDescription(trimToNull(dto.description()));
+        route.setDistanceM(dto.distanceM());
+        route.setEstimatedMinutes(dto.estimatedMinutes());
+        route.setFeature(dto.feature());
+        route.setRegion(trimToNull(dto.region()));
+        route.setStartLatitude(dto.startLatitude());
+        route.setStartLongitude(dto.startLongitude());
+        route.setThumbnailImg(null);
+        route.setCreatedAt(LocalDateTime.now());
+        return routeRepository.save(route);
+    }
+
+    private static String trimToNull(String value) {
+        if (value == null) {
+            return null;
+        }
+        String trimmed = value.trim();
+        return trimmed.isEmpty() ? null : trimmed;
     }
 
     private Board findBoard(Long meetingId) {
