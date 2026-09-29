@@ -72,31 +72,194 @@
     return node;
   }
 
+  /* ---------- 카카오 지도 (정석진님 추천 산책로 상세와 같은 표시 방식) ---------- */
+  var ROUTE_COLOR = "#2f8060";
+
+  function isValidLatLng(lat, lng) {
+    return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+  }
+
+  function validPoints(points) {
+    if (!Array.isArray(points) || points.length < 2) return null;
+    var ok = points.every(function (p) { return p && isValidLatLng(p.latitude, p.longitude); });
+    return ok ? points.slice().sort(function (a, b) { return a.sequence - b.sequence; }) : null;
+  }
+
+  // 지도로 그릴 수 있는지: 경로 좌표 2개 이상 또는 출발 좌표
+  function canDrawMap(data) {
+    return !!(window.kakao && kakao.maps && kakao.maps.Map) &&
+      (validPoints(data.points) !== null || isValidLatLng(data.startLatitude, data.startLongitude));
+  }
+
+  // .map-preview 안의 점선 그림(SVG)과 "지도 미리보기" 글씨를 지도로 교체할 준비
+  function prepareMapBox(preview, interactive) {
+    var chip = preview.querySelector(".map-chip");
+    if (chip) chip.remove();
+    preview.classList.add("has-map"); // 기존 CSS: SVG 숨김
+    var box = document.createElement("div");
+    box.className = "walk-map";       // 기존 CSS: 영역 전체 채우기
+    box.style.zIndex = "0";           // 지도가 "참여 n/m" 표시를 덮지 않게
+    if (!interactive) box.style.pointerEvents = "none"; // 카드 클릭은 상세 이동
+    preview.insertBefore(box, preview.firstChild);
+    return box;
+  }
+
+  /**
+   * 지도 그리기
+   * - 경로 좌표가 있으면: 경로 선 + 시작·도착 표시
+   * - 출발 좌표만 있으면: 출발 지점 마커
+   * - interactive=false 이면 드래그·확대 불가 (목록 카드)
+   */
+  function drawCourseMap(box, data, interactive) {
+    var maps = kakao.maps;
+    var sorted = validPoints(data.points);
+    var options = { center: null, level: 3 };
+    if (!interactive) {
+      options.draggable = false;
+      options.scrollwheel = false;
+      options.disableDoubleClickZoom = true;
+      options.keyboardShortcuts = false;
+    }
+
+    if (!sorted) {
+      var position = new maps.LatLng(data.startLatitude, data.startLongitude);
+      options.center = position;
+      var single = new maps.Map(box, options);
+      new maps.Marker({ map: single, position: position, title: "산책로 시작점" });
+      return single;
+    }
+
+    var path = sorted.map(function (p) { return new maps.LatLng(p.latitude, p.longitude); });
+    options.center = path[0];
+    options.level = 4;
+    var map = new maps.Map(box, options);
+    new maps.Polyline({
+      map: map, path: path, strokeWeight: interactive ? 5 : 4,
+      strokeColor: ROUTE_COLOR, strokeOpacity: 0.9, strokeStyle: "solid"
+    });
+
+    var bounds = new maps.LatLngBounds();
+    path.forEach(function (p) { bounds.extend(p); });
+    function fit() {
+      map.relayout();
+      if (interactive) map.setBounds(bounds, 60, 40, 40, 40);
+      else map.setBounds(bounds, 36, 20, 16, 20);
+    }
+    fit();
+
+    function mark(position, label) {
+      new maps.Marker({ map: map, position: position, title: label });
+      if (!interactive) return; // 작은 카드에서는 라벨 생략
+      var text = document.createElement("span");
+      text.className = "tag";
+      text.style.cssText =
+        "background:white;border:1px solid " + ROUTE_COLOR + ";white-space:nowrap;transform:translateY(-42px);";
+      text.textContent = label;
+      new maps.CustomOverlay({ map: map, position: position, content: text, yAnchor: 1 });
+    }
+    var first = sorted[0];
+    var last = sorted[sorted.length - 1];
+    var roundTrip = Math.abs(first.latitude - last.latitude) < 0.000001 &&
+      Math.abs(first.longitude - last.longitude) < 0.000001;
+    mark(path[0], roundTrip ? "시작 · 도착" : "시작");
+    if (!roundTrip) mark(path[path.length - 1], "도착");
+
+    if (interactive) window.addEventListener("resize", fit);
+    return map;
+  }
+
+  // 목록 카드 지도는 화면에 보일 때만 만들기 (카드가 많아도 느려지지 않게)
+  var cardMapObserver = ("IntersectionObserver" in window)
+    ? new IntersectionObserver(function (entries) {
+        entries.forEach(function (entry) {
+          if (!entry.isIntersecting) return;
+          cardMapObserver.unobserve(entry.target);
+          var box = entry.target;
+          try {
+            drawCourseMap(box, box._courseData, false);
+          } catch (err) {
+            console.error("카드 지도 표시 실패", err);
+            box.parentElement.classList.remove("has-map"); // 실패하면 점선 그림으로
+            box.remove();
+          }
+        });
+      }, { rootMargin: "100px 0px" })
+    : null;
+
   /* ======================================================================
      산책로 게시판 목록 (/board)
      ====================================================================== */
   var boardList = document.querySelector("[data-meeting-list]");
   if (boardList) {
-    loadMeetings();
+    initBoardList();
   }
 
-  function loadMeetings() {
-    fetch("/api/meetings")
-      .then(function (res) {
-        if (!res.ok) throw new Error("status " + res.status);
-        return res.json();
-      })
-      .then(function (meetings) {
-        if (meetings.length === 0) {
-          boardList.replaceChildren(el("p", "text-muted", "아직 공유된 산책로가 없어요."));
-          return;
-        }
-        boardList.replaceChildren.apply(boardList, meetings.map(createMeetingCard));
-      })
-      .catch(function (err) {
-        console.error("게시글을 불러오지 못했습니다.", err);
-        boardList.replaceChildren(el("p", "text-muted", "게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요."));
-      });
+  // 무한스크롤: 처음 PAGE_SIZE개를 보여주고, 맨 아래(sentinel)가 보이면 다음 PAGE_SIZE개를 이어서 불러옴
+  function initBoardList() {
+    var PAGE_SIZE = 6;
+    var statusText = document.querySelector("[data-meeting-status]");
+    var sentinel = document.querySelector("[data-meeting-sentinel]");
+    var cursor = null;       // 마지막으로 불러온 게시글 번호
+    var hasNext = true;
+    var loading = false;
+    var cardCount = 0;       // 지도 미리보기 경로를 돌려 쓰기 위한 순번
+
+    function showStatus(text) {
+      statusText.textContent = text;
+      statusText.hidden = !text;
+    }
+
+    function loadNextPage() {
+      if (loading || !hasNext) return;
+      loading = true;
+      showStatus("게시글을 불러오는 중이에요...");
+
+      var url = "/api/meetings?size=" + PAGE_SIZE + (cursor != null ? "&cursor=" + encodeURIComponent(cursor) : "");
+      fetch(url)
+        .then(function (res) {
+          if (!res.ok) throw new Error("status " + res.status);
+          return res.json();
+        })
+        .then(function (page) {
+          page.items.forEach(function (meeting) {
+            boardList.appendChild(createMeetingCard(meeting, cardCount++));
+          });
+          cursor = page.nextCursor;
+          hasNext = page.hasNext;
+
+          if (cardCount === 0) {
+            showStatus("아직 공유된 산책로가 없어요.");
+          } else {
+            showStatus("");
+          }
+          if (!hasNext) {
+            observer.disconnect();
+          }
+        })
+        .catch(function (err) {
+          console.error("게시글을 불러오지 못했습니다.", err);
+          hasNext = false;
+          observer.disconnect();
+          showStatus("게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+        })
+        .finally(function () {
+          loading = false;
+          // 불러온 뒤에도 맨 아래가 화면 안에 있으면(카드가 적어서 스크롤이 안 생기는 경우) 이어서 불러오기
+          if (hasNext && isSentinelVisible()) loadNextPage();
+        });
+    }
+
+    function isSentinelVisible() {
+      var rect = sentinel.getBoundingClientRect();
+      return rect.top < window.innerHeight;
+    }
+
+    var observer = new IntersectionObserver(function (entries) {
+      if (entries[0].isIntersecting) loadNextPage();
+    });
+
+    observer.observe(sentinel);
+    loadNextPage();
   }
 
   function createMeetingCard(meeting, index) {
@@ -120,6 +283,12 @@
       "</div>";
 
     card.querySelector("path").setAttribute("d", PREVIEW_PATHS[index % PREVIEW_PATHS.length]);
+    // 좌표가 있으면 실제 지도 (없으면 점선 그림 유지)
+    if (cardMapObserver && canDrawMap(meeting)) {
+      var box = prepareMapBox(card.querySelector(".map-preview"), false);
+      box._courseData = meeting;
+      cardMapObserver.observe(box);
+    }
     card.querySelector(".map-tag").textContent =
       "참여 " + meeting.currentParticipants + "/" + meeting.maxParticipants;
 
@@ -156,6 +325,7 @@
     var csrfHeader = detailRoot.getAttribute("data-csrf-header");
     var csrfToken = detailRoot.getAttribute("data-csrf-token");
     var applyBtn = detailRoot.querySelector("[data-apply-btn]");
+    var meetingClosed = false; // 모집 중(RECRUITING)이 아니면 true (정원 충족 시 서버가 CLOSED로 내려줌)
 
     fetch("/api/meetings/" + encodeURIComponent(meetingId))
       .then(function (res) {
@@ -169,8 +339,14 @@
       .then(function (meeting) {
         if (!meeting) return;
         renderDetail(meeting);
-        renderApplyButton(meeting.myApplicationStatus);
+        meetingClosed = meeting.status !== "RECRUITING";
+        if (meeting.isHost) {
+          renderDisabledButton("HOST", "내가 공유한 모집이에요");
+        } else {
+          renderApplyButton(meeting.myApplicationStatus);
+        }
         detailRoot.hidden = false;
+        showDetailMap(meeting);
         loadComments();
       })
       .catch(function (err) {
@@ -224,8 +400,28 @@
         });
     }
 
-    // 신청 상태별 버튼: 없음 → 동행 신청 / PENDING → 신청 완료(다시 누르면 취소) / ACCEPTED·REJECTED → 비활성
+    // 신청할 수 없는 상태: 안내 문구, 누를 수 없음 (디자인 시스템 Gray = 비활성)
+    // - HOST  : 내가 공유한 모집
+    // - CLOSED: 모집 마감 (정원 충족 포함), 아직 신청하지 않은 사람
+    function renderDisabledButton(mark, text) {
+      applyBtn.setAttribute("data-application-status", mark);
+      applyBtn.classList.remove("is-done");
+      applyBtn.disabled = true;
+      applyBtn.style.background = "var(--color-border)";
+      applyBtn.style.color = "var(--color-text-muted)";
+      applyBtn.style.cursor = "default";
+      applyBtn.textContent = text;
+    }
+
+    // 신청 상태별 버튼: 없음 → 동행 신청(마감이면 비활성) / PENDING → 신청 완료(다시 누르면 취소) / ACCEPTED·REJECTED → 비활성
     function renderApplyButton(status) {
+      if (!status && meetingClosed) {
+        renderDisabledButton("CLOSED", "동행 모집 마감");
+        return;
+      }
+      applyBtn.style.background = "";
+      applyBtn.style.color = "";
+      applyBtn.style.cursor = "";
       applyBtn.setAttribute("data-application-status", status || "");
       applyBtn.classList.toggle("is-done", !!status);
       applyBtn.disabled = status === "ACCEPTED" || status === "REJECTED";
@@ -369,6 +565,20 @@
     body.appendChild(el("p", null, comment.content));
     item.appendChild(body);
     return item;
+  }
+
+  // 상세 상단 지도 (좌표가 없으면 점선 그림 유지)
+  function showDetailMap(meeting) {
+    if (!canDrawMap(meeting)) return;
+    var preview = detailRoot.querySelector(".map-preview");
+    var box = prepareMapBox(preview, true);
+    try {
+      drawCourseMap(box, meeting, true);
+    } catch (err) {
+      console.error("지도 표시 실패", err);
+      preview.classList.remove("has-map");
+      box.remove();
+    }
   }
 
   function renderDetail(meeting) {
