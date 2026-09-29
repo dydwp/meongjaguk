@@ -39,12 +39,6 @@ GREEN_AREAS = gpd.read_file(
 
 ROUTE_PLACE_LOOKUP = RoutePlaceLookup(GREEN_AREAS)
 
-MODEL_PATH = (
-    BASE_DIR
-    / "model"
-    / "walk_route_model.json"
-)
-
 FEATURE_COLUMNS = [
     "distance_m",
     "overlap_ratio",
@@ -55,8 +49,6 @@ FEATURE_COLUMNS = [
 ]
 
 ox.settings.use_cache = True
-ox.settings.requests_timeout = 120
-ox.settings.overpass_url = "https://overpass.private.coffee/api"
 
 
 # =========================================================
@@ -1002,7 +994,7 @@ def route_to_coordinates(
 def recommend_routes(
     latitude,
     longitude,
-    top_k=4
+    top_k=3
 ):
     G, candidates, route_df = (
         generate_route_dataset(
