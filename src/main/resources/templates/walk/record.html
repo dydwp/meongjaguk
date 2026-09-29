@@ -1,48 +1,102 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/default :: page(title='멍자국 — 산책 기록', active='mypage', content=~{::main}, showFooter=false, showScript=true)}">
-<head><title>멍자국 — 산책 기록</title></head>
-<body>
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 산책 기록', active='mypage', content=~{::main}, showFooter=false, showScript=true)}"
+>
+  <head>
+    <title>멍자국 — 산책 기록</title>
+  </head>
+  <body>
+    <main class="page" data-auto-start-walk>
+      <div
+        style="
+          display: flex;
+          align-items: center;
+          gap: 10px;
+          margin-bottom: 14px;
+        "
+      >
+        <span class="tag tag-dot">기록 중</span>
+        <h1 style="font-size: 17px; margin: 0" data-walk-title>자유 산책</h1>
+      </div>
+      <p
+        class="small text-muted"
+        data-walk-route-status
+        role="status"
+        hidden
+      ></p>
 
-<main class="page" data-auto-start-walk>
-  <div style="display:flex; align-items:center; gap:10px; margin-bottom:14px;">
-    <span class="tag tag-dot">기록 중</span>
-    <h1 style="font-size:17px; margin:0;">자유 산책</h1>
-  </div>
+      <div class="map-preview" style="height: 300px">
+        <svg viewBox="0 0 900 300" preserveAspectRatio="none">
+          <path
+            d="M100 250 C 180 210, 220 230, 280 190 S 380 150, 430 155 S 560 120, 650 90 S 780 55, 830 45"
+            fill="none"
+            stroke="var(--color-primary)"
+            stroke-width="4"
+            stroke-linecap="round"
+          />
+          <circle cx="100" cy="250" r="6" fill="var(--color-text)" />
+          <circle
+            cx="830"
+            cy="45"
+            r="9"
+            fill="var(--color-accent)"
+            opacity="0.3"
+          />
+          <circle cx="830" cy="45" r="6" fill="var(--color-accent)" />
+        </svg>
+        <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 (walk-map.js) -->
+        <div class="walk-map" data-walk-map></div>
+        <span class="map-chip floating" data-walk-chip
+          >실시간 위치 추적 중</span
+        >
+      </div>
+      <!-- 경로 구분 색 추가 -->
+      <div class="walk-route-legend" data-walk-route-legend hidden>
+        <span
+          ><i class="walk-route-swatch planned" aria-hidden="true"></i>추천
+          경로</span
+        >
+        <span
+          ><i class="walk-route-swatch actual" aria-hidden="true"></i>실제 이동
+          경로</span
+        >
+      </div>
 
-  <div class="map-preview" style="height:300px;">
-    <svg viewBox="0 0 900 300" preserveAspectRatio="none">
-      <path d="M100 250 C 180 210, 220 230, 280 190 S 380 150, 430 155 S 560 120, 650 90 S 780 55, 830 45"
-            fill="none" stroke="var(--color-primary)" stroke-width="4" stroke-linecap="round"/>
-      <circle cx="100" cy="250" r="6" fill="var(--color-text)"/>
-      <circle cx="830" cy="45" r="9" fill="var(--color-accent)" opacity="0.3"/>
-      <circle cx="830" cy="45" r="6" fill="var(--color-accent)"/>
-    </svg>
-    <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 (walk-map.js) -->
-    <div class="walk-map" data-walk-map></div>
-    <span class="map-chip floating" data-walk-chip>실시간 위치 추적 중</span>
-  </div>
+      <div class="stat-row">
+        <div class="stat-card">
+          <div class="label">이동 거리</div>
+          <div class="value" data-walk-distance>0.0 km</div>
+        </div>
+        <div class="stat-card">
+          <div class="label">경과 시간</div>
+          <div class="value" data-walk-elapsed>00:00</div>
+        </div>
+      </div>
 
-  <div class="stat-row">
-    <div class="stat-card">
-      <div class="label">이동 거리</div>
-      <div class="value" data-walk-distance>0.0 km</div>
-    </div>
-    <div class="stat-card">
-      <div class="label">경과 시간</div>
-      <div class="value" data-walk-elapsed>00:00</div>
-    </div>
-  </div>
+      <div class="btn-row">
+        <button
+          type="button"
+          class="btn btn-outline-primary"
+          data-end-walk
+          data-end-redirect="/"
+        >
+          산책 종료
+        </button>
+        <!-- 저장 없이 산책 취소 (시작 직후 마음이 바뀐 경우) -->
+        <button
+          type="button"
+          class="btn btn-highlight btn-soft-text"
+          data-cancel-walk
+          data-cancel-redirect="/"
+        >
+          산책 취소
+        </button>
+      </div>
 
-  <div class="btn-row">
-    <button type="button" class="btn btn-outline-primary" data-end-walk data-end-redirect="/">산책 종료</button>
-    <!-- 저장 없이 산책 취소 (시작 직후 마음이 바뀐 경우) -->
-    <button type="button" class="btn btn-highlight btn-soft-text" data-cancel-walk data-cancel-redirect="/">산책 취소</button>
-  </div>
-
-  <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
-  <script th:src="@{/js/walk-map.js}"></script>
-</main>
-
-</body>
+      <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
+      <script th:src="@{/js/walk-map.js}"></script>
+    </main>
+  </body>
 </html>

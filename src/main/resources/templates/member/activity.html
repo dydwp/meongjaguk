@@ -73,7 +73,16 @@
     </p>
   </div>
 
-  <a th:href="@{/mypage(tab='activity')}" class="btn btn-outline mt-24">닫기</a>
+  <div class="activity-detail-actions mt-24">
+    <a th:href="@{/mypage(tab='activity')}" class="btn btn-outline">닫기</a>
+
+    <form th:if="${detail.deletable()}"
+          th:action="@{/activity-detail/{id}/delete(id=${detail.id()})}"
+          method="post"
+          onsubmit="return confirm('이 산책 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다.');">
+      <button type="submit" class="btn btn-danger-outline">기록 삭제</button>
+    </form>
+  </div>
 
   <script th:if="${!#strings.isEmpty(kakaoMapsJavaScriptKey)}"
           th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapsJavaScriptKey}|"></script>

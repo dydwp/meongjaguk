@@ -19,32 +19,6 @@
     });
   });
 
-  /* ---------- 탭 전환: 마이페이지 ---------- */
-  document.querySelectorAll("[data-tabs]").forEach(function (tabsEl) {
-    var tabs = tabsEl.querySelectorAll(".tab");
-
-    tabs.forEach(function (tab) {
-      tab.addEventListener("click", function () {
-        var target = tab.getAttribute("data-tab-target");
-
-        tabs.forEach(function (t) {
-          t.classList.remove("active");
-        });
-        tab.classList.add("active");
-
-        document.querySelectorAll("[data-tab-panel]").forEach(function (panel) {
-          panel.hidden = panel.getAttribute("data-tab-panel") !== target;
-        });
-
-        if (target !== "requests") {
-          document.querySelectorAll('[data-tab-panel="requests"] .mypage-message').forEach(function (message) {
-            message.remove();
-          });
-        }
-      });
-    });
-  });
-
   /* ---------- 동행 신청 토글 버튼 ---------- */
   document.querySelectorAll("[data-join-btn]").forEach(function (btn) {
     btn.addEventListener("click", function () {

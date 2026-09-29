@@ -7,6 +7,7 @@ import com.mungjaguk.app.entity.CompanionRequest;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
+import java.time.LocalDateTime;
 import java.util.NoSuchElementException;
 import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.security.access.AccessDeniedException;
@@ -37,6 +38,8 @@ public class CompanionService {
      * 동행 신청
      * - 본인이 공유한 모집에는 신청 불가
      * - RECRUITING 상태에서만 신청 가능
+     * - 모임 일시가 지났으면 신청 불가
+     * - 정원이 찼으면 신청 불가 (작성자 1명 + 수락된 신청자 수 기준)
      * - 같은 모집에 중복 신청 불가
      * - 신청 후 상태는 PENDING
      */
@@ -50,6 +53,13 @@ public class CompanionService {
         }
         if (board.getStatus() != BoardStatus.RECRUITING) {
             throw new IllegalStateException("모집이 마감되어 신청할 수 없어요.");
+        }
+        if (board.isMeetingTimePassed(LocalDateTime.now())) {
+            throw new IllegalStateException("모임 시간이 지나 신청할 수 없어요.");
+        }
+        long accepted = companionRequestRepository.countByMeetingIdAndStatus(meetingId, ApplicationStatus.ACCEPTED);
+        if (board.isFull(accepted)) {
+            throw new IllegalStateException("정원이 다 차서 신청할 수 없어요.");
         }
         if (companionRequestRepository.existsByMeetingIdAndApplicant_UserId(meetingId, userId)) {
             throw new IllegalStateException("이미 신청한 모집이에요.");
@@ -95,6 +105,10 @@ public class CompanionService {
             return;
         }
 
+        if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {
+            throw new IllegalStateException("모임 시간이 지나 신청을 처리할 수 없습니다.");
+        }
+
         long acceptedCount = companionRequestRepository
                 .countByMeetingIdAndStatus(request.getMeetingId(), ApplicationStatus.ACCEPTED);
 
@@ -113,9 +127,15 @@ public class CompanionService {
     public void rejectForHost(Long applicationId, Long hostUserId) {
         CompanionRequest request = findAuthorizedRequest(applicationId, hostUserId);
 
-        if (request.getStatus() == ApplicationStatus.PENDING) {
-            request.reject();
+        if (request.getStatus() != ApplicationStatus.PENDING) {
+            return;
         }
+
+        if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {
+            throw new IllegalStateException("모임 시간이 지나 신청을 처리할 수 없습니다.");
+        }
+
+        request.reject();
     }
 
     private CompanionRequest findRequest(Long applicationId) {

@@ -1,9 +1,12 @@
 package com.mungjaguk.app.controller;
 
-import com.mungjaguk.app.security.LoginUser;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestParam;
+
+import com.mungjaguk.app.security.LoginUser;
+import com.mungjaguk.app.service.PetService;
 
 /**
  * 담당 영역: 인증 / 반려견 프로필
@@ -16,6 +19,12 @@ import org.springframework.web.bind.annotation.GetMapping;
 @Controller
 public class AuthController {
 
+    private final PetService petService;
+
+    public AuthController(PetService petService) {
+        this.petService = petService;
+    }
+
     @GetMapping("/login")
     public String login(@AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser != null) {
@@ -25,7 +34,13 @@ public class AuthController {
     }
 
     @GetMapping("/pet-profile")
-    public String petProfile() {
+    public String petProfile(@RequestParam(required = false) Long id,
+            @AuthenticationPrincipal LoginUser loginUser) {
+
+        if (id != null) {
+            petService.getPetEditView(id, loginUser.getUserId());
+        }
+
         return "dog/profile";
     }
 }

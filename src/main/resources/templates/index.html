@@ -114,27 +114,11 @@
         <a th:href="@{/routes}" class="section-link">전체 보기 ›</a>
       </div>
 
-      <!-- courses 테이블에서 가져온 추천 산책로 (최대 3개) -->
-      <a th:each="route, stat : ${recommendRoutes}"
-         th:href="@{/course-detail(courseId=${route.courseId})}"
-         class="route-item"
-         th:classappend="${stat.last} ? 'mb-0'">
-        <div class="route-thumb">🐾</div>
-        <div>
-          <h3>[[${route.courseName}]]
-            <span th:if="${route.feature != null}" class="tag"
-                  th:text="${#strings.trim(#strings.arraySplit(route.feature, ',')[0])}">평지</span>
-          </h3>
-          <p th:text="${route.description}">코스 설명</p>
-          <span class="meta"
-                th:text="|${#numbers.formatDecimal(route.distanceM / 1000.0, 1, 1)}km · 약 ${route.estimatedMinutes}분|">3.2km · 약 50분</span>
-        </div>
-      </a>
-
-      <!-- DB에 코스가 하나도 없을 때 -->
-      <p th:if="${#lists.isEmpty(recommendRoutes)}" class="small text-muted">
-        등록된 추천 산책로가 없어요.
+      <!-- 내 위치 기준 AI 추천 산책로 3개 (home-routes.js, 추천 산책로 페이지와 같은 추천 결과 공유) -->
+      <p id="home-route-status" class="small text-muted" role="status" aria-live="polite">
+        내 주변 산책로를 추천하고 있어요.
       </p>
+      <div id="home-route-list" th:attr="data-detail-url=@{/course-detail}" data-limit="3" aria-busy="true"></div>
     </section>
 
     <!-- 오른쪽: 산책 지도 (산책 시작 버튼은 배너로 이동, 지도만 크게) -->
@@ -174,7 +158,9 @@
           <span class="meet-date" th:text="${meet.meetingDateText}">9/27(토) 오후 4:00</span>
         </div>
         <h4 th:text="${meet.title}">모집 제목</h4>
-        <p class="meet-cond" th:text="|${meet.courseName} · ${meet.participationCondition}|">코스 · 참여 조건</p>
+        <!-- 참여 조건은 선택 항목: 없으면 코스 이름만 -->
+        <p class="meet-cond"
+           th:text="${#strings.isEmpty(meet.participationCondition)} ? ${meet.courseName} : |${meet.courseName} · ${meet.participationCondition}|">코스 · 참여 조건</p>
         <div class="progress-bar" th:classappend="${meet.progressPercent >= 100} ? 'is-full'">
           <i th:style="|width:${meet.progressPercent}%|"></i>
         </div>
@@ -225,6 +211,7 @@
   <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
   <script th:src="@{/js/walk-map.js}"></script>
   <script th:src="@{/js/home-widgets.js}" defer></script>
+  <script th:src="@{/js/home-routes.js}" defer></script>
 </main>
 
 </body>

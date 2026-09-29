@@ -9,8 +9,11 @@ import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 /**
  * 담당 영역: 산책 기록
@@ -51,5 +54,15 @@ public class WalkController {
         model.addAttribute("kakaoMapsJavaScriptKey", kakaoMapsJavaScriptKey);
 
         return "member/activity";
+    }
+
+    @PostMapping("/activity-detail/{id}/delete")
+    public String deleteActivity(@PathVariable Long id,
+                                @AuthenticationPrincipal LoginUser loginUser,
+                                RedirectAttributes redirectAttributes) {
+        walkRecordService.deleteMyCompletedWalkRecord(id, loginUser.getUserId());
+        redirectAttributes.addFlashAttribute("activityMessage", "산책 기록을 삭제했습니다.");
+
+        return "redirect:/mypage?tab=activity";
     }
 }
