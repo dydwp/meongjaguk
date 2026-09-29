@@ -95,6 +95,33 @@
     };
   }
 
+  // 추천받은 코스의 경로 좌표: 게시판 지도에 경로를 그리기 위해 함께 저장 (추가: 김환중)
+  // - 형식이 맞지 않으면 null (서버는 좌표 없이 출발 지점만 저장)
+  function loadRecommendedPoints() {
+    try {
+      const route = JSON.parse(sessionStorage.getItem(`walk-route:${routeKey}`));
+      const points = Array.isArray(route?.points) ? route.points : [];
+      const valid =
+        points.length >= 2 &&
+        points.every(
+          (point) =>
+            point &&
+            Number.isFinite(point.sequence) &&
+            Number.isFinite(point.latitude) &&
+            Number.isFinite(point.longitude),
+        );
+      if (!valid) return null;
+      return points.map((point) => ({
+        sequence: point.sequence,
+        latitude: point.latitude,
+        longitude: point.longitude,
+      }));
+    } catch (error) {
+      console.error("추천 경로 좌표 조회 실패:", error);
+      return null;
+    }
+  }
+
   // DB에 있는 코스: 기존 코스 조회 API 사용
   async function loadSavedCourse() {
     const response = await fetch(
@@ -131,7 +158,7 @@
           backLink.hidden = false;
           return;
         }
-        courseSource = { course };
+        courseSource = { course, points: loadRecommendedPoints() };
         cancelLink.href = `${page.dataset.courseDetailUrl}?route=${encodeURIComponent(routeKey)}`;
         showCourse(course);
       } else if (courseId && /^[1-9]\d*$/.test(courseId)) {

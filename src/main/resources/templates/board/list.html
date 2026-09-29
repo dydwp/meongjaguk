@@ -8,9 +8,11 @@
   <h1 class="page-title">산책로 게시판</h1>
   <p class="page-sub">다른 이웃들이 공유한 산책 코스예요</p>
 
-  <div class="grid-2" data-meeting-list>
-    <p class="text-muted">게시글을 불러오는 중이에요...</p>
-  </div>
+  <div class="grid-2" data-meeting-list></div>
+
+  <!-- 무한스크롤: 이 영역이 화면에 보이면 다음 게시글을 불러옴 -->
+  <p class="text-muted mt-24" data-meeting-status>게시글을 불러오는 중이에요...</p>
+  <div data-meeting-sentinel style="height:1px;"></div>
 
   <script th:src="@{/js/board.js}" defer></script>
 </main>
