@@ -2,10 +2,10 @@ package com.mungjaguk.app.controller;
 
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.security.LoginUser;
+import com.mungjaguk.app.service.CompanionService;
 import com.mungjaguk.app.service.MyPageService;
 import com.mungjaguk.app.service.PetService;
 import com.mungjaguk.app.service.UserService;
-import com.mungjaguk.app.service.WalkApplicationService;
 import com.mungjaguk.app.service.WalkRecordService;
 import java.time.format.DateTimeFormatter;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -26,16 +26,15 @@ public class MyPageController {
     private final PetService petService;
     private final WalkRecordService walkRecordService;
     private final MyPageService myPageService;
-    private final WalkApplicationService walkApplicationService;
+    private final CompanionService companionService;
 
-    public MyPageController(UserService userService, PetService petService,
-                            WalkRecordService walkRecordService, MyPageService myPageService,
-                            WalkApplicationService walkApplicationService) {
+    public MyPageController(UserService userService, PetService petService, WalkRecordService walkRecordService,
+                            MyPageService myPageService, CompanionService companionService) {
         this.userService = userService;
         this.petService = petService;
         this.walkRecordService = walkRecordService;
         this.myPageService = myPageService;
-        this.walkApplicationService = walkApplicationService;
+        this.companionService = companionService;
     }
 
     @GetMapping("/mypage")
@@ -61,7 +60,7 @@ public class MyPageController {
                                 @AuthenticationPrincipal LoginUser loginUser,
                                 RedirectAttributes redirectAttributes) {
         try {
-            walkApplicationService.acceptForHost(applicationId, loginUser.getUserId());
+            companionService.acceptForHost(applicationId, loginUser.getUserId());
             redirectAttributes.addFlashAttribute("successMessage", "참여 신청을 수락했습니다.");
         } catch (IllegalStateException e) {
             redirectAttributes.addFlashAttribute("errorMessage", e.getMessage());
@@ -74,7 +73,7 @@ public class MyPageController {
     public String rejectRequest(@PathVariable Long applicationId,
                                 @AuthenticationPrincipal LoginUser loginUser,
                                 RedirectAttributes redirectAttributes) {
-        walkApplicationService.rejectForHost(applicationId, loginUser.getUserId());
+        companionService.rejectForHost(applicationId, loginUser.getUserId());
         redirectAttributes.addFlashAttribute("successMessage", "참여 신청을 거절했습니다.");
 
         return "redirect:/mypage?tab=requests";
