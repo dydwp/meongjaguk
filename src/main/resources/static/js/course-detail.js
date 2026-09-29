@@ -8,87 +8,31 @@
   const isRecommended = params.has("route");
   const shareButton = document.querySelector("#course-share");
   let loadedCourse = null;
-  let saving = false;
-  let saved = false;
-  const savedKey = `walk-route-saved:${params.get("route")}`;
-  try {
-    saved = isRecommended && sessionStorage.getItem(savedKey) === "true";
-  } catch (error) {
-    console.error("코스 저장 상태 확인 실패:", error);
-  }
 
-  shareButton.addEventListener("click", async (event) => {
+  // 공유하기: 코스는 저장하지 않고 등록 페이지로 이동 (코스는 게시글 등록 시 함께 저장됨)
+  // 비로그인이면 /board/new 접근 시 로그인 화면으로 이동
+  shareButton.addEventListener("click", (event) => {
     event.preventDefault();
-    if (!loadedCourse || saving) return;
-    if (!isRecommended || saved) {
-      shareButton.textContent = "공유 완료";
+    if (!loadedCourse) return;
+    if (!isRecommended) {
+      window.location.href = `${page.dataset.formUrl}?courseId=${encodeURIComponent(courseId)}`;
+      return;
+    }
+    const first = [...(loadedCourse.points ?? [])].sort(
+      (a, b) => a.sequence - b.sequence,
+    )[0];
+    if (
+      !first ||
+      !Number.isFinite(first.latitude) ||
+      !Number.isFinite(first.longitude) ||
+      !Number.isFinite(loadedCourse.distanceM) ||
+      !Number.isFinite(loadedCourse.estimatedMinutes)
+    ) {
+      shareButton.textContent = "다시 추천받아주세요";
       shareButton.disabled = true;
       return;
     }
-    saving = true;
-    shareButton.disabled = true;
-    shareButton.textContent = "공유 중…";
-    try {
-      const first = [...(loadedCourse.points ?? [])].sort(
-        (a, b) => a.sequence - b.sequence,
-      )[0];
-      if (
-        !first ||
-        !Number.isFinite(first.latitude) ||
-        !Number.isFinite(first.longitude) ||
-        !Number.isFinite(loadedCourse.distanceM) ||
-        !Number.isFinite(loadedCourse.estimatedMinutes)
-      ) {
-        shareButton.textContent = "다시 추천받아주세요";
-        return;
-      }
-      const headers = {
-        "Content-Type": "application/json",
-        Accept: "application/json",
-      };
-      if (page.dataset.csrfHeader && page.dataset.csrfToken) {
-        headers[page.dataset.csrfHeader] = page.dataset.csrfToken;
-      }
-      const response = await fetch(page.dataset.saveUrl, {
-        method: "POST",
-        credentials: "same-origin",
-        headers,
-        body: JSON.stringify({
-          name: loadedCourse.courseName,
-          description: loadedCourse.description ?? null,
-          distanceM: Math.round(loadedCourse.distanceM),
-          estimatedMinutes: Math.round(loadedCourse.estimatedMinutes),
-          feature: loadedCourse.feature,
-          region: loadedCourse.region ?? null,
-          startLatitude: first.latitude,
-          startLongitude: first.longitude,
-          thumbnailImg: loadedCourse.thumbnailImg ?? null,
-        }),
-      });
-      if (response.redirected || response.status === 401) {
-        shareButton.textContent = "로그인 후 공유해주세요";
-        return;
-      }
-      if (response.status === 403) {
-        shareButton.textContent = "새로고침 후 다시 시도";
-        return;
-      }
-      if (response.status !== 201)
-        throw new Error(`Course save failed: ${response.status}`);
-      saved = true;
-      try {
-        sessionStorage.setItem(savedKey, "true");
-      } catch (error) {
-        console.error("코스 저장 상태 보관 실패:", error);
-      }
-      shareButton.textContent = "공유 완료";
-    } catch (error) {
-      console.error("산책 코스 저장 실패:", error);
-      shareButton.textContent = "다시 시도해주세요";
-    } finally {
-      saving = false;
-      shareButton.disabled = saved;
-    }
+    window.location.href = `${page.dataset.formUrl}?route=${encodeURIComponent(params.get("route"))}`;
   });
 
   function showRecommendedMap(points) {
@@ -278,8 +222,7 @@
       document.title = `${course.courseName ?? "산책로 상세"} — 멍자국`;
       content.hidden = false;
       loadedCourse = course;
-      shareButton.disabled = saved || !isRecommended;
-      if (shareButton.disabled) shareButton.textContent = "공유 완료";
+      shareButton.disabled = false;
       status.hidden = true;
       if (isRecommended) showRecommendedMap(course.points);
       else showMap(course);
