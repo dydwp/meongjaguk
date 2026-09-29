@@ -246,10 +246,10 @@ public class BoardService {
         return saved.getMeetingId();
     }
 
-    /** 댓글 목록: 오래된 순 (loginUserId는 비로그인이면 null) */
+    /** 댓글 목록: 최신순 (loginUserId는 비로그인이면 null) */
     public List<CommentDto> getComments(Long meetingId, Long loginUserId) {
         Board board = findBoard(meetingId);
-        return commentRepository.findByBoard_MeetingIdOrderByCreatedAtAscCommentIdAsc(meetingId)
+        return commentRepository.findByBoard_MeetingIdOrderByCreatedAtDescCommentIdDesc(meetingId)
                 .stream()
                 .map(comment -> toCommentDto(comment, board, loginUserId))
                 .toList();
