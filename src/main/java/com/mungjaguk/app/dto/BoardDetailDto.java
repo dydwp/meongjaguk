@@ -11,6 +11,7 @@ import java.util.List;
  * currentParticipants  = 작성자 1명 + 수락된 신청자 수
  * isHost               : 로그인 사용자가 작성자인지
  * myApplicationStatus  : 로그인 사용자의 신청 상태 (신청 안 했거나 비로그인이면 null)
+ * startLatitude/startLongitude/points: 지도 표시용 (경로 좌표가 없으면 points는 빈 목록)
  */
 public record BoardDetailDto(
     Long meetingId,
@@ -30,5 +31,8 @@ public record BoardDetailDto(
     int maxParticipants,
     String status,
     boolean isHost,
-    String myApplicationStatus) {
+    String myApplicationStatus,
+    Double startLatitude,
+    Double startLongitude,
+    List<CoursePointDto> points) {
 }

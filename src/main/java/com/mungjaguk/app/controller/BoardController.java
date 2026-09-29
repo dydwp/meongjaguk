@@ -1,8 +1,8 @@
 package com.mungjaguk.app.controller;
 
-import com.mungjaguk.app.dto.BoardCardDto;
 import com.mungjaguk.app.dto.BoardCreateRequest;
 import com.mungjaguk.app.dto.BoardDetailDto;
+import com.mungjaguk.app.dto.BoardPageDto;
 import com.mungjaguk.app.dto.CommentDto;
 import com.mungjaguk.app.dto.CommentRequest;
 import com.mungjaguk.app.security.LoginUser;
@@ -18,6 +18,7 @@ import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.util.List;
@@ -37,10 +38,15 @@ public class BoardController {
         this.boardService = boardService;
     }
 
-    /** 산책로 게시판 목록 (최신순 6개) */
+    /**
+     * 산책로 게시판 목록 (무한스크롤)
+     * 예) /api/meetings?size=6 → 첫 페이지, /api/meetings?cursor=12&size=6 → 12번보다 오래된 글
+     */
     @GetMapping("/api/meetings")
-    public ResponseEntity<List<BoardCardDto>> boards() {
-        return ResponseEntity.ok(boardService.getRecentBoards());
+    public ResponseEntity<BoardPageDto> boards(@RequestParam(required = false) Long cursor,
+                                               @RequestParam(defaultValue = "6") int size) {
+        int pageSize = Math.max(1, Math.min(size, 30));
+        return ResponseEntity.ok(boardService.getBoards(cursor, pageSize));
     }
 
     /** 산책로 게시글(동행 모집) 등록 (로그인 회원만) */
