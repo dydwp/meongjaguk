@@ -34,9 +34,6 @@ public interface CompanionRequestRepository extends JpaRepository<CompanionReque
     @EntityGraph(attributePaths = {"applicant"})
     List<CompanionRequest> findByMeetingIdAndStatusOrderByCreatedAtAsc(Long meetingId, ApplicationStatus status);
 
-    /** 특정 모집글의 상태별 신청 수 */
-    long countByMeetingIdAndStatus(Long meetingId, ApplicationStatus status);
-
     /** 여러 모집글의 상태별 신청 수: [meetingId, count] */
     @Query("select r.meetingId, count(r) from CompanionRequest r " +
            "where r.meetingId in :meetingIds and r.status = :status " +
