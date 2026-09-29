@@ -64,7 +64,29 @@ public class Board {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
+    public static final int MAX_TITLE_LENGTH = 150;
+    public static final int MAX_DESCRIPTION_LENGTH = 600;
+    public static final int MAX_CONDITION_LENGTH = 500;
+    public static final int MIN_PARTICIPANTS = 2;
+    public static final int MAX_PARTICIPANTS = 10;
+
     protected Board() {}
+
+    public static Board create(User host, Route course, String title, String description,
+                               LocalDate meetingDate, LocalTime meetingTime, int maxParticipants,
+                               boolean petRequired, String participationCondition) {
+        Board board = new Board();
+        board.host = host;
+        board.course = course;
+        board.title = title;
+        board.description = description;
+        board.meetingDate = meetingDate;
+        board.meetingTime = meetingTime;
+        board.maxParticipants = maxParticipants;
+        board.petRequired = petRequired;
+        board.participationCondition = participationCondition;
+        return board;
+    }
 
     @PrePersist
     protected void onCreate() {

@@ -16,6 +16,12 @@ public class MeetupController {
         return "board/list";
     }
 
+    /** 추천 산책로 등록 (공유하기 → 모집 정보 입력): /board/new?route={key} 또는 ?courseId={id} */
+    @GetMapping("/board/new")
+    public String boardForm() {
+        return "board/form";
+    }
+
     @GetMapping("/course-detail-shared")
     public String courseDetailShared() {
         return "board/detail";

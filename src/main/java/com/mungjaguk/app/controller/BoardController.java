@@ -1,5 +1,6 @@
 package com.mungjaguk.app.controller;
 
+import com.mungjaguk.app.dto.BoardCreateRequest;
 import com.mungjaguk.app.dto.BoardDetailDto;
 import com.mungjaguk.app.dto.BoardPageDto;
 import com.mungjaguk.app.dto.CommentDto;
@@ -8,6 +9,7 @@ import com.mungjaguk.app.security.LoginUser;
 import com.mungjaguk.app.service.BoardService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.http.converter.HttpMessageNotReadableException;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -24,8 +26,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 산책로 게시판 API: 목록/상세 조회, 댓글 조회/작성/삭제
- * (화면 연결 /board, /course-detail-shared 는 MeetupController)
+ * 산책로 게시판 API: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
+ * (화면 연결 /board, /board/new, /course-detail-shared 는 MeetupController)
  */
 @RestController
 public class BoardController {
@@ -45,6 +47,17 @@ public class BoardController {
                                                @RequestParam(defaultValue = "6") int size) {
         int pageSize = Math.max(1, Math.min(size, 30));
         return ResponseEntity.ok(boardService.getBoards(cursor, pageSize));
+    }
+
+    /** 산책로 게시글(동행 모집) 등록 (로그인 회원만) */
+    @PostMapping("/api/meetings")
+    public ResponseEntity<?> createBoard(@RequestBody BoardCreateRequest request,
+                                         @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
+        }
+        Long meetingId = boardService.createBoard(loginUser.getUserId(), request);
+        return ResponseEntity.status(HttpStatus.CREATED).body(Map.of("meetingId", meetingId));
     }
 
     /** 공유 산책로 상세 */
@@ -97,6 +110,12 @@ public class BoardController {
     @ExceptionHandler(IllegalArgumentException.class)
     public ResponseEntity<Map<String, String>> handleBadRequest(IllegalArgumentException e) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", e.getMessage()));
+    }
+
+    /** 요청 본문이 비었거나 날짜/시간/숫자 형식이 잘못된 경우 */
+    @ExceptionHandler(HttpMessageNotReadableException.class)
+    public ResponseEntity<Map<String, String>> handleUnreadable(HttpMessageNotReadableException e) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(Map.of("message", "입력값 형식을 확인해주세요."));
     }
 
     @ExceptionHandler(AccessDeniedException.class)
