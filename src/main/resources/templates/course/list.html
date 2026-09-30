@@ -1,0 +1,57 @@
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 추천 산책로', active=null, content=~{::main}, showFooter=false, showScript=false)}"
+>
+  <head>
+    <title>멍자국 — 추천 산책로</title>
+  </head>
+  <body>
+    <main class="page">
+      <script th:src="@{/js/courses.js}" defer></script>
+      <script th:src="@{/js/walk-recommend.js}" defer></script>
+      <section aria-labelledby="walk-recommend-heading">
+        <div class="walk-recommend-header">
+          <h1 id="walk-recommend-heading" class="page-title">추천 산책로</h1>
+          <button
+            id="walk-recommend-retry"
+            class="walk-recommend-refresh"
+            type="button"
+            aria-label="다시 추천받기"
+            title="다시 추천받기"
+            disabled
+          >
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+              <path d="M20 11a8 8 0 0 0-15.5-2" />
+              <path d="M4 4v5h5" />
+              <path d="M4 13a8 8 0 0 0 15.5 2" />
+              <path d="M20 20v-5h-5" />
+            </svg>
+          </button>
+        </div>
+        <p class="page-sub">
+          멍자국이 엄선한 산책 코스예요. 반려견 성향에 맞게 골라보세요.
+        </p>
+        <p
+          id="walk-recommend-status"
+          class="small text-muted"
+          role="status"
+          aria-live="polite"
+        ></p>
+        <div
+          id="walk-recommend-list"
+          th:attr="data-detail-url=@{/course-detail}"
+          aria-busy="false"
+          data-limit="6"
+        ></div>
+        <p id="walk-recommend-more-status" class="small text-muted walk-recommend-more-status"
+           role="status" aria-live="polite" hidden></p>
+        <button id="walk-recommend-more-retry" type="button" class="btn btn-outline" hidden>
+          더 불러오기 다시 시도
+        </button>
+        <div id="walk-recommend-sentinel" aria-hidden="true" hidden></div>
+      </section>
+    </main>
+  </body>
+</html>

@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 메인 / 홈', active=null, content=~{::main}, showFooter=true, showScript=true)}">
+<head><title>멍자국 — 메인 / 홈</title></head>
+<body>
+
+<main class="page">
+  <!-- 배너: 인사말 + 산책 시작 / 오른쪽: 이번 주 나의 산책 (담당: 박용제) -->
+  <section class="main-banner">
+    <!-- 발자국 트레일 (장식용) -->
+    <svg class="banner-trail" viewBox="210 10 180 160" aria-hidden="true">
+      <defs>
+        <g id="banner-paw">
+          <ellipse cx="0" cy="5" rx="7" ry="6"/>
+          <circle cx="-7" cy="-5" r="2.8"/>
+          <circle cx="-2.5" cy="-9" r="2.8"/>
+          <circle cx="2.5" cy="-9" r="2.8"/>
+          <circle cx="7" cy="-5" r="2.8"/>
+        </g>
+      </defs>
+      <path class="trail-line" d="M230 160 Q260 110 300 100 T360 40"/>
+      <g class="trail-paws">
+        <g transform="translate(236,148) rotate(35)"><use href="#banner-paw" class="paw" style="animation-delay:0s"/></g>
+        <g transform="translate(262,120) rotate(55)"><use href="#banner-paw" class="paw" style="animation-delay:.5s"/></g>
+        <g transform="translate(296,104) rotate(70)"><use href="#banner-paw" class="paw" style="animation-delay:1s"/></g>
+        <g transform="translate(328,84) rotate(40)"><use href="#banner-paw" class="paw" style="animation-delay:1.5s"/></g>
+        <g transform="translate(348,56) rotate(20)"><use href="#banner-paw" class="paw" style="animation-delay:2s"/></g>
+      </g>
+      <g transform="translate(372,30)">
+        <path class="trail-pin" d="M0 -8 C-10 -8 -14 0 -14 5 C-14 14 0 24 0 24 C0 24 14 14 14 5 C14 0 10 -8 0 -8Z"/>
+        <circle cx="0" cy="5" r="5" fill="#fff"/>
+      </g>
+    </svg>
+
+    <div class="banner-text">
+      <h1 th:if="${loginUser != null}">
+        <span th:text="|${loginUser.nickname}님, 오늘도|">용제님, 오늘도</span><br>
+        <span th:text="${petWith != null} ? |${petWith} 같이 걸어요| : '같이 걸어요'">보리랑 같이 걸어요</span>
+      </h1>
+      <h1 th:unless="${loginUser != null}">오늘은 어디로<br>산책 나가볼까요?</h1>
+      <p>걸은 길이 지도에 남고, 기록이 쌓여요.</p>
+
+      <!-- 산책 전: 시작 버튼 (비회원이면 data-login-required="true" → 로그인 안내) -->
+      <div class="hero-actions" data-walk-idle>
+        <button type="button" class="btn btn-primary" data-start-walk
+                th:attr="data-login-required=${loginUser == null}">▷ 산책 시작</button>
+      </div>
+
+      <!-- 산책 중: 종료·상세 버튼 (실시간 거리/시간은 오른쪽 카드) -->
+      <div class="hero-actions" data-walk-active hidden>
+        <!-- 비회원이면 data-login-required="true" → 종료 시 로그인 안내 -->
+        <button type="button" class="btn btn-outline-primary" data-end-walk
+                th:attr="data-login-required=${loginUser == null}">산책 종료</button>
+        <a th:href="@{/walk-record}" class="btn btn-outline">상세 보기</a>
+      </div>
+    </div>
+
+    <aside class="banner-stat hero-weekly card card-pad">
+      <!-- 산책 중: 지금 산책 (이동 거리 / 경과 시간 실시간 갱신은 app.js) -->
+      <div data-walk-active hidden>
+        <div class="hero-live-head">
+          <h2 class="hero-live-title">지금 산책</h2>
+          <span class="live-badge">기록 중</span>
+        </div>
+        <div class="hero-live-stats">
+          <div class="hero-live-stat">
+            <div class="hero-live-label">이동 거리</div>
+            <div class="hero-live-value"><span data-walk-distance-num>0.00</span><span class="unit">km</span></div>
+          </div>
+          <div class="hero-live-divider" aria-hidden="true"></div>
+          <div class="hero-live-stat">
+            <div class="hero-live-label">경과 시간</div>
+            <div class="hero-live-value" data-walk-elapsed>00:00</div>
+          </div>
+        </div>
+        <div class="walk-pet-summary" data-walk-pet-summary hidden>
+          <span class="walk-pet-summary-label">함께 걷는 반려견:</span>
+          <strong data-walk-pet-names></strong>
+        </div>
+        <div class="hero-weekly-foot hero-live-foot">
+          <span th:if="${weeklyWalk != null}"
+                th:text="|이번 주 ${weeklyWalk.walkCount}회 · ${#numbers.formatDecimal(weeklyWalk.distanceKm, 1, 1)}km · ${weeklyWalk.minutes}분|">이번 주 3회 · 5.2km · 96분</span>
+          <span th:unless="${weeklyWalk != null}"></span>
+          <a th:href="@{/mypage}" class="section-link">마이페이지 ›</a>
+        </div>
+      </div>
+
+      <!-- 산책 전: 이번 주 나의 산책 -->
+      <div data-walk-idle>
+        <h2 class="hero-weekly-title">이번 주 나의 산책</h2>
+        <th:block th:if="${weeklyWalk != null}">
+          <div class="hero-weekly-stats">
+            <div><b th:text="${weeklyWalk.walkCount}">3</b>회</div>
+            <div><b th:text="${#numbers.formatDecimal(weeklyWalk.distanceKm, 1, 1)}">5.2</b>km</div>
+            <div><b th:text="${weeklyWalk.minutes}">96</b>분</div>
+          </div>
+          <div class="hero-weekly-foot">
+            <span th:text="${weeklyWalk.lastWalkLabel != null} ? |마지막 산책 · ${weeklyWalk.lastWalkLabel}| : '아직 산책 기록이 없어요'">마지막 산책 · 오늘 2.1km</span>
+            <a th:href="@{/mypage}" class="section-link">마이페이지 ›</a>
+          </div>
+        </th:block>
+        <th:block th:if="${weeklyWalk == null}">
+          <p class="small text-muted">로그인하면 이번 주 산책 기록을 볼 수 있어요.</p>
+          <div class="hero-weekly-foot">
+            <span></span>
+            <a th:href="@{/login}" class="section-link">로그인 ›</a>
+          </div>
+        </th:block>
+      </div>
+    </aside>
+  </section>
+
+  <div class="two-col home-cols">
+    <!-- 왼쪽: 추천 산책로 -->
+    <section>
+      <div class="block-label-row">
+        <h2 class="block-label">추천 산책로</h2>
+        <a th:href="@{/routes}" class="section-link">전체 보기 ›</a>
+      </div>
+
+      <!-- 내 위치 기준 AI 추천 산책로 3개 (home-routes.js, 추천 산책로 페이지와 같은 추천 결과 공유) -->
+      <p id="home-route-status" class="small text-muted" role="status" aria-live="polite">
+        내 주변 산책로를 추천하고 있어요.
+      </p>
+      <div id="home-route-list" th:attr="data-detail-url=@{/course-detail}" data-limit="3" aria-busy="true"></div>
+    </section>
+
+    <!-- 오른쪽: 산책 지도 (산책 시작 버튼은 배너로 이동, 지도만 크게) -->
+    <section class="home-walk">
+      <h2 class="block-label">산책 지도</h2>
+      <div class="card card-pad">
+      <div class="map-preview">
+        <svg viewBox="0 0 300 180" preserveAspectRatio="none">
+          <path d="M40 150 C 90 120, 120 140, 150 100 S 220 60, 260 35"
+                fill="none" stroke="var(--color-primary)" stroke-width="3" stroke-dasharray="7 7" stroke-linecap="round"/>
+          <circle cx="40" cy="150" r="5" fill="var(--color-primary)"/>
+          <circle cx="260" cy="35" r="5" fill="var(--color-accent)"/>
+        </svg>
+        <!-- 카카오맵이 뜨면 위 그림(svg)은 숨겨짐 -->
+        <div class="walk-map" data-walk-map></div>
+        <span class="map-chip" data-walk-chip>지도 미리보기</span>
+      </div>
+      </div>
+    </section>
+  </div>
+
+  <section class="meet-section">
+    <div class="block-label-row">
+      <h2 class="block-label">🐶 같이 걷기 모집 중</h2>
+      <a th:href="@{/board}" class="section-link">더보기 ›</a>
+    </div>
+
+    <!-- 같이 걷기 모집 카드 (지금은 임시 데이터, 최대 3개) -->
+    <div class="meet-grid" th:unless="${#lists.isEmpty(meetCards)}">
+      <a th:each="meet : ${meetCards}"
+         th:href="@{/course-detail-shared(meetingId=${meet.meetingId})}"
+         class="meet-card">
+        <div class="meet-top">
+          <span class="meet-status"
+                th:classappend="${meet.closed} ? 'closed'"
+                th:text="${meet.closed} ? '마감' : '모집중'">모집중</span>
+          <span class="meet-date" th:text="${meet.meetingDateText}">9/27(토) 오후 4:00</span>
+        </div>
+        <h4 th:text="${meet.title}">모집 제목</h4>
+        <!-- 참여 조건은 선택 항목: 없으면 코스 이름만 -->
+        <p class="meet-cond"
+           th:text="${#strings.isEmpty(meet.participationCondition)} ? ${meet.courseName} : |${meet.courseName} · ${meet.participationCondition}|">코스 · 참여 조건</p>
+        <div class="progress-bar" th:classappend="${meet.progressPercent >= 100} ? 'is-full'">
+          <i th:style="|width:${meet.progressPercent}%|"></i>
+        </div>
+        <div class="meet-count">
+          <span>참여 인원</span>
+          <b th:text="|${meet.currentParticipants} / ${meet.maxParticipants}명|">3 / 5명</b>
+        </div>
+      </a>
+    </div>
+
+    <!-- 모집 글이 하나도 없을 때 -->
+    <p th:if="${#lists.isEmpty(meetCards)}" class="small text-muted">
+      아직 모집 중인 산책이 없어요.
+    </p>
+  </section>
+  <!-- 산책 날씨 / 나가기 전 체크 (담당: 박용제, home-widgets.js) -->
+  <div class="home-extras">
+    <section class="card card-pad" data-weather>
+      <div class="block-label-row">
+        <h2 class="block-label">오늘의 산책 날씨</h2>
+      </div>
+      <p class="small text-muted mb-0" data-weather-status role="status">날씨를 불러오는 중이에요.</p>
+      <div class="weather-body" data-weather-body hidden>
+        <span class="weather-icon" data-weather-icon aria-hidden="true">☀️</span>
+        <div>
+          <div class="weather-main">
+            <b data-weather-temp>21°</b>
+            <span class="tag" data-weather-grade>산책 좋음</span>
+          </div>
+          <p class="small text-muted mb-0" data-weather-detail>미세먼지 보통 · 오후 5~7시 추천</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="card card-pad" data-walk-checklist>
+      <div class="block-label-row">
+        <h2 class="block-label">나가기 전 체크</h2>
+      </div>
+      <ul class="check-list">
+        <li><label><input type="checkbox" value="leash"> 목줄·인식표</label></li>
+        <li><label><input type="checkbox" value="poop-bag"> 배변봉투</label></li>
+        <li><label><input type="checkbox" value="water"> 물·물그릇</label></li>
+        <li><label><input type="checkbox" value="snack"> 간식</label></li>
+      </ul>
+    </section>
+  </div>
+
+  <!-- 산책 지도 (카카오맵 SDK는 layout/default.html에서 불러옴) -->
+  <script th:src="@{/js/walk-map.js}"></script>
+  <script th:src="@{/js/home-widgets.js}" defer></script>
+  <script th:src="@{/js/home-routes.js}" defer></script>
+</main>
+
+</body>
+</html>

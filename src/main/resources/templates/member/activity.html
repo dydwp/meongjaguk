@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="ko" xmlns:th="http://www.thymeleaf.org"
+      th:replace="~{layout/default :: page(title='멍자국 — 활동 내역 상세', active='mypage', content=~{::main}, showFooter=false, showScript=false)}">
+<head>
+  <title>멍자국 — 활동 내역 상세</title>
+</head>
+
+<body>
+
+<main id="activity-detail" class="page">
+
+  <!-- 추천 경로와 실제 산책 경로 지도 -->
+  <div id="activity-map" style="width:100%; height:400px;" hidden></div>
+  <div id="activity-route-legend" class="walk-route-legend" hidden>
+    <span id="activity-planned-legend" hidden><i class="walk-route-swatch planned" aria-hidden="true"></i>추천 경로</span>
+    <span id="activity-actual-legend" hidden><i class="walk-route-swatch actual" aria-hidden="true"></i>실제 이동 경로</span>
+  </div>
+
+  <p id="activity-map-status" class="small text-muted mt-16" role="status" hidden>
+    산책 경로 정보가 없습니다.
+  </p>
+
+  <div id="walk-point-data" hidden>
+    <span th:each="point : ${walkPoints}"
+          th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
+  </div>
+  <div id="planned-point-data" hidden>
+    <span th:each="point : ${plannedPoints}"
+          th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
+  </div>
+
+  <!-- 산책 코스 정보 -->
+  <div class="mt-24">
+    <span class="tag-neutral" th:text="${detail.tagLabel()}">개인 산책</span>
+
+    <h1 style="font-size:22px; margin:12px 0 10px;"
+        th:text="${detail.title()}">
+      한강 벚꽃길 코스
+    </h1>
+
+    <div th:if="${detail.hasRoute()}">
+      <p class="small mb-0" style="font-weight:700;"
+          th:text="${detail.plannedDistanceLabel()}">
+        거리 · 2.3km
+      </p>
+
+      <p class="small" style="font-weight:700; margin-top:2px;"
+          th:text="${detail.plannedDurationLabel()}">
+        예상 소요시간 · 약 35분
+      </p>
+
+      <p class="text-muted mt-16" th:text="${detail.description()}">
+        한강공원을 따라 이어지는 평탄한 산책로예요.
+      </p>
+    </div>
+    
+  </div>
+
+  <!-- 함께 산책한 반려견 프로필 -->
+  <div class="card card-pad mt-24"
+      th:if="${walkPets != null and !#lists.isEmpty(walkPets)}">
+
+    <h2 class="block-label">함께 산책한 반려견</h2>
+
+    <div class="walk-pet-group-card">
+      <div class="walk-pet-group-item" th:each="pet : ${walkPets}">
+        <div class="walk-current-pet-photo">
+          <img th:if="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}"
+              th:src="${pet.profileImage()}"
+              th:alt="${pet.name()}">
+          <span th:unless="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}">
+            🐾
+          </span>
+        </div>
+
+        <div class="walk-current-pet-info">
+          <strong th:text="${pet.name()}">초코</strong>
+          <span th:text="${pet.summaryLine()}">포메라니안 · 소형견 · 3세</span>
+
+          <span class="walk-current-pet-activity"
+                th:if="${pet.activityLevelLabel() != null and !#strings.isEmpty(pet.activityLevelLabel())}"
+                th:text="|활동성 ${pet.activityLevelLabel()}|">
+            활동성 높음
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 실제 산책 기록 -->
+  <div class="card card-pad mt-24">
+
+    <h2 class="block-label">실제 기록</h2>
+
+    <div class="stat-row" style="margin:0;">
+      <div class="stat-card">
+        <div class="label">이동 거리</div>
+        <div class="value" th:text="${detail.actualDistanceLabel()}">
+          2.4km
+        </div>
+      </div>
+
+      <div class="stat-card">
+        <div class="label">소요 시간</div>
+        <div class="value" th:text="${detail.actualDurationLabel()}">
+          38:12
+        </div>
+      </div>
+    </div>
+
+    <p class="small text-muted mt-16 mb-0" th:text="${detail.completedDateLabel()}">
+      2026.09.19 완료
+    </p>
+  </div>
+
+  <div class="activity-detail-actions mt-24">
+    <a th:href="${selectedPetId != null}
+    ? @{/mypage(tab='activity', petId=${selectedPetId})}
+    : @{/mypage(tab='activity')}"
+    class="btn btn-outline">닫기</a>
+
+    <form th:if="${detail.deletable()}"
+          th:action="@{/activity-detail/{id}/delete(id=${detail.id()})}"
+          method="post"
+          onsubmit="return confirm('이 산책 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다.');">
+      <input th:if="${selectedPetId != null}" type="hidden" name="petId" th:value="${selectedPetId}">
+      <button type="submit" class="btn btn-highlight">기록 삭제</button>
+    </form>
+  </div>
+
+  <script th:if="${!#strings.isEmpty(kakaoMapsJavaScriptKey)}"
+          th:src="|https://dapi.kakao.com/v2/maps/sdk.js?appkey=${kakaoMapsJavaScriptKey}|"></script>
+  <script th:src="@{/js/activity.js}" defer></script>
+</main>
+
+</body>
+</html>
