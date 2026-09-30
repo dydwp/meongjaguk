@@ -11,11 +11,11 @@
     <main
       id="board-form-page"
       class="page"
-      th:attr="data-api-base=@{/api/courses/},data-submit-url=@{/api/meetings},data-detail-url=@{/course-detail-shared},data-course-detail-url=@{/course-detail},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token}"
+      th:attr="data-api-base=@{/api/courses/},data-submit-url=@{/api/meetings},data-meeting-api=@{/api/meetings/},data-detail-url=@{/course-detail-shared},data-course-detail-url=@{/course-detail},data-csrf-header=${_csrf.headerName},data-csrf-token=${_csrf.token}"
       aria-busy="true"
     >
-      <h1 class="page-title">추천 산책로 등록</h1>
-      <p class="page-sub">함께 걸을 이웃을 모집해보세요</p>
+      <h1 id="board-form-heading" class="page-title">추천 산책로 등록</h1>
+      <p id="board-form-sub" class="page-sub">함께 걸을 이웃을 모집해보세요</p>
 
       <p id="board-form-status" role="status" aria-live="polite">
         산책로 정보를 불러오는 중이에요.

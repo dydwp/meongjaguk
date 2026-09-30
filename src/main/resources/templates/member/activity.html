@@ -98,7 +98,7 @@
           method="post"
           onsubmit="return confirm('이 산책 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다.');">
       <input th:if="${selectedPetId != null}" type="hidden" name="petId" th:value="${selectedPetId}">
-      <button type="submit" class="btn btn-danger-outline">기록 삭제</button>
+      <button type="submit" class="btn btn-highlight">기록 삭제</button>
     </form>
   </div>
 

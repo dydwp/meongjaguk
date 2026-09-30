@@ -114,12 +114,13 @@ const COMMENTS = [
   { commentId: 1, authorNickname: "용제", hostComment: true, mine: false, content: "환영해요", createdAt: hoursAgo(30) },
 ];
 
-function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao } = {}) {
+function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao, confirm } = {}) {
   return openPage({
     html: template("board/detail.html"),
     url: url || "http://localhost:8081/course-detail-shared?meetingId=10",
     scripts: ["board.js"],
     kakao,
+    confirm,
     setup(window) {
       const root = window.document.querySelector("[data-meeting-detail]");
       root.setAttribute("data-logged-in", String(loggedIn));
@@ -300,6 +301,58 @@ test("댓글 삭제는 확인 후 요청하고 목록에서 지운다", async ()
   assert.deepEqual(page.calls.confirms, ["댓글을 삭제할까요?"]);
   assert.equal(page.$$("[data-meeting-comment-list] .comment").length, 1);
   assert.equal(page.$("[data-meeting-comment-count]").textContent, "1");
+  page.close();
+});
+
+test("수정·삭제 버튼은 작성자에게만 보이고, 수정은 수정 화면으로 연결된다", async () => {
+  const guest = openDetail();
+  await settle();
+  assert.equal(guest.$("[data-host-actions]").hidden, true);
+  guest.close();
+
+  const host = openDetail({ meeting: { ...DETAIL, isHost: true } });
+  await settle();
+  assert.equal(host.$("[data-host-actions]").hidden, false);
+  assert.equal(host.$("[data-edit-link]").getAttribute("href"), "/board/edit?meetingId=10");
+  host.close();
+});
+
+test("글 삭제는 확인 후 CSRF 토큰과 함께 요청하고 게시판으로 이동한다 (취소하면 요청 안 함)", async () => {
+  const cancelled = openDetail({ meeting: { ...DETAIL, isHost: true }, confirm: false });
+  await settle();
+  cancelled.click("[data-delete-btn]");
+  await settle();
+  assert.equal(cancelled.calls.fetch.some((c) => c.method === "DELETE"), false);
+  cancelled.close();
+
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true },
+    routes: { "DELETE /api/meetings/10": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  page.click("[data-delete-btn]");
+  await settle();
+
+  assert.match(page.calls.confirms[0], /이 모집 글을 삭제할까요\?/);
+  assert.equal(page.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(page.calls.navigations, ["/board"]);
+  page.close();
+});
+
+test("글 삭제가 거부되면 이유를 알려주고 다시 누를 수 있게 한다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true },
+    routes: {
+      "DELETE /api/meetings/10": () => response({ message: "본인이 작성한 글만 삭제할 수 있어요." }, { status: 403 }),
+    },
+  });
+  await settle();
+  page.click("[data-delete-btn]");
+  await settle();
+
+  assert.deepEqual(page.calls.alerts, ["본인이 작성한 글만 삭제할 수 있어요."]);
+  assert.equal(page.$("[data-delete-btn]").disabled, false);
+  assert.deepEqual(page.calls.navigations, []);
   page.close();
 });
 

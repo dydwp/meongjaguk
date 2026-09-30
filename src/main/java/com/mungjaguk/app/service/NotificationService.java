@@ -34,6 +34,12 @@ public class NotificationService {
                 request.getBoard().getTitle()));
     }
 
+    /** 모집 글 삭제 → 그 글을 가리키는 알림도 삭제 (삭제와 같은 트랜잭션에서 호출) */
+    @Transactional
+    public void deleteByMeeting(Long meetingId) {
+        notificationRepository.deleteByReferenceId(meetingId);
+    }
+
     /** 동행 신청 도착 → 모집 작성자에게 알림 (신청과 같은 트랜잭션에서 호출) */
     @Transactional
     public void notifyCompanionRequested(Board board, User applicant) {

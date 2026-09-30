@@ -116,6 +116,24 @@ public class Board {
         }
     }
 
+    /**
+     * 게시글 수정 (작성자만, 코스는 바꾸지 않음)
+     * - 모임 일시가 지나 마감(CLOSED)됐던 글도 새 일시로 바꾸면 다시 모집 중으로 변경
+     */
+    public void update(String title, String description, LocalDate meetingDate, LocalTime meetingTime,
+                       int maxParticipants, boolean petRequired, String participationCondition) {
+        this.title = title;
+        this.description = description;
+        this.meetingDate = meetingDate;
+        this.meetingTime = meetingTime;
+        this.maxParticipants = maxParticipants;
+        this.petRequired = petRequired;
+        this.participationCondition = participationCondition;
+        if (this.status == BoardStatus.CLOSED) {
+            this.status = BoardStatus.RECRUITING;
+        }
+    }
+
     /** 정원이 찼는지 (현재 인원 = 작성자 1명 + 수락된 신청자 수) */
     public boolean isFull(long acceptedCount) {
         return 1 + acceptedCount >= maxParticipants;

@@ -32,6 +32,7 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.delete;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.get;
 import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.post;
+import static org.springframework.test.web.servlet.request.MockMvcRequestBuilders.put;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.header;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.jsonPath;
 import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.status;
@@ -136,6 +137,59 @@ class BoardControllerTest extends WebTestSupport {
                         .contentType(MediaType.APPLICATION_JSON).content("{\"meetingDate\": \"내일\"}"))
                 .andExpect(status().isBadRequest())
                 .andExpect(jsonPath("$.message").value("입력값 형식을 확인해주세요."));
+    }
+
+    // ---------- 수정 / 삭제 ----------
+
+    @Test
+    void guestCannotUpdateOrDelete() throws Exception {
+        mvc.perform(put("/api/meetings/10").with(csrf()).contentType(MediaType.APPLICATION_JSON).content(CREATE_JSON))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(delete("/api/meetings/10").with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        verify(boardService, never()).updateBoard(anyLong(), anyLong(), any());
+        verify(boardService, never()).deleteBoard(anyLong(), anyLong());
+    }
+
+    @Test
+    void hostUpdatesBoard() throws Exception {
+        mvc.perform(put("/api/meetings/10").with(login()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(CREATE_JSON))
+                .andExpect(status().isOk())
+                .andExpect(jsonPath("$.meetingId").value(10));
+
+        ArgumentCaptor<BoardCreateRequest> captor = ArgumentCaptor.forClass(BoardCreateRequest.class);
+        verify(boardService).updateBoard(eq(10L), eq(USER_ID), captor.capture());
+        assertEquals("주말 산책", captor.getValue().title());
+    }
+
+    @Test
+    void updatingOthersBoardIs403() throws Exception {
+        doThrow(new AccessDeniedException("본인이 작성한 글만 수정할 수 있어요."))
+                .when(boardService).updateBoard(eq(10L), eq(USER_ID), any());
+
+        mvc.perform(put("/api/meetings/10").with(login()).with(csrf())
+                        .contentType(MediaType.APPLICATION_JSON).content(CREATE_JSON))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("본인이 작성한 글만 수정할 수 있어요."));
+    }
+
+    @Test
+    void hostDeletesBoard() throws Exception {
+        mvc.perform(delete("/api/meetings/10").with(login()).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(boardService).deleteBoard(10L, USER_ID);
+    }
+
+    @Test
+    void deletingOthersBoardIs403() throws Exception {
+        doThrow(new AccessDeniedException("본인이 작성한 글만 삭제할 수 있어요."))
+                .when(boardService).deleteBoard(10L, USER_ID);
+
+        mvc.perform(delete("/api/meetings/10").with(login()).with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("본인이 작성한 글만 삭제할 수 있어요."));
     }
 
     // ---------- 댓글 ----------

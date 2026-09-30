@@ -22,6 +22,12 @@ public class MeetupController {
         return "board/form";
     }
 
+    /** 산책로 게시글 수정 (작성자만, 같은 입력 화면 사용): /board/edit?meetingId={id} */
+    @GetMapping("/board/edit")
+    public String boardEditForm() {
+        return "board/form";
+    }
+
     @GetMapping("/course-detail-shared")
     public String courseDetailShared() {
         return "board/detail";

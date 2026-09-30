@@ -15,17 +15,18 @@ const ROUTE = {
   ],
 };
 
-function openForm({ query = "?route=r-1", session = { "walk-route:r-1": ROUTE }, fetch } = {}) {
+function openForm({ query = "?route=r-1", session = { "walk-route:r-1": ROUTE }, fetch, path = "/board/new" } = {}) {
   return openPage({
     html: template("board/form.html"),
-    url: "http://localhost:8081/board/new" + query,
+    url: "http://localhost:8081" + path + query,
     scripts: ["board-form.js"],
     sessionStorage: session,
     fetch,
     setup(window) {
       const page = window.document.querySelector("#board-form-page");
       Object.assign(page.dataset, {
-        apiBase: "/api/courses/", submitUrl: "/api/meetings", detailUrl: "/course-detail-shared",
+        apiBase: "/api/courses/", submitUrl: "/api/meetings", meetingApi: "/api/meetings/",
+        detailUrl: "/course-detail-shared",
         courseDetailUrl: "/course-detail", csrfHeader: "X-CSRF-TOKEN", csrfToken: "token-123",
       });
     },
@@ -166,4 +167,96 @@ test("등록 실패 원인별로 안내하고 다시 누를 수 있게 한다", 
     assert.deepEqual(page.calls.navigations, []);
     page.close();
   }
+});
+
+// ---------- 수정 (/board/edit?meetingId=10) ----------
+
+const MEETING = {
+  meetingId: 10, title: "저녁 산책", description: "같이 걸어요", courseName: "서울숲 코스",
+  distanceM: 2600, estimatedMinutes: 40, meetingDate: "2099-10-03", meetingTime: "19:00:00",
+  petRequired: true, participationCondition: "소형견", maxParticipants: 4, isHost: true,
+};
+
+function openEdit(meeting = MEETING, onPut = () => response({ meetingId: 10 })) {
+  return openForm({
+    path: "/board/edit",
+    query: "?meetingId=10",
+    session: {},
+    fetch: (url, call) => {
+      if (call.method === "PUT") return onPut(call);
+      if (url === "/api/meetings/10") return meeting ? response(meeting) : response({}, { status: 404 });
+      throw new Error("unexpected " + url);
+    },
+  });
+}
+
+test("수정 화면은 기존 값을 채우고 코스 정보를 보여준다", async () => {
+  const page = openEdit();
+  await settle();
+
+  assert.equal(page.$("#board-form-heading").textContent, "산책로 게시글 수정");
+  assert.equal(page.$("#board-form-submit").textContent, "수정");
+  assert.equal(page.$("#board-form").hidden, false);
+  assert.equal(page.$("#board-form-course-name").textContent, "서울숲 코스");
+  const f = page.$("#board-form").elements;
+  assert.equal(f.title.value, "저녁 산책");
+  assert.equal(f.meetingDate.value, "2099-10-03");
+  assert.equal(f.meetingTime.value, "19:00");
+  assert.equal(f.maxParticipants.value, "4");
+  assert.equal(f.petRequired.checked, true);
+  assert.equal(f.participationCondition.value, "소형견");
+  assert.equal(f.description.value, "같이 걸어요");
+  assert.equal(page.$("#board-form-cancel").getAttribute("href"), "/course-detail-shared?meetingId=10");
+  page.close();
+});
+
+test("작성자가 아니거나 없는 글이면 수정 폼을 열지 않는다", async () => {
+  for (const [meeting, message] of [
+    [{ ...MEETING, isHost: false }, "본인이 작성한 글만 수정할 수 있어요."],
+    [null, "모집 정보를 찾을 수 없어요."],
+  ]) {
+    const page = openEdit(meeting);
+    await settle();
+    assert.equal(page.$("#board-form").hidden, true);
+    assert.equal(page.$("#board-form-status").textContent, message);
+    assert.equal(page.$("#board-form-back").hidden, false);
+    page.close();
+  }
+});
+
+test("수정하면 PUT으로 입력값만 보내고 상세 화면으로 이동한다", async () => {
+  const page = openEdit();
+  await settle();
+
+  fill(page, { title: " 새 제목 ", maxParticipants: "6" });
+  submit(page);
+  await settle();
+
+  const call = page.calls.fetch.at(-1);
+  assert.equal(call.method, "PUT");
+  assert.equal(call.url, "/api/meetings/10");
+  assert.equal(call.headers["X-CSRF-TOKEN"], "token-123");
+  const body = JSON.parse(call.body);
+  assert.equal(body.title, "새 제목");
+  assert.equal(body.maxParticipants, 6);
+  assert.equal(body.meetingTime, "19:00");
+  assert.equal(body.course, undefined);
+  assert.equal(body.courseId, undefined);
+  assert.deepEqual(page.calls.navigations, ["/course-detail-shared?meetingId=10"]);
+  page.close();
+});
+
+test("수정이 거부되면 서버가 준 이유를 보여주고 다시 누를 수 있게 한다", async () => {
+  const page = openEdit(MEETING, () =>
+    response({ message: "최대 인원은 현재 참여 인원(3명)보다 적을 수 없어요." }, { status: 400 }));
+  await settle();
+
+  submit(page);
+  await settle();
+
+  assert.equal(page.$("#board-form-error").textContent, "최대 인원은 현재 참여 인원(3명)보다 적을 수 없어요.");
+  assert.equal(page.$("#board-form-submit").disabled, false);
+  assert.equal(page.$("#board-form-submit").textContent, "수정");
+  assert.deepEqual(page.calls.navigations, []);
+  page.close();
 });

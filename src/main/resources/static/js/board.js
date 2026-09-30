@@ -1,5 +1,5 @@
 /* ==========================================================================
-   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 동행 신청·취소 / 댓글)
+   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 글 수정·삭제 / 동행 신청·취소 / 댓글)
    담당: 김환중
    ========================================================================== */
 (function () {
@@ -342,6 +342,7 @@
         meetingClosed = meeting.status !== "RECRUITING";
         if (meeting.isHost) {
           renderDisabledButton("HOST", "내가 공유한 모집이에요");
+          showHostActions();
         } else {
           renderApplyButton(meeting.myApplicationStatus);
         }
@@ -353,6 +354,51 @@
         console.error("모집 정보를 불러오지 못했습니다.", err);
         showNotFound("모집 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
       });
+
+    /* ---------- 게시글 수정 / 삭제 (작성자만) ---------- */
+    var hostActions = detailRoot.querySelector("[data-host-actions]");
+    var deleteBtn = detailRoot.querySelector("[data-delete-btn]");
+
+    function showHostActions() {
+      detailRoot.querySelector("[data-edit-link]").href =
+        "/board/edit?meetingId=" + encodeURIComponent(meetingId);
+      hostActions.hidden = false;
+    }
+
+    deleteBtn.addEventListener("click", function () {
+      if (deleteBtn.disabled) return;
+      if (!confirm("이 모집 글을 삭제할까요?\n동행 신청과 댓글도 함께 삭제되고 복구할 수 없어요.")) return;
+
+      var headers = {};
+      if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+      deleteBtn.disabled = true;
+      fetch("/api/meetings/" + encodeURIComponent(meetingId), {
+        method: "DELETE",
+        headers: headers
+      })
+        .then(function (res) {
+          if (res.redirected || res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          if (res.ok) {
+            window.location.replace("/board"); // 뒤로 가기로 삭제된 글에 돌아오지 않도록
+            return;
+          }
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) {
+              alert(body.message || "글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+              deleteBtn.disabled = false;
+            });
+        })
+        .catch(function (err) {
+          console.error("게시글 삭제 실패", err);
+          alert("글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+          deleteBtn.disabled = false;
+        });
+    });
 
     /* ---------- 동행 신청 / 취소 ---------- */
     applyBtn.addEventListener("click", function () {
