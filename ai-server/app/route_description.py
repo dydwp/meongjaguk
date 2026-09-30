@@ -1,11 +1,12 @@
-"""OSM 장소명과 추천 feature를 사용하는 결정적 산책로 설명 생성."""
-
 import math
 
 import geopandas as gpd
 from shapely.geometry import LineString
 from shapely.ops import unary_union
 
+"""OSM 장소명과 추천 feature를 사용하는 결정적 산책로 설명 생성."""
+
+## 장소명, 기본 제목, 우선순위, 실제 경계값(0.4·0.2), 거리·시간 표현 검증
 
 class RoutePlaceLookup:
     """녹지는 한 번만 미터 좌표계로 변환하고 공간 인덱스로 조회한다."""
