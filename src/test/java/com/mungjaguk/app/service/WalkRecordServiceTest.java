@@ -56,7 +56,8 @@ class WalkRecordServiceTest {
                 plannedPoints,
                 mock(CoursePointRepository.class),
                 mock(WalkRecordPetRepository.class),
-                mock(PetRepository.class)
+                mock(PetRepository.class),
+                mock(PetService.class)
         );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
@@ -74,14 +75,15 @@ class WalkRecordServiceTest {
         WalkRecordRepository records = mock(WalkRecordRepository.class);
         WalkRecordPointRepository actualPoints = mock(WalkRecordPointRepository.class);
         WalkRecordPlannedPointRepository plannedPoints = mock(WalkRecordPlannedPointRepository.class);
-        WalkRecordService service = new WalkRecordService(
+                WalkRecordService service = new WalkRecordService(
                 records,
                 mock(RouteRepository.class),
                 actualPoints,
                 plannedPoints,
                 mock(CoursePointRepository.class),
                 mock(WalkRecordPetRepository.class),
-                mock(PetRepository.class)
+                mock(PetRepository.class),
+                mock(PetService.class)
         );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
@@ -108,8 +110,9 @@ class WalkRecordServiceTest {
     private final CoursePointRepository coursePoints = mock(CoursePointRepository.class);
     private final WalkRecordPetRepository walkPets = mock(WalkRecordPetRepository.class);
     private final PetRepository pets = mock(PetRepository.class);
+    private final PetService petService = mock(PetService.class);
     private final WalkRecordService service = new WalkRecordService(
-            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets);
+            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets, petService);
 
     private WalkRecord record(long id, Long courseId, int durationSeconds, int distanceM) {
         LocalDateTime start = LocalDateTime.of(2026, 9, 29, 10, 0);

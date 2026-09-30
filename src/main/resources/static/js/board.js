@@ -584,30 +584,102 @@
     }
   }
 
+  // 반려견 프로필 렌더링
+  function renderMeetingPets(pets) {
+    var section = detailRoot.querySelector("[data-meeting-pets]");
+    var list = detailRoot.querySelector("[data-meeting-pet-list]");
+
+    if (!section || !list) return;
+
+    list.replaceChildren();
+
+    if (!Array.isArray(pets) || pets.length === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    pets.forEach(function (pet) {
+      var item = el("div", "walk-pet-group-item");
+
+      var photo = el("div", "walk-current-pet-photo");
+
+      if (pet.profileImage) {
+        var img = document.createElement("img");
+        img.src = pet.profileImage;
+        img.alt = pet.name || "반려견";
+        photo.appendChild(img);
+      } else {
+        photo.textContent = "🐾";
+      }
+
+      var info = el("div", "walk-current-pet-info");
+      info.appendChild(el("strong", null, pet.name || "반려견"));
+
+      var parts = [];
+      if (pet.breed) parts.push(pet.breed);
+      if (pet.sizeLabel) parts.push(pet.sizeLabel);
+      if (pet.ageInYears != null) parts.push(pet.ageInYears + "세");
+
+      if (parts.length) {
+        info.appendChild(el("span", null, parts.join(" · ")));
+      }
+
+      if (pet.activityLevelLabel) {
+        info.appendChild(
+          el("span", "walk-current-pet-activity",
+            "활동성 " + pet.activityLevelLabel)
+        );
+      }
+
+      item.appendChild(photo);
+      item.appendChild(info);
+      list.appendChild(item);
+    });
+
+    section.hidden = false;
+  }
+
   function renderDetail(meeting) {
     var q = function (sel) { return detailRoot.querySelector(sel); };
 
     q("[data-status]").replaceChildren(statusTag(meeting.status));
     q("[data-title]").textContent = meeting.title;
-    q("[data-course-name]").textContent = "코스 · " + meeting.courseName;
+    q("[data-course-name]").textContent = meeting.courseName || "-";
     q("[data-distance]").textContent =
-      "거리 · " + (meeting.distanceM != null ? (meeting.distanceM / 1000).toFixed(1) + "km" : "-");
+      meeting.distanceM != null ? (meeting.distanceM / 1000).toFixed(1) + "km" : "-";
     q("[data-minutes]").textContent =
-      "예상 소요시간 · " + (meeting.estimatedMinutes != null ? "약 " + meeting.estimatedMinutes + "분" : "-");
+      meeting.estimatedMinutes != null ? "약 " + meeting.estimatedMinutes + "분" : "-";
     q("[data-when]").textContent =
-      "모임 일시 · " + formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime);
-    q("[data-pet]").textContent = "반려견 동반 · " + (meeting.petRequired ? "필수" : "선택");
+      formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime) || "-";
 
+    // 참여자의 반려견 동반 필수 조건 (조건부 class 적용)
+    var petCondition = q("[data-pet]");
+    petCondition.textContent = meeting.petRequired ? "필수" : "선택";
+    petCondition.classList.toggle("meeting-pet-required", meeting.petRequired);
+
+    // 참여 조건
     var condition = q("[data-condition]");
+
     if (meeting.participationCondition) {
-      condition.textContent = "참여 조건 · " + meeting.participationCondition;
+      condition.textContent = meeting.participationCondition;
     } else {
-      condition.remove();
+      condition.textContent = "없음";
     }
 
+    // 설명 영역
+    var descriptionSection = q("[data-description-section]");
     var description = q("[data-description]");
-    if (meeting.description) description.textContent = meeting.description;
-    else description.remove();
+
+    if (descriptionSection && description) {
+      if (meeting.description) {
+        description.textContent = meeting.description;
+        descriptionSection.hidden = false;
+      } else {
+        descriptionSection.hidden = true;
+      }
+    }
+
+    renderMeetingPets(meeting.pets);
 
     q("[data-host-avatar]").textContent = meeting.hostNickname.charAt(0);
     q("[data-host-name]").textContent = meeting.hostNickname;

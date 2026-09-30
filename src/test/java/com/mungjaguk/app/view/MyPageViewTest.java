@@ -98,9 +98,12 @@ class MyPageViewTest extends WebTestSupport {
     @Test
     void onlyActionableRequestsHaveButtons() throws Exception {
         when(myPageService.getMeetingRequests(USER_ID)).thenReturn(List.of(
-                new MeetingRequestView(1L, 10L, "저녁 산책", "민준", "같이 가요", future.toLocalDate(), future.toLocalTime(), "PENDING"),
-                new MeetingRequestView(2L, 10L, "저녁 산책", "서연", null, future.toLocalDate(), future.toLocalTime(), "ACCEPTED"),
-                new MeetingRequestView(3L, 11L, "지난 산책", "지훈", null, past.toLocalDate(), past.toLocalTime(), "PENDING")));
+                new MeetingRequestView(1L, 10L, "저녁 산책", "민준", "같이 가요",
+                        future.toLocalDate(), future.toLocalTime(), "PENDING"),
+                new MeetingRequestView(2L, 10L, "저녁 산책", "서연", null,
+                        future.toLocalDate(), future.toLocalTime(), "ACCEPTED"),
+                new MeetingRequestView(3L, 11L, "지난 산책", "지훈", null,
+                        past.toLocalDate(), past.toLocalTime(), "PENDING")));
 
         mvc.perform(get("/mypage").param("tab", "requests").with(login()))
                 .andExpect(content().string(allOf(
@@ -109,7 +112,7 @@ class MyPageViewTest extends WebTestSupport {
                         containsString("action=\"/mypage/requests/1/reject\""),
                         not(containsString("/mypage/requests/2/accept")),
                         not(containsString("/mypage/requests/3/accept")),
-                        containsString("name=\"_csrf\""),            // 폼마다 CSRF 토큰
+                        containsString("name=\"_csrf\""),
                         containsString("저녁 산책 동행을 신청했어요"),
                         containsString("같이 가요"),
                         containsString(">수락됨<"),
@@ -119,7 +122,8 @@ class MyPageViewTest extends WebTestSupport {
     @Test
     void mySentRequestsShowHostAndSchedule() throws Exception {
         when(myPageService.getMyCompanionRequests(USER_ID)).thenReturn(List.of(
-                new MyCompanionRequestView(4L, 20L, "주말 산책", "한강 코스", "서연", future.toLocalDate(), future.toLocalTime(), "PENDING")));
+                new MyCompanionRequestView(4L, 20L, "주말 산책", "한강 코스", "서연",
+                        future.toLocalDate(), future.toLocalTime(), "PENDING")));
 
         mvc.perform(get("/mypage").param("tab", "requests").with(login()))
                 .andExpect(content().string(allOf(
@@ -145,7 +149,8 @@ class MyPageViewTest extends WebTestSupport {
                 new PetCardView(9L, "보리", "말티즈", "소형견", 3, null, "")));
         when(walkRecordService.isMyPet(USER_ID, 9L)).thenReturn(true);
         when(walkRecordService.getMyWalkHistory(USER_ID, 9L)).thenReturn(List.of(
-                new WalkHistoryItemView(3L, "한강 코스", "개인 산책", "보리", "2.3km", "약 35분", "2026.09.19")));
+                new WalkHistoryItemView(3L, "한강 코스", "개인 산책", "보리",
+                        "2.3km", "약 35분", "2026.09.19")));
 
         mvc.perform(get("/mypage").param("tab", "activity").param("petId", "9").with(login()))
                 .andExpect(content().string(allOf(
@@ -160,11 +165,29 @@ class MyPageViewTest extends WebTestSupport {
 
     @Test
     void activityDetailShowsRecordAndDeleteButton() throws Exception {
-        when(walkRecordService.getDetail(3L, USER_ID)).thenReturn(Optional.of(new WalkDetailView(3L, "추천 코스",
-                "개인 산책", true, true, "공원을 따라 걷는 코스", "거리 · 2.3km", "예상 소요시간 · 약 35분",
-                "보리 · 초코", "2.4km", "38:12", "2026.09.29 완료")));
+        when(walkRecordService.getDetail(3L, USER_ID)).thenReturn(Optional.of(
+                new WalkDetailView(
+                        3L,
+                        "추천 코스",
+                        "개인 산책",
+                        true,
+                        true,
+                        "공원을 따라 걷는 코스",
+                        "거리 · 2.3km",
+                        "예상 소요시간 · 약 35분",
+                        "보리 · 초코",
+                        "2.4km",
+                        "38:12",
+                        "2026.09.29 완료"
+                )));
+
         when(walkRecordService.getWalkPoints(3L, USER_ID)).thenReturn(List.of(
                 new WalkPointView(new BigDecimal("37.5440000"), new BigDecimal("127.0430000"))));
+
+        when(walkRecordService.getWalkPets(3L, USER_ID)).thenReturn(List.of(
+                new PetCardView(1L, "보리", "말티즈", "소형견", 3, "/images/pets/bori.png", "높음"),
+                new PetCardView(2L, "초코", "푸들", "중형견", 2, null, "보통")
+        ));
 
         mvc.perform(get("/activity-detail").param("id", "3").with(login()))
                 .andExpect(status().isOk())
@@ -173,8 +196,14 @@ class MyPageViewTest extends WebTestSupport {
                         containsString("거리 · 2.3km"),
                         containsString("예상 소요시간 · 약 35분"),
                         containsString("공원을 따라 걷는 코스"),
+                        containsString("함께 산책한 반려견"),
+                        containsString("보리"),
+                        containsString("말티즈 · 소형견 · 3세"),
+                        containsString("활동성 높음"),
+                        containsString("초코"),
+                        containsString("푸들 · 중형견 · 2세"),
+                        containsString("활동성 보통"),
                         containsString("38:12"),
-                        containsString("함께 산책한 반려견: 보리 · 초코"),
                         containsString("2026.09.29 완료"),
                         containsString("data-lat=\"37.5440000\""),
                         containsString("action=\"/activity-detail/3/delete\""),
@@ -183,14 +212,29 @@ class MyPageViewTest extends WebTestSupport {
 
     @Test
     void freeWalkDetailHidesPlanAndDelete() throws Exception {
-        when(walkRecordService.getDetail(1L, USER_ID)).thenReturn(Optional.of(new WalkDetailView(1L, "자유 산책",
-                "개인 산책", false, false, "", "거리 · -", "예상 소요시간 · -", "", "0.1km", "01:05", "산책 중")));
+        when(walkRecordService.getDetail(1L, USER_ID)).thenReturn(Optional.of(
+                new WalkDetailView(
+                        1L,
+                        "자유 산책",
+                        "개인 산책",
+                        false,
+                        false,
+                        "",
+                        "거리 · -",
+                        "예상 소요시간 · -",
+                        "",
+                        "0.1km",
+                        "01:05",
+                        "산책 중"
+                )));
+
+        when(walkRecordService.getWalkPets(1L, USER_ID)).thenReturn(List.of());
 
         mvc.perform(get("/activity-detail").param("id", "1").with(login()))
                 .andExpect(content().string(allOf(
                         containsString("자유 산책"),
-                        not(containsString("예상 소요시간")),
+                        not(containsString("예상 소요시간 · -")),
                         not(containsString("기록 삭제")),
-                        not(containsString("함께 산책한 반려견")))));
+                        not(containsString("walk-pet-group-card")))));
     }
 }
