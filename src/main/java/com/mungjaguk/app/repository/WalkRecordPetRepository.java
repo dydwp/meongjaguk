@@ -79,4 +79,19 @@ public class WalkRecordPetRepository {
                 walkRecordId, userId, userId
         );
     }
+
+    public void savePetLinks(Long walkRecordId, List<Long> petIds) {
+        if (petIds == null || petIds.isEmpty()) {
+            return;
+        }
+
+        String sql = """
+                INSERT INTO walk_record_pets (walk_record_id, pet_id)
+                VALUES (?, ?)
+                """;
+
+        for (Long petId : petIds) {
+            jdbcTemplate.update(sql, walkRecordId, petId);
+        }
+    }
 }
