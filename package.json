@@ -1,0 +1,11 @@
+{
+  "name": "mungjaguk-frontend-tests",
+  "private": true,
+  "description": "멍자국 프론트엔드(static/js) 테스트 - Node 내장 테스트 러너 + jsdom",
+  "scripts": {
+    "test": "node --test \"src/test/js/**/*.test.js\""
+  },
+  "devDependencies": {
+    "jsdom": "^30.1.1"
+  }
+}
