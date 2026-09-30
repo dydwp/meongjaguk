@@ -56,8 +56,40 @@
     
   </div>
 
+  <!-- 함께 산책한 반려견 프로필 -->
+  <div class="card card-pad mt-24"
+      th:if="${walkPets != null and !#lists.isEmpty(walkPets)}">
+
+    <h2 class="block-label">함께 산책한 반려견</h2>
+
+    <div class="walk-pet-group-card">
+      <div class="walk-pet-group-item" th:each="pet : ${walkPets}">
+        <div class="walk-current-pet-photo">
+          <img th:if="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}"
+              th:src="${pet.profileImage()}"
+              th:alt="${pet.name()}">
+          <span th:unless="${pet.profileImage() != null and !#strings.isEmpty(pet.profileImage())}">
+            🐾
+          </span>
+        </div>
+
+        <div class="walk-current-pet-info">
+          <strong th:text="${pet.name()}">초코</strong>
+          <span th:text="${pet.summaryLine()}">포메라니안 · 소형견 · 3세</span>
+
+          <span class="walk-current-pet-activity"
+                th:if="${pet.activityLevelLabel() != null and !#strings.isEmpty(pet.activityLevelLabel())}"
+                th:text="|활동성 ${pet.activityLevelLabel()}|">
+            활동성 높음
+          </span>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <!-- 실제 산책 기록 -->
   <div class="card card-pad mt-24">
+
     <h2 class="block-label">실제 기록</h2>
 
     <div class="stat-row" style="margin:0;">
@@ -75,12 +107,6 @@
         </div>
       </div>
     </div>
-
-    <p class="small text-muted mt-16"
-      th:if="${detail.petNamesLabel() != null and !#strings.isEmpty(detail.petNamesLabel())}"
-      th:text="|함께 산책한 반려견: ${detail.petNamesLabel()}|">
-      함께 산책한 반려견: 초코 · 코코
-    </p>
 
     <p class="small text-muted mt-16 mb-0" th:text="${detail.completedDateLabel()}">
       2026.09.19 완료

@@ -80,6 +80,25 @@ public class WalkRecordPetRepository {
         );
     }
 
+    public List<Long> findPetIdsByWalkRecordId(Long walkRecordId, Long userId) {
+        String sql = """
+                SELECT wrp.pet_id
+                FROM walk_record_pets wrp
+                JOIN walk_records wr ON wrp.walk_record_id = wr.walk_record_id
+                JOIN pets p ON wrp.pet_id = p.pet_id
+                WHERE wrp.walk_record_id = ?
+                AND wr.user_id = ?
+                AND p.user_id = ?
+                ORDER BY wrp.pet_id
+                """;
+
+        return jdbcTemplate.query(
+                sql,
+                (rs, rowNum) -> rs.getLong("pet_id"),
+                walkRecordId, userId, userId
+        );
+    }
+
     public void savePetLinks(Long walkRecordId, List<Long> petIds) {
         if (petIds == null || petIds.isEmpty()) {
             return;
