@@ -1,10 +1,17 @@
 package com.mungjaguk.app.repository;
 
 import com.mungjaguk.app.entity.Board;
+import com.mungjaguk.app.entity.BoardStatus;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.List;
 import java.util.Optional;
 
@@ -25,4 +32,19 @@ public interface BoardRepository extends JpaRepository<Board, Long> {
     /** 공유 산책로 상세 (작성자, 코스 함께 조회) */
     @EntityGraph(attributePaths = {"host", "course"})
     Optional<Board> findWithHostAndCourseByMeetingId(Long meetingId);
+
+    /**
+     * 모임 일시가 지난 모집 중(RECRUITING) 게시글을 한 번에 모집 마감(CLOSED)으로 변경
+     * - 모임 시작 시각이 되면 지난 것으로 봄 (Board.isMeetingTimePassed와 같은 기준)
+     * @return 변경된 게시글 수
+     */
+    @Modifying
+    @Query("update Board b set b.status = :closed, b.updatedAt = :now " +
+           "where b.status = :recruiting " +
+           "and (b.meetingDate < :today or (b.meetingDate = :today and b.meetingTime <= :time))")
+    int closeExpired(@Param("recruiting") BoardStatus recruiting,
+                     @Param("closed") BoardStatus closed,
+                     @Param("today") LocalDate today,
+                     @Param("time") LocalTime time,
+                     @Param("now") LocalDateTime now);
 }

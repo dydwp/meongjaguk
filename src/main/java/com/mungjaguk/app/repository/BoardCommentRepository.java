@@ -8,7 +8,7 @@ import java.util.List;
 
 public interface BoardCommentRepository extends JpaRepository<BoardComment, Long> {
 
-    /** 게시글 댓글 목록: 오래된 순 (작성자 함께 조회) */
+    /** 게시글 댓글 목록: 최신순 (작성자 함께 조회) */
     @EntityGraph(attributePaths = {"user"})
-    List<BoardComment> findByBoard_MeetingIdOrderByCreatedAtAscCommentIdAsc(Long meetingId);
+    List<BoardComment> findByBoard_MeetingIdOrderByCreatedAtDescCommentIdDesc(Long meetingId);
 }
