@@ -17,7 +17,10 @@ import com.mungjaguk.app.repository.BoardCommentRepository;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
 import com.mungjaguk.app.repository.CoursePointRepository;
+import com.mungjaguk.app.repository.PetRepository;
 import com.mungjaguk.app.repository.RouteRepository;
+import com.mungjaguk.app.repository.WalkMeetingPetRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
 import org.junit.jupiter.api.Test;
@@ -62,6 +65,9 @@ class BoardServiceTest {
     private CoursePointRepository coursePoints;
     private NotificationService notifications;
     private BoardService service;
+    private WalkMeetingPetRepository walkMeetingPets;
+    private PetRepository pets;
+    private PetService petService;
 
     private final User host = user(1L, "용제");
     private final User applicant = user(2L, "민준");
@@ -76,7 +82,21 @@ class BoardServiceTest {
         routes = mock(RouteRepository.class);
         coursePoints = mock(CoursePointRepository.class);
         notifications = mock(NotificationService.class);
-        service = new BoardService(boards, requests, comments, users, routes, coursePoints, notifications);
+        walkMeetingPets = mock(WalkMeetingPetRepository.class);
+        pets = mock(PetRepository.class);
+        petService = mock(PetService.class);
+        service = new BoardService(
+                boards,
+                requests,
+                comments,
+                users,
+                routes,
+                coursePoints,
+                notifications,
+                walkMeetingPets,
+                pets,
+                petService
+        );
         when(users.findById(1L)).thenReturn(host);
         when(users.findById(2L)).thenReturn(applicant);
     }
@@ -205,7 +225,7 @@ class BoardServiceTest {
 
         private BoardCreateRequest existingCourse(String title, LocalDate date, LocalTime time, Integer max,
                                                   String condition, String description) {
-            return new BoardCreateRequest(3, null, title, date, time, max, null, condition, description, null);
+            return new BoardCreateRequest(3, null, title, date, time, max, null, condition, description, null, null);
         }
 
         private BoardCreateRequest valid() {
@@ -271,7 +291,7 @@ class BoardServiceTest {
 
         @Test
         void newCourseNeedsCourseInfo() {
-            BoardCreateRequest noCourse = new BoardCreateRequest(null, null, "제목", date, time, 4, true, null, null, null);
+            BoardCreateRequest noCourse = new BoardCreateRequest(null, null, "제목", date, time, 4, true, null, null, null, null);
 
             assertBadRequest(noCourse, "공유할 산책로 정보가 없어요.");
         }
@@ -337,7 +357,7 @@ class BoardServiceTest {
         }
 
         private BoardCreateRequest newCourse(RouteDto course, List<CoursePointDto> points) {
-            return new BoardCreateRequest(null, course, "새 코스 산책", date, time, 4, true, null, null, points);
+            return new BoardCreateRequest(null, course, "새 코스 산책", date, time, 4, true, null, null, points, null);
         }
 
         private void assertBadRequest(BoardCreateRequest request, String message) {

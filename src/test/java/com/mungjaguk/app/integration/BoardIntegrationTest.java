@@ -57,7 +57,8 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         BoardCreateRequest request = new BoardCreateRequest(null, course, "주말 산책", tomorrow, LocalTime.of(10, 0),
                 4, true, "소형견", "같이 걸어요", List.of(
                         new CoursePointDto(2, 37.545, 127.044),
-                        new CoursePointDto(1, 37.544, 127.043)));
+                        new CoursePointDto(1, 37.544, 127.043)),
+                        null);
 
         Long meetingId = boardService.createBoard(host.getUserId(), request);
         flushAndClear();
@@ -78,7 +79,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         Route course = data.route("한강 코스");
 
         Long meetingId = boardService.createBoard(host.getUserId(), new BoardCreateRequest(course.getCourseId(), null,
-                "한강 산책", tomorrow, LocalTime.of(9, 0), 2, null, null, null, null));
+                "한강 산책", tomorrow, LocalTime.of(9, 0), 2, null, null, null, null, null));
         flushAndClear();
 
         assertEquals(course.getCourseId(),

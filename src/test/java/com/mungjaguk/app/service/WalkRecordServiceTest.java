@@ -110,8 +110,9 @@ class WalkRecordServiceTest {
     private final CoursePointRepository coursePoints = mock(CoursePointRepository.class);
     private final WalkRecordPetRepository walkPets = mock(WalkRecordPetRepository.class);
     private final PetRepository pets = mock(PetRepository.class);
+    private final PetService petService = mock(PetService.class);
     private final WalkRecordService service = new WalkRecordService(
-            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets);
+            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets, petService);
 
     private WalkRecord record(long id, Long courseId, int durationSeconds, int distanceM) {
         LocalDateTime start = LocalDateTime.of(2026, 9, 29, 10, 0);
