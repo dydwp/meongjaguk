@@ -74,6 +74,13 @@ Windows 기준:
 ./mvnw.cmd test
 ```
 
+프론트엔드(`static/js`) 테스트 (Node.js 필요, 처음 한 번 `npm install`):
+
+```bash
+npm install
+npm test
+```
+
 ## AI 산책 코스 추천
 
 `ai-server`에서 현재 위치를 기반으로 산책 코스를 추천합니다.
