@@ -1,0 +1,46 @@
+# front(Thymeleaf 템플릿 + static/js) 테스트를 자동으로 실행하는 CI
+# 실행 명령은 README의 "프론트엔드 테스트"와 같다: npm ci -> npm test
+name: Front CI
+
+on:
+  pull_request:
+    branches: [dev, main]
+    paths:
+      - "src/main/resources/templates/**"
+      - "src/main/resources/static/**"
+      - "src/test/js/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/front-ci.yml"
+  push:
+    branches: [dev]
+    paths:
+      - "src/main/resources/templates/**"
+      - "src/main/resources/static/**"
+      - "src/test/js/**"
+      - "package.json"
+      - "package-lock.json"
+      - ".github/workflows/front-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  front-test:
+    name: front 테스트
+    runs-on: ubuntu-latest
+    steps:
+      - name: 코드 받기
+        uses: actions/checkout@v6
+
+      - name: Node.js 24 설치
+        uses: actions/setup-node@v6
+        with:
+          node-version: "24"
+          cache: npm
+
+      - name: 패키지 설치 (package-lock.json 기준)
+        run: npm ci
+
+      - name: front 테스트 실행
+        run: npm test
