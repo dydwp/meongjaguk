@@ -10,8 +10,8 @@
  *  - walk:stopped  : 산책이 끝났을 때   → 경로 지우기
  */
 (function () {
-  var POINTS_KEY = "mungjaguk-walk-points"; // app.js와 같은 저장 이름
-  var ACTIVE_KEY = "mungjaguk-walk-active";
+  var POINTS_KEY = "meongjaguk-walk-points"; // app.js와 같은 저장 이름
+  var ACTIVE_KEY = "meongjaguk-walk-active";
   var DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 }; // 위치를 모를 때: 서울시청
   var el = document.querySelector("[data-walk-map]");
   if (!el) return;

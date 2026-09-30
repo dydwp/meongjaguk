@@ -51,7 +51,7 @@ test("날씨·미세먼지로 산책 등급과 오늘 추천 시간을 보여주
   assert.equal(page.$("[data-weather-status]").hidden, true);
   // 위치는 소수 2자리(약 1km)로 줄여서 보냄
   assert.ok(page.calls.fetch.every((c) => c.url.includes("latitude=37.54&longitude=127.04")));
-  assert.ok(JSON.parse(page.window.sessionStorage.getItem("mungjaguk-weather")).view);
+  assert.ok(JSON.parse(page.window.sessionStorage.getItem("meongjaguk-weather")).view);
   page.close();
 });
 
@@ -89,7 +89,7 @@ test("위치 권한이 없으면 서울시청 기준으로, 보관된 날씨가 
   denied.close();
 
   const view = { icon: "🌤️", temp: "19°", grade: "산책 좋음", detail: "보관된 날씨" };
-  const cached = openWeather({ session: { "mungjaguk-weather": { savedAt: Date.now(), view } } });
+  const cached = openWeather({ session: { "meongjaguk-weather": { savedAt: Date.now(), view } } });
   await settle();
   assert.equal(cached.calls.fetch.length, 0);
   assert.deepEqual(weatherText(cached), ["🌤️", "19°", "산책 좋음", "보관된 날씨"]);
@@ -103,7 +103,7 @@ function openChecklist(saved) {
     html: template("index.html"),
     scripts: ["home-widgets.js"],
     geolocation: {},
-    localStorage: saved ? { "mungjaguk-walk-checklist": saved } : {},
+    localStorage: saved ? { "meongjaguk-walk-checklist": saved } : {},
   });
 }
 const checked = (page) => page.$$("[data-walk-checklist] input").filter((i) => i.checked).map((i) => i.value);
@@ -114,7 +114,7 @@ test("체크 상태를 오늘 날짜로 저장하고, 다시 열면 이어서 �
   leash.checked = true;
   leash.dispatchEvent(new page.window.Event("change"));
 
-  const saved = JSON.parse(page.window.localStorage.getItem("mungjaguk-walk-checklist"));
+  const saved = JSON.parse(page.window.localStorage.getItem("meongjaguk-walk-checklist"));
   assert.deepEqual(saved, { date: todayText(), checked: ["leash"] });
   page.close();
 
@@ -203,7 +203,7 @@ test("지도는 산책 중이면 걸은 경로를 그리고, 새 위치·산책 
     scripts: ["walk-map.js"],
     kakao: true,
     geolocation: {},
-    localStorage: { "mungjaguk-walk-active": "true", "mungjaguk-walk-points": points },
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-points": points },
   });
   const { maps, polylines, markers } = page.calls.kakao;
 
@@ -214,11 +214,11 @@ test("지도는 산책 중이면 걸은 경로를 그리고, 새 위치·산책 
   assert.equal(markers[0].map, maps[0], "시작 지점 표시");
   assert.equal(maps[0].center.lat, 37.501, "마지막 위치로 이동");
 
-  page.window.localStorage.setItem("mungjaguk-walk-points", JSON.stringify([...points, { lat: 37.502, lng: 127.0 }]));
+  page.window.localStorage.setItem("meongjaguk-walk-points", JSON.stringify([...points, { lat: 37.502, lng: 127.0 }]));
   page.window.dispatchEvent(new page.window.CustomEvent("walk:position", { detail: { lat: 37.502, lng: 127.0 } }));
   assert.equal(line.path.length, 3);
 
-  page.window.localStorage.setItem("mungjaguk-walk-active", "false");
+  page.window.localStorage.setItem("meongjaguk-walk-active", "false");
   page.window.dispatchEvent(new page.window.CustomEvent("walk:stopped"));
   assert.equal(line.path.length, 0);
   assert.equal(markers[0].map, null);

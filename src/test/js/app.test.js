@@ -5,12 +5,12 @@ const { openPage, template, response, settle } = require("./support/browser");
 
 const CSRF_META = '<meta name="_csrf" content="token-123"><meta name="_csrf_header" content="X-CSRF-TOKEN">';
 const KEYS = {
-  active: "mungjaguk-walk-active",
-  start: "mungjaguk-walk-start",
-  points: "mungjaguk-walk-points",
-  planned: "mungjaguk-walk-planned",
-  petIds: "mungjaguk-walk-pet-ids",
-  checklist: "mungjaguk-walk-checklist",
+  active: "meongjaguk-walk-active",
+  start: "meongjaguk-walk-start",
+  points: "meongjaguk-walk-points",
+  planned: "meongjaguk-walk-planned",
+  petIds: "meongjaguk-walk-pet-ids",
+  checklist: "meongjaguk-walk-checklist",
 };
 
 const BORI = { id: 1, name: "보리", breed: "말티즈", sizeLabel: "소형견", ageInYears: 3, profileImage: null, activityLevelLabel: "높음" };
