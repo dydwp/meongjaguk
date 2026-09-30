@@ -287,8 +287,28 @@
         산책 기록을 삭제했습니다.
       </div>
 
+      <div class="activity-pet-filter">
+        <a th:href="@{/mypage(tab='activity')}"
+          class="activity-filter-chip"
+          th:classappend="${selectedPetId == null} ? ' active' : ''">
+          전체
+        </a>
+
+        <a th:each="pet : ${pets}"
+          th:href="@{/mypage(tab='activity', petId=${pet.id()})}"
+          class="activity-filter-chip"
+          th:classappend="${selectedPetId != null and selectedPetId == pet.id()} ? ' active' : ''"
+          th:text="${pet.name()}">
+          초코
+        </a>
+      </div>
+
       <!-- 기존 활동 목록 -->
-      <a th:each="item : ${walkHistory}" th:href="@{/activity-detail(id=${item.id()})}" class="route-item">
+      <a th:each="item : ${walkHistory}"
+        th:href="${selectedPetId != null}
+          ? @{/activity-detail(id=${item.id()}, petId=${selectedPetId})}
+          : @{/activity-detail(id=${item.id()})}"
+        class="route-item">
 
         <div class="route-thumb route-distance">
           <span class="route-distance-value"
@@ -307,6 +327,12 @@
             ·
             <span th:text="${item.durationLabel()}">약 35분</span>
           </p>
+
+          <span class="meta activity-pet-names"
+            th:if="${item.petNamesLabel() != null and !#strings.isEmpty(item.petNamesLabel())}"
+            th:text="|함께 산책한 반려견: ${item.petNamesLabel()}|">
+            함께 산책한 반려견: 초코 · 코코
+          </span>
 
           <span class="meta" th:text="${item.dateLabel()}">
             2026.09.19

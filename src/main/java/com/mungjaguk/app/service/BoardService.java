@@ -48,6 +48,7 @@ public class BoardService {
     private final UserService userService;
     private final RouteRepository routeRepository;
     private final CoursePointRepository coursePointRepository;
+    private final NotificationService notificationService;
 
     /** 저장할 수 있는 경로 좌표 최대 개수 (비정상적으로 큰 요청 방지) */
     private static final int MAX_COURSE_POINTS = 5000;
@@ -57,13 +58,15 @@ public class BoardService {
                         BoardCommentRepository commentRepository,
                         UserService userService,
                         RouteRepository routeRepository,
-                        CoursePointRepository coursePointRepository) {
+                        CoursePointRepository coursePointRepository,
+                        NotificationService notificationService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
         this.userService = userService;
         this.routeRepository = routeRepository;
         this.coursePointRepository = coursePointRepository;
+        this.notificationService = notificationService;
     }
 
     /**
@@ -272,6 +275,7 @@ public class BoardService {
         Board board = findBoard(meetingId);
         User user = userService.findById(userId);
         BoardComment saved = commentRepository.save(BoardComment.create(board, user, trimmed));
+        notificationService.notifyCommentAdded(board, user, trimmed); // 추가(박용제): 모집 작성자에게 알림
         return toCommentDto(saved, board, userId);
     }
 

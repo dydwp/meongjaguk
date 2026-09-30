@@ -39,8 +39,9 @@ public class WalkController {
 
     @GetMapping("/activity-detail")
     public String activityDetail(@RequestParam Long id,
-                                 @AuthenticationPrincipal LoginUser loginUser,
-                                 Model model) {
+                                @RequestParam(required = false) Long petId,
+                                @AuthenticationPrincipal LoginUser loginUser,
+                                Model model) {
         Long userId = loginUser.getUserId();
 
         WalkDetailView detail = walkRecordService.getDetail(id, userId)
@@ -49,8 +50,13 @@ public class WalkController {
                         "산책 기록을 찾을 수 없습니다."
                 ));
 
+        Long selectedPetId = petId != null && walkRecordService.isMyPet(userId, petId)
+                ? petId : null;
+
         model.addAttribute("detail", detail);
         model.addAttribute("walkPoints", walkRecordService.getWalkPoints(id, userId));
+        model.addAttribute("plannedPoints", walkRecordService.getPlannedPoints(id, userId));
+        model.addAttribute("selectedPetId", selectedPetId);
         model.addAttribute("kakaoMapsJavaScriptKey", kakaoMapsJavaScriptKey);
 
         return "member/activity";
@@ -58,10 +64,17 @@ public class WalkController {
 
     @PostMapping("/activity-detail/{id}/delete")
     public String deleteActivity(@PathVariable Long id,
+                                @RequestParam(required = false) Long petId,
                                 @AuthenticationPrincipal LoginUser loginUser,
                                 RedirectAttributes redirectAttributes) {
-        walkRecordService.deleteMyCompletedWalkRecord(id, loginUser.getUserId());
+        Long userId = loginUser.getUserId();
+
+        walkRecordService.deleteMyCompletedWalkRecord(id, userId);
         redirectAttributes.addFlashAttribute("activityMessage", "산책 기록을 삭제했습니다.");
+
+        if (petId != null && walkRecordService.isMyPet(userId, petId)) {
+            return "redirect:/mypage?tab=activity&petId=" + petId;
+        }
 
         return "redirect:/mypage?tab=activity";
     }

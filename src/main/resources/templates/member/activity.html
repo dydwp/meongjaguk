@@ -9,8 +9,12 @@
 
 <main id="activity-detail" class="page">
 
-  <!-- GPS 산책 경로 지도 -->
+  <!-- 추천 경로와 실제 산책 경로 지도 -->
   <div id="activity-map" style="width:100%; height:400px;" hidden></div>
+  <div id="activity-route-legend" class="walk-route-legend" hidden>
+    <span id="activity-planned-legend" hidden><i class="walk-route-swatch planned" aria-hidden="true"></i>추천 경로</span>
+    <span id="activity-actual-legend" hidden><i class="walk-route-swatch actual" aria-hidden="true"></i>실제 이동 경로</span>
+  </div>
 
   <p id="activity-map-status" class="small text-muted mt-16" role="status" hidden>
     산책 경로 정보가 없습니다.
@@ -18,6 +22,10 @@
 
   <div id="walk-point-data" hidden>
     <span th:each="point : ${walkPoints}"
+          th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
+  </div>
+  <div id="planned-point-data" hidden>
+    <span th:each="point : ${plannedPoints}"
           th:attr="data-lat=${point.latitude()}, data-lng=${point.longitude()}"></span>
   </div>
 
@@ -68,18 +76,28 @@
       </div>
     </div>
 
+    <p class="small text-muted mt-16"
+      th:if="${detail.petNamesLabel() != null and !#strings.isEmpty(detail.petNamesLabel())}"
+      th:text="|함께 산책한 반려견: ${detail.petNamesLabel()}|">
+      함께 산책한 반려견: 초코 · 코코
+    </p>
+
     <p class="small text-muted mt-16 mb-0" th:text="${detail.completedDateLabel()}">
       2026.09.19 완료
     </p>
   </div>
 
   <div class="activity-detail-actions mt-24">
-    <a th:href="@{/mypage(tab='activity')}" class="btn btn-outline">닫기</a>
+    <a th:href="${selectedPetId != null}
+    ? @{/mypage(tab='activity', petId=${selectedPetId})}
+    : @{/mypage(tab='activity')}"
+    class="btn btn-outline">닫기</a>
 
     <form th:if="${detail.deletable()}"
           th:action="@{/activity-detail/{id}/delete(id=${detail.id()})}"
           method="post"
           onsubmit="return confirm('이 산책 기록을 삭제하시겠습니까?\n삭제한 기록은 복구할 수 없습니다.');">
+      <input th:if="${selectedPetId != null}" type="hidden" name="petId" th:value="${selectedPetId}">
       <button type="submit" class="btn btn-danger-outline">기록 삭제</button>
     </form>
   </div>

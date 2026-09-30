@@ -42,6 +42,11 @@
         document.querySelectorAll("[data-tab-panel]").forEach(function (panel) {
           panel.hidden = panel.getAttribute("data-tab-panel") !== target;
         });
+
+        var url = new URL(window.location.href);
+        url.searchParams.set("tab", target);
+        url.searchParams.delete("petId");
+        window.history.replaceState(null, "", url);
       });
     });
   });
@@ -91,7 +96,6 @@
     });
 
     window.addEventListener("resize", render);
-
     render();
   });
 })();

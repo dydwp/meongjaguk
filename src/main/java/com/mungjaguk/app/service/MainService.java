@@ -2,23 +2,26 @@ package com.mungjaguk.app.service;
 
 import com.mungjaguk.app.dto.MeetCardDto;
 import com.mungjaguk.app.dto.WeeklyWalkSummary;
+import com.mungjaguk.app.entity.ApplicationStatus;
+import com.mungjaguk.app.entity.Board;
 import com.mungjaguk.app.entity.Pet;
-import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.WalkRecord;
+import com.mungjaguk.app.repository.BoardRepository;
+import com.mungjaguk.app.repository.CompanionRequestRepository;
 import com.mungjaguk.app.repository.PetRepository;
-import com.mungjaguk.app.repository.RouteRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
 import lombok.RequiredArgsConstructor;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.DayOfWeek;
 import java.time.LocalDate;
-import java.time.LocalTime;
 import java.time.temporal.TemporalAdjusters;
+import java.util.ArrayList;
+import java.util.Comparator;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Locale;
 
 /**
@@ -30,15 +33,10 @@ import java.util.Locale;
 @Transactional(readOnly = true)
 public class MainService {
 
-    private final RouteRepository routeRepository;
     private final WalkRecordRepository walkRecordRepository;
     private final PetRepository petRepository;
-
-    /** 추천 산책로를 course_id 순서로 limit개 가져옴 */
-    public List<Route> getRecommendRoutes(int limit) {
-        PageRequest page = PageRequest.of(0, limit, Sort.by("courseId").ascending());
-        return routeRepository.findAll(page).getContent();
-    }
+    private final BoardRepository boardRepository;
+    private final CompanionRequestRepository companionRequestRepository;
 
     /** 메인 배너 "이번 주 나의 산책": 월요일 0시부터 지금까지 완료한 산책 합계 + 마지막 산책 */
     public WeeklyWalkSummary getWeeklyWalkSummary(Long userId) {
@@ -89,23 +87,41 @@ public class MainService {
     }
 
     /**
-     * 같이 걷기 모집 카드 limit개
-     * TODO: 환중님 walk_meetings 엔티티/Repository가 dev에 합쳐지면
-     *       이 메서드 안쪽만 "DB 조회 → MeetCardDto 변환"으로 교체
+     * 같이 걷기 모집 카드 limit개 (walk_meetings 실제 데이터)
+     * - 최신 글 6개 중 모집 중인 글을 먼저, 부족하면 마감된 글로 채움 (각각 최신순 유지)
+     * - 참여 인원 = 작성자 1명 + 수락된 신청 수 (산책로 게시판과 같은 기준)
      */
     public List<MeetCardDto> getRecentMeets(int limit) {
-        LocalDate today = LocalDate.now();
-        List<MeetCardDto> meets = List.of(
-                new MeetCardDto(1L, "주말 서울숲 같이 걸어요",
-                        "서울숲 반려견 산책 코스", "소형견 환영",
-                        today.plusDays(1), LocalTime.of(16, 0), 3, 5, "RECRUITING"),
-                new MeetCardDto(2L, "아침 뚝섬 한강 산책 메이트 구해요",
-                        "한강공원 뚝섬 산책 코스", "활동량 많은 친구",
-                        today.plusDays(2), LocalTime.of(8, 0), 2, 4, "RECRUITING"),
-                new MeetCardDto(3L, "퇴근 후 올림픽공원 한 바퀴",
-                        "올림픽공원 순환 산책 코스", "대형견 가능",
-                        today.minusDays(1), LocalTime.of(19, 30), 6, 6, "CLOSED")
-        );
-        return meets.stream().limit(limit).toList();
+        List<Board> boards = boardRepository.findTop6ByOrderByCreatedAtDescMeetingIdDesc();
+        if (boards.isEmpty()) {
+            return List.of();
+        }
+
+        List<Long> meetingIds = boards.stream().map(Board::getMeetingId).toList();
+        Map<Long, Long> acceptedCounts = new HashMap<>();
+        for (Object[] row : companionRequestRepository.countByMeetingIdsAndStatus(meetingIds, ApplicationStatus.ACCEPTED)) {
+            acceptedCounts.put((Long) row[0], (Long) row[1]);
+        }
+
+        List<MeetCardDto> cards = new ArrayList<>();
+        for (Board board : boards) {
+            int accepted = acceptedCounts.getOrDefault(board.getMeetingId(), 0L).intValue();
+            cards.add(new MeetCardDto(
+                    board.getMeetingId(),
+                    board.getTitle(),
+                    board.getCourse().getCourseName(),
+                    board.getParticipationCondition(),
+                    board.getMeetingDate(),
+                    board.getMeetingTime(),
+                    1 + accepted,
+                    board.getMaxParticipants(),
+                    board.getStatus().name()));
+        }
+
+        // 모집 중 먼저 (정렬은 안정 정렬이라 같은 그룹 안에서는 최신순 유지)
+        return cards.stream()
+                .sorted(Comparator.comparing(MeetCardDto::isClosed))
+                .limit(limit)
+                .toList();
     }
 }

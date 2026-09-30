@@ -98,6 +98,47 @@
   var WALK_ACTIVE_KEY = "mungjaguk-walk-active";
   var WALK_START_KEY = "mungjaguk-walk-start";
   var WALK_POINTS_KEY = "mungjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
+  var WALK_PLANNED_KEY = "mungjaguk-walk-planned";
+
+  function readSelectedRoute() {
+    var routeKey = new URLSearchParams(window.location.search).get("route");
+    if (!document.querySelector("[data-auto-start-walk]") ||
+        !routeKey || !/^[a-zA-Z0-9-]+$/.test(routeKey)) return null;
+    try {
+      var route = JSON.parse(sessionStorage.getItem("walk-route:" + routeKey));
+      if (!route || !Array.isArray(route.points) || route.points.length < 2 ||
+          route.points.length > 5000 ||
+          !Number.isFinite(route.distance_m) || route.distance_m <= 0 ||
+          !Number.isFinite(route.estimated_minutes) || route.estimated_minutes <= 0 ||
+          route.points.some(function (point) {
+            return !point || !Number.isInteger(point.sequence) ||
+              !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) ||
+              Math.abs(point.latitude) > 90 || Math.abs(point.longitude) > 180;
+          })) return null;
+      return {
+        title: typeof route.title === "string" && route.title.trim()
+          ? route.title.trim().slice(0, 100) : "추천 산책로",
+        description: typeof route.description === "string"
+          ? route.description.slice(0, 1000) : "",
+        distanceM: Math.round(route.distance_m),
+        estimatedMinutes: Math.round(route.estimated_minutes),
+        points: route.points.map(function (point) {
+          return { sequence: point.sequence, latitude: point.latitude, longitude: point.longitude };
+        })
+      };
+    } catch (error) {
+      console.error("추천 산책로 보관 실패:", error);
+      return null;
+    }
+  }
+
+  function getPlannedRoute() {
+    try {
+      return JSON.parse(localStorage.getItem(WALK_PLANNED_KEY));
+    } catch (error) {
+      return null;
+    }
+  }
 
   // GPS 오차 걸러내기 기준 (담당: 박용제)
   // 데스크톱 브라우저의 낮은 위치 정확도를 고려해 200m 이하 좌표를 기록
@@ -113,6 +154,11 @@
     return v ? parseInt(v, 10) : Date.now();
   }
   function startWalking() {
+    var selectedRoute = readSelectedRoute();
+    localStorage.removeItem(WALK_PLANNED_KEY);
+    if (selectedRoute) {
+      localStorage.setItem(WALK_PLANNED_KEY, JSON.stringify(selectedRoute));
+    }
     localStorage.setItem(WALK_ACTIVE_KEY, "true");
     localStorage.setItem(WALK_START_KEY, String(Date.now()));
     localStorage.setItem(WALK_POINTS_KEY, "[]");
@@ -121,6 +167,7 @@
     localStorage.setItem(WALK_ACTIVE_KEY, "false");
     localStorage.removeItem(WALK_START_KEY);
     localStorage.removeItem(WALK_POINTS_KEY);
+    localStorage.removeItem(WALK_PLANNED_KEY);
     localStorage.removeItem("mungjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
     window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도 경로·체크 표시 지우기 (walk-map.js, home-widgets.js)
   }
@@ -198,7 +245,8 @@
         startedAt: startedAt,
         endedAt: endedAt,
         distanceM: distanceM,           // 실제 GPS로 잰 거리
-        points: getWalkPoints()         // 지나간 좌표 목록 [{lat, lng, t}, ...]
+        points: getWalkPoints(),        // 지나간 좌표 목록 [{lat, lng, t}, ...]
+        recommendedRoute: getPlannedRoute()
       })
     }).then(function (res) {
       if (!res.ok) throw new Error("저장 실패: " + res.status);
@@ -212,6 +260,7 @@
     var actives = document.querySelectorAll("[data-walk-active]");
     var startBtn = document.querySelector("[data-start-walk]");
     var endBtn = document.querySelector("[data-end-walk]");
+    var cancelBtn = document.querySelector("[data-cancel-walk]"); // 저장 없이 취소 (산책 기록 화면)
     var distanceEl = document.querySelector("[data-walk-distance]");        // "0.00 km" (산책 기록 화면)
     var distanceNumEl = document.querySelector("[data-walk-distance-num]"); // 숫자만, 단위는 화면에 따로 (메인)
     var elapsedEl = document.querySelector("[data-walk-elapsed]");
@@ -222,7 +271,16 @@
 
     if (!idles.length && !actives.length && !startBtn && !endBtn && !autoStartHost) return;
 
-    if (autoStartHost && !isWalking()) startWalking();
+    if (autoStartHost) {
+      if (!isWalking()) {
+        startWalking();
+      } else {
+        var selectedRoute = readSelectedRoute();
+        if (selectedRoute) {
+          localStorage.setItem(WALK_PLANNED_KEY, JSON.stringify(selectedRoute));
+        }
+      }
+    }
 
     function tick() {
       var elapsed = Date.now() - walkStartedAt();
@@ -290,12 +348,11 @@
       }
     }
 
-    // 산책 종료 처리 (저장 여부와 상관없이 공통)
-    function finishWalk() {
+    // 산책 종료 처리 (저장·취소 여부와 상관없이 공통). redirect가 있으면 그 화면으로 이동
+    function finishWalk(redirect) {
       stopTracking();
       stopWalking();
       stopTimer();
-      var redirect = endBtn.getAttribute("data-end-redirect");
       if (redirect) {
         window.location.href = redirect;
       } else {
@@ -331,7 +388,7 @@
             window.location.href = "/login";
             return;
           }
-          finishWalk(); // 취소 → 저장 없이 종료
+          finishWalk(endBtn.getAttribute("data-end-redirect")); // 취소 → 저장 없이 종료
           return;
         }
 
@@ -340,7 +397,7 @@
         saveWalkRecord(walkStartedAt(), Date.now(), walkedMeters())
           .then(function () {
             alert("산책 기록을 저장했어요!");
-            finishWalk();
+            finishWalk(endBtn.getAttribute("data-end-redirect"));
           })
           .catch(function (err) {
             console.error(err);
@@ -349,6 +406,14 @@
           .finally(function () {
             endBtn.disabled = false;
           });
+      });
+    }
+
+    // 산책 취소: 기록을 저장하지 않고 산책을 끝냄 (회원·비회원 공통)
+    if (cancelBtn) {
+      cancelBtn.addEventListener("click", function () {
+        if (!confirm("산책을 취소할까요? 지금까지 걸은 기록은 저장되지 않아요.")) return;
+        finishWalk(cancelBtn.getAttribute("data-cancel-redirect"));
       });
     }
 
