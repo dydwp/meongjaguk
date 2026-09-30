@@ -13,6 +13,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
 
+import com.mungjaguk.app.dto.PetCardView;
 import com.mungjaguk.app.dto.WalkDetailView;
 import com.mungjaguk.app.dto.WalkHistoryItemView;
 import com.mungjaguk.app.dto.WalkPointView;
@@ -38,6 +39,7 @@ public class WalkRecordService {
     private final WalkRecordPointRepository walkRecordPointRepository;
     private final WalkRecordPlannedPointRepository plannedPointRepository;
     private final PetRepository petRepository;
+    private final PetService petService;
     private final RouteRepository routeRepository;
     private final CoursePointRepository coursePointRepository;
 
@@ -47,7 +49,8 @@ public class WalkRecordService {
                             WalkRecordPlannedPointRepository plannedPointRepository,
                             CoursePointRepository coursePointRepository,
                             WalkRecordPetRepository walkRecordPetRepository,
-                            PetRepository petRepository) {
+                            PetRepository petRepository,
+                            PetService petService) {
         this.walkRecordRepository = walkRecordRepository;
         this.routeRepository = routeRepository;
         this.walkRecordPointRepository = walkRecordPointRepository;
@@ -55,6 +58,7 @@ public class WalkRecordService {
         this.coursePointRepository = coursePointRepository;
         this.walkRecordPetRepository = walkRecordPetRepository;
         this.petRepository = petRepository;
+        this.petService = petService;
     }
 
     public List<WalkHistoryItemView> getMyWalkHistory(Long userId) {
@@ -209,6 +213,12 @@ public class WalkRecordService {
                 .map(point -> new WalkPointView(BigDecimal.valueOf(point.getLatitude()),
                         BigDecimal.valueOf(point.getLongitude())))
                 .toList();
+    }
+
+    // 활동 상세에서 함께 산책한 반려견 프로필 조회 (담당: 최주영)
+    public List<PetCardView> getWalkPets(Long walkRecordId, Long userId) {
+        List<Long> petIds = walkRecordPetRepository.findPetIdsByWalkRecordId(walkRecordId, userId);
+        return petService.getMyPetsByIds(userId, petIds);
     }
 
     @Transactional

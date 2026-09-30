@@ -6,6 +6,7 @@ import com.mungjaguk.app.dto.BoardDetailDto;
 import com.mungjaguk.app.dto.BoardPageDto;
 import com.mungjaguk.app.dto.CommentDto;
 import com.mungjaguk.app.dto.CoursePointDto;
+import com.mungjaguk.app.dto.PetCardView;
 import com.mungjaguk.app.dto.RouteDto;
 import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.Board;
@@ -13,13 +14,18 @@ import com.mungjaguk.app.entity.BoardComment;
 import com.mungjaguk.app.entity.BoardStatus;
 import com.mungjaguk.app.entity.CompanionRequest;
 import com.mungjaguk.app.entity.CoursePoint;
+import com.mungjaguk.app.entity.Pet;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardCommentRepository;
 import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
 import com.mungjaguk.app.repository.CoursePointRepository;
+import com.mungjaguk.app.repository.PetRepository;
 import com.mungjaguk.app.repository.RouteRepository;
+import com.mungjaguk.app.repository.WalkMeetingPetRepository;
+
+
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -31,9 +37,12 @@ import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.NoSuchElementException;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /**
  * 산책로 게시판: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
@@ -49,6 +58,9 @@ public class BoardService {
     private final RouteRepository routeRepository;
     private final CoursePointRepository coursePointRepository;
     private final NotificationService notificationService;
+    private final WalkMeetingPetRepository walkMeetingPetRepository;
+    private final PetRepository petRepository;
+    private final PetService petService;
 
     /** 저장할 수 있는 경로 좌표 최대 개수 (비정상적으로 큰 요청 방지) */
     private static final int MAX_COURSE_POINTS = 5000;
@@ -59,7 +71,10 @@ public class BoardService {
                         UserService userService,
                         RouteRepository routeRepository,
                         CoursePointRepository coursePointRepository,
-                        NotificationService notificationService) {
+                        NotificationService notificationService,
+                        WalkMeetingPetRepository walkMeetingPetRepository,
+                        PetRepository petRepository,
+                        PetService petService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
@@ -67,6 +82,9 @@ public class BoardService {
         this.routeRepository = routeRepository;
         this.coursePointRepository = coursePointRepository;
         this.notificationService = notificationService;
+        this.walkMeetingPetRepository = walkMeetingPetRepository;
+        this.petRepository = petRepository;
+        this.petService = petService;
     }
 
     /**
@@ -158,29 +176,35 @@ public class BoardService {
                     .orElse(null);
         }
 
+        // 로그인 사용자가 아닌 글 작성자의 userId 기준
+        Long hostUserId = board.getHost().getUserId();
+        List<Long> petIds = walkMeetingPetRepository.findPetIdsByMeetingId(meetingId, hostUserId);
+        List<PetCardView> pets = petService.getMyPetsByIds(hostUserId, petIds);
+
         return new BoardDetailDto(
-                board.getMeetingId(),
-                board.getTitle(),
-                board.getDescription(),
-                course.getCourseName(),
-                course.getDistanceM(),
-                course.getEstimatedMinutes(),
-                board.getMeetingDate(),
-                board.getMeetingTime(),
-                board.isPetRequired(),
-                board.getParticipationCondition(),
-                board.getHost().getNickname(),
-                board.getCreatedAt(),
-                participants,
-                participants.size(),
-                board.getMaxParticipants(),
-                displayStatus(board, accepted.size()),
-                isHost,
-                myStatus,
-                course.getStartLatitude(),
-                course.getStartLongitude(),
-                coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
-                        .stream().map(BoardService::toPointDto).toList());
+            board.getMeetingId(),
+            board.getTitle(),
+            board.getDescription(),
+            course.getCourseName(),
+            course.getDistanceM(),
+            course.getEstimatedMinutes(),
+            board.getMeetingDate(),
+            board.getMeetingTime(),
+            board.isPetRequired(),
+            board.getParticipationCondition(),
+            board.getHost().getNickname(),
+            board.getCreatedAt(),
+            participants,
+            participants.size(),
+            board.getMaxParticipants(),
+            displayStatus(board, accepted.size()),
+            isHost,
+            myStatus,
+            course.getStartLatitude(),
+            course.getStartLongitude(),
+            coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
+                                .stream().map(BoardService::toPointDto).toList(),
+            pets);
     }
 
     /**
@@ -200,15 +224,22 @@ public class BoardService {
         if (request.courseId() == null) {
             saveCoursePoints(course, request.points());
         }
+
+        // 모집자가 함께 산책할 반려견 검증 (담당: 최주영)
+        List<Long> petIds = validatePetIds(userId, request.petIds());
+
         Board saved = boardRepository.save(Board.create(host, course, fields.title(), fields.description(),
                 fields.meetingDate(), fields.meetingTime(), fields.maxParticipants(),
                 fields.petRequired(), fields.condition()));
+
+        walkMeetingPetRepository.savePetLinks(saved.getMeetingId(), petIds);
+
         return saved.getMeetingId();
     }
 
     /**
      * 산책로 게시글 수정 (작성자만)
-     * - 코스는 바꿀 수 없고 제목·일시·인원·조건·설명만 수정 (courseId/course/points는 무시)
+     * - 코스는 바꿀 수 없고 제목·일시·인원·조건·설명·함께할 반려견만 수정 (courseId/course/points는 무시)
      * - 검증 기준은 등록과 같고, 최대 인원은 현재 참여 인원(작성자 + 수락된 신청자)보다 적을 수 없음
      */
     @Transactional
@@ -224,13 +255,19 @@ public class BoardService {
             throw new IllegalArgumentException("최대 인원은 현재 참여 인원(" + (1 + accepted) + "명)보다 적을 수 없어요.");
         }
 
+        List<Long> petIds = validatePetIds(userId, request.petIds());
+
         board.update(fields.title(), fields.description(), fields.meetingDate(), fields.meetingTime(),
                 fields.maxParticipants(), fields.petRequired(), fields.condition());
+
+        // 함께할 반려견은 선택한 목록으로 교체
+        walkMeetingPetRepository.deletePetLinks(meetingId);
+        walkMeetingPetRepository.savePetLinks(meetingId, petIds);
     }
 
     /**
      * 산책로 게시글 삭제 (작성자만)
-     * - 동행 신청, 댓글, 이 글에 대한 알림을 먼저 지우고 게시글 삭제 (코스는 다른 곳에서 쓸 수 있어 남김)
+     * - 동행 신청, 댓글, 함께할 반려견 연결, 이 글에 대한 알림을 먼저 지우고 게시글 삭제 (코스는 다른 곳에서 쓸 수 있어 남김)
      */
     @Transactional
     public void deleteBoard(Long meetingId, Long userId) {
@@ -241,6 +278,7 @@ public class BoardService {
 
         companionRequestRepository.deleteByMeetingId(meetingId);
         commentRepository.deleteByMeetingId(meetingId);
+        walkMeetingPetRepository.deletePetLinks(meetingId);
         notificationService.deleteByMeeting(meetingId);
         boardRepository.delete(board);
     }
@@ -458,5 +496,26 @@ public class BoardService {
     private Board findBoard(Long meetingId) {
         return boardRepository.findWithHostAndCourseByMeetingId(meetingId)
                 .orElseThrow(() -> new NoSuchElementException("모집 정보를 찾을 수 없어요."));
+    }
+
+    /* 모집 글에 연결할 반려견 소유권 검증 (담당: 최주영) */
+    private List<Long> validatePetIds(Long userId, List<Long> petIds) {
+        if (petIds == null || petIds.isEmpty()) return List.of();
+
+        if (petIds.stream().anyMatch(id -> id == null)) {
+            throw new IllegalArgumentException("반려견 정보가 올바르지 않습니다.");
+        }
+
+        List<Long> distinctPetIds = new LinkedHashSet<>(petIds).stream().toList();
+
+        Set<Long> myPetIds = petRepository.findByUser_UserIdOrderByPetIdAsc(userId).stream()
+                .map(Pet::getPetId)
+                .collect(Collectors.toSet());
+
+        if (!myPetIds.containsAll(distinctPetIds)) {
+            throw new IllegalArgumentException("본인의 반려견만 선택할 수 있습니다.");
+        }
+
+        return distinctPetIds;
     }
 }

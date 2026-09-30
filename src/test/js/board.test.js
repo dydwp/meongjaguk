@@ -144,12 +144,15 @@ test("상세 화면에 모집 정보·참여자·댓글을 그린다", async () 
   const text = (s) => page.$(s).textContent;
   assert.equal(page.$("[data-meeting-detail]").hidden, false);
   assert.equal(text("[data-title]"), "저녁 산책");
-  assert.equal(text("[data-course-name]"), "코스 · 서울숲 코스");
-  assert.equal(text("[data-distance]"), "거리 · 2.6km");
-  assert.equal(text("[data-minutes]"), "예상 소요시간 · 약 40분");
-  assert.equal(text("[data-when]"), "모임 일시 · 2099.10.03 19:00");
-  assert.equal(text("[data-pet]"), "반려견 동반 · 필수");
-  assert.equal(text("[data-condition]"), "참여 조건 · 소형견");
+  assert.equal(text("[data-course-name]"), "서울숲 코스");
+  assert.equal(text("[data-distance]"), "2.6km");
+  assert.equal(text("[data-minutes]"), "약 40분");
+  assert.equal(text("[data-when]"), "2099.10.03 19:00");
+  assert.equal(text("[data-pet]"), "필수");
+  assert.ok(page.$("[data-pet]").classList.contains("meeting-pet-required"));
+  assert.equal(text("[data-condition]"), "소형견");
+  assert.equal(page.$("[data-description-section]").hidden, false);
+  assert.equal(text("[data-description]"), "같이 걸어요");
   assert.equal(text("[data-shared-at]"), "2026.09.20 공유");
   assert.equal(text("[data-join-count]"), "2/4");
   assert.deepEqual(page.$$("[data-participant-avatars] .avatar").map((a) => a.textContent), ["용", "민"]);
@@ -165,13 +168,35 @@ test("상세 화면에 모집 정보·참여자·댓글을 그린다", async () 
   page.close();
 });
 
-test("참여 조건·설명이 없으면 해당 줄을 지운다", async () => {
+test("참여 조건이 없으면 '없음', 설명이 없으면 설명 칸을 숨긴다", async () => {
   const page = openDetail({ meeting: { ...DETAIL, participationCondition: null, description: null, petRequired: false } });
   await settle();
 
-  assert.equal(page.$("[data-condition]"), null);
-  assert.equal(page.$("[data-description]"), null);
-  assert.equal(page.$("[data-pet]").textContent, "반려견 동반 · 선택");
+  assert.equal(page.$("[data-condition]").textContent, "없음");
+  assert.equal(page.$("[data-description-section]").hidden, true);
+  assert.equal(page.$("[data-pet]").textContent, "선택");
+  assert.ok(!page.$("[data-pet]").classList.contains("meeting-pet-required"));
+  page.close();
+});
+
+test("모집자가 함께할 반려견이 있으면 반려견 카드를 보여준다", async () => {
+  const none = openDetail();
+  await settle();
+  assert.equal(none.$("[data-meeting-pets]").hidden, true);
+  none.close();
+
+  const page = openDetail({
+    meeting: {
+      ...DETAIL,
+      pets: [{ id: 1, name: "보리", breed: "푸들", sizeLabel: "소형", ageInYears: 3, profileImage: null, activityLevelLabel: "높음" }],
+    },
+  });
+  await settle();
+  assert.equal(page.$("[data-meeting-pets]").hidden, false);
+  const items = page.$$("[data-meeting-pet-list] .walk-pet-group-item");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].querySelector("strong").textContent, "보리");
+  assert.equal(items[0].querySelector(".walk-current-pet-activity").textContent, "활동성 높음");
   page.close();
 });
 

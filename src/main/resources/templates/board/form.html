@@ -67,13 +67,24 @@
           />
         </div>
 
+        <!-- 모집자가 함께 산책할 반려견 선택 (담당: 최주영) -->
         <div class="field">
-          <label
-            for="board-pet-required"
-            style="display: flex; align-items: center; gap: 8px; color: var(--color-text)"
-          >
+          <label>함께 산책할 반려견 (선택)</label>
+
+          <p class="small text-muted board-pet-description">
+            모집에 함께할 반려견을 선택해주세요. 선택하지 않아도 등록할 수 있어요.
+          </p>
+
+          <div id="board-pet-list" class="board-pet-select-list">
+            <span class="small text-muted">반려견 정보를 불러오는 중이에요.</span>
+          </div>
+        </div>
+
+        <!-- 참여자 반려견 동반 조건 -->
+        <div class="field">
+          <label class="board-pet-required" for="board-pet-required">
             <input id="board-pet-required" name="petRequired" type="checkbox" />
-            반려견 동반 필수
+            <span>반려견 동반 필수</span>
           </label>
         </div>
 

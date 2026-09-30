@@ -109,6 +109,16 @@ public class PetService {
         activityLevelLabel(pet.getActivityLevel()));
   }
 
+  public List<PetCardView> getMyPetsByIds(Long userId, List<Long> petIds) {
+    if (petIds == null || petIds.isEmpty()) {
+        return List.of();
+    }
+
+    return getMyPets(userId).stream()
+            .filter(pet -> petIds.contains(pet.id()))
+            .toList();
+  }
+
   private String activityLevelLabel(String activityLevel) {
     if (activityLevel == null || activityLevel.isBlank()) {
       return "";

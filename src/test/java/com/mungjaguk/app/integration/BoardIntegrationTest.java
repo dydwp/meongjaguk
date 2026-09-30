@@ -10,6 +10,7 @@ import com.mungjaguk.app.dto.RouteDto;
 import com.mungjaguk.app.entity.Board;
 import com.mungjaguk.app.entity.BoardStatus;
 import com.mungjaguk.app.entity.CoursePoint;
+import com.mungjaguk.app.entity.Pet;
 import com.mungjaguk.app.entity.Route;
 import com.mungjaguk.app.entity.User;
 import com.mungjaguk.app.repository.BoardCommentRepository;
@@ -17,6 +18,7 @@ import com.mungjaguk.app.repository.BoardRepository;
 import com.mungjaguk.app.repository.CompanionRequestRepository;
 import com.mungjaguk.app.repository.CoursePointRepository;
 import com.mungjaguk.app.repository.NotificationRepository;
+import com.mungjaguk.app.repository.WalkMeetingPetRepository;
 import com.mungjaguk.app.service.BoardCloseScheduler;
 import com.mungjaguk.app.service.BoardService;
 import com.mungjaguk.app.support.IntegrationTestSupport;
@@ -47,6 +49,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
     @Autowired BoardCloseScheduler closeScheduler;
     @Autowired CompanionRequestRepository requests;
     @Autowired BoardCommentRepository comments;
+    @Autowired WalkMeetingPetRepository walkMeetingPets;
 
     private User host;
     private final LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -63,7 +66,8 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         BoardCreateRequest request = new BoardCreateRequest(null, course, "주말 산책", tomorrow, LocalTime.of(10, 0),
                 4, true, "소형견", "같이 걸어요", List.of(
                         new CoursePointDto(2, 37.545, 127.044),
-                        new CoursePointDto(1, 37.544, 127.043)));
+                        new CoursePointDto(1, 37.544, 127.043)),
+                        null);
 
         Long meetingId = boardService.createBoard(host.getUserId(), request);
         flushAndClear();
@@ -84,7 +88,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         Route course = data.route("한강 코스");
 
         Long meetingId = boardService.createBoard(host.getUserId(), new BoardCreateRequest(course.getCourseId(), null,
-                "한강 산책", tomorrow, LocalTime.of(9, 0), 2, null, null, null, null));
+                "한강 산책", tomorrow, LocalTime.of(9, 0), 2, null, null, null, null, null));
         flushAndClear();
 
         assertEquals(course.getCourseId(),
@@ -95,12 +99,20 @@ class BoardIntegrationTest extends IntegrationTestSupport {
     void hostUpdatesBoardButCourseStaysAndClosedBoardReopens() {
         Board board = data.board(host, "지난 산책", LocalDateTime.now().minusDays(1), 3);
         Integer courseId = board.getCourse().getCourseId();
+        Pet bori = data.pet(host, "보리");
+        Pet choco = data.pet(host, "초코");
+        walkMeetingPets.savePetLinks(board.getMeetingId(), List.of(bori.getPetId()));
         closeScheduler.closeExpiredBoards();
         flushAndClear();
 
         boardService.updateBoard(board.getMeetingId(), host.getUserId(), new BoardCreateRequest(999, null,
-                " 새 제목 ", tomorrow, LocalTime.of(18, 30), 5, true, " 소형견 ", null, null));
+                " 새 제목 ", tomorrow, LocalTime.of(18, 30), 5, true, " 소형견 ", null, null,
+                List.of(choco.getPetId())));
         flushAndClear();
+
+        // 함께할 반려견은 선택한 목록으로 교체
+        assertEquals(List.of(choco.getPetId()),
+                walkMeetingPets.findPetIdsByMeetingId(board.getMeetingId(), host.getUserId()));
 
         Board updated = boards.findWithHostAndCourseByMeetingId(board.getMeetingId()).orElseThrow();
         assertEquals("새 제목", updated.getTitle());
@@ -121,7 +133,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         flushAndClear();
 
         BoardCreateRequest twoPeople = new BoardCreateRequest(null, null, "저녁 산책", tomorrow, LocalTime.of(19, 0),
-                2, false, null, null, null);
+                2, false, null, null, null, null);
         assertThrows(AccessDeniedException.class,
                 () -> boardService.updateBoard(board.getMeetingId(), stranger.getUserId(), twoPeople));
         IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
@@ -135,6 +147,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         User minjun = data.user("민준");
         data.pendingRequest(board, minjun);
         boardService.addComment(board.getMeetingId(), minjun.getUserId(), "참여할게요"); // 작성자에게 알림
+        walkMeetingPets.savePetLinks(board.getMeetingId(), List.of(data.pet(host, "보리").getPetId()));
         Board other = data.board(host, "다른 산책", LocalDateTime.now().plusDays(2), 4);
         boardService.addComment(other.getMeetingId(), minjun.getUserId(), "여기도요");
         flushAndClear();
@@ -148,6 +161,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
         assertTrue(boards.findById(board.getMeetingId()).isEmpty());
         assertTrue(requests.findByMeetingIdAndApplicant_UserId(board.getMeetingId(), minjun.getUserId()).isEmpty());
         assertTrue(comments.findByBoard_MeetingIdOrderByCreatedAtDescCommentIdDesc(board.getMeetingId()).isEmpty());
+        assertTrue(walkMeetingPets.findPetIdsByMeetingId(board.getMeetingId(), host.getUserId()).isEmpty());
         // 다른 글의 댓글·알림은 남음
         assertEquals(1, comments.findByBoard_MeetingIdOrderByCreatedAtDescCommentIdDesc(other.getMeetingId()).size());
         assertEquals(1L, notifications.countByUserIdAndReadFalse(host.getUserId()));

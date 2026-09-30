@@ -1820,7 +1820,10 @@ button.btn {
 
 .activity-pet-names {
   display: block;
-  margin-bottom: 4px;
+  margin: 5px 0 2px;
+  color: var(--color-primary-dark) !important;
+  font-size: 12.5px;
+  font-weight: 700;
 }
 
 .activity-detail-actions {
@@ -2280,6 +2283,203 @@ button.btn {
   object-fit: cover;
 }
 
+/* ---------- 동행 모집 글: 함께 산책할 반려견 선택 (담당: 최주영) ---------- */
+
+.board-pet-description {
+  margin: 0 0 10px;
+}
+
+.board-pet-select-list {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 10px;
+}
+
+/* .field label보다 우선하도록 범위 지정 */
+.field .board-pet-option {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  margin: 0;
+  padding: 12px 14px;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+  color: var(--color-text);
+  cursor: pointer;
+}
+
+.field .board-pet-option:hover {
+  border-color: var(--color-primary);
+}
+
+.field .board-pet-option:has(input:checked) {
+  border-color: var(--color-primary);
+  background: var(--color-primary-soft);
+}
+
+.field .board-pet-option input {
+  width: 18px;
+  height: 18px;
+  flex: none;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+.board-pet-required {
+  display: inline-flex !important;
+  align-items: center;
+  gap: 8px;
+  margin: 0 !important;
+  color: var(--color-text) !important;
+  cursor: pointer;
+}
+
+.board-pet-required input {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--color-primary);
+}
+
+@media (max-width: 520px) {
+  .board-pet-select-list {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* ---------- 동행 모집 상세: 모임 정보 (담당: 최주영) ---------- */
+
+.meeting-detail-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px;
+}
+
+.meeting-detail-title {
+  margin: 12px 0 18px;
+  font-size: 22px;
+}
+
+.meeting-info-card {
+  margin-top: 0;
+}
+
+.meeting-info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  overflow: hidden;
+}
+
+.meeting-info-item {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  min-width: 0;
+  padding: 14px 16px;
+  border-bottom: 1px dashed var(--color-border);
+}
+
+.meeting-info-item:nth-child(odd) {
+  border-right: 1px dashed var(--color-border);
+}
+
+.meeting-info-item:nth-last-child(-n + 2) {
+  border-bottom: none;
+}
+
+.meeting-info-label {
+  font-size: 12px;
+  color: var(--color-text-muted);
+}
+
+.meeting-info-item strong {
+  font-size: 13.5px;
+  font-weight: 700;
+  line-height: 1.5;
+}
+
+.meeting-description {
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.meeting-info-item strong {
+  color: var(--color-text);
+}
+
+.meeting-pet-required {
+  color: var(--color-accent-hover) !important;
+}
+
+@media (max-width: 520px) {
+  .meeting-info-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .meeting-info-item:nth-child(odd) {
+    border-right: none;
+  }
+
+  .meeting-info-item:nth-last-child(-n + 2) {
+    border-bottom: 1px dashed var(--color-border);
+  }
+
+  .meeting-info-item:last-child {
+    border-bottom: none;
+  }
+}
+
+/* 모집 상세: 모집자 및 참여 현황 (담당: 최주영) */
+
+.meeting-host-profile {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+}
+
+.meeting-host-name {
+  display: block;
+  font-size: 13.5px;
+  font-weight: 700;
+}
+
+.meeting-participant-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  margin-top: 18px;
+  padding-top: 16px;
+  border-top: 1px dashed var(--color-border);
+}
+
+.meeting-participant-avatars {
+  display: flex;
+  margin-top: 6px;
+}
+
+.meeting-participant-count {
+  flex: none;
+  font-size: 13px;
+  color: var(--color-primary-dark);
+}
+
+@media (max-width: 420px) {
+  .meeting-participant-row {
+    align-items: flex-start;
+  }
+
+  .meeting-participant-count {
+    font-size: 12.5px;
+  }
+}
+
 /* ---------- 메인 홈 : 산책 시작 시 산책중인 반려견 표시 (담당: 최주영) ---------- */
 
 .walk-pet-summary {
@@ -2304,22 +2504,6 @@ button.btn {
 
 .walk-current-pets {
   margin-top: 20px;
-}
-
-.walk-current-pet-list {
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 10px;
-}
-
-.walk-current-pet-card {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 14px;
-  border: 1px solid var(--color-border);
-  border-radius: var(--radius-md);
-  background: var(--color-surface);
 }
 
 .walk-current-pet-photo {
@@ -2362,9 +2546,71 @@ button.btn {
   font-weight: 700;
 }
 
+/* ---------- 상세페이지 공통: 함께하는 반려견 프로필 그룹 카드 (담당: 최주영) ---------- */
+
+.walk-pet-group-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-surface);
+}
+
+.walk-pet-group-item {
+  position: relative;
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  min-width: 0;
+  padding: 12px 16px;
+}
+
+/* PC: 좌우 항목 사이 짧은 점선 */
+.walk-pet-group-item:nth-child(odd):not(:last-child)::after {
+  content: "";
+  position: absolute;
+  top: 14px;
+  right: 0;
+  bottom: 14px;
+  border-right: 1px dashed var(--color-border);
+}
+
+/* 두 번째 줄부터 위쪽에 여백 있는 점선 */
+.walk-pet-group-item:nth-child(n+3)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 18px;
+  right: 18px;
+  border-top: 1px dashed var(--color-border);
+}
+
+/* 홀수 마지막 항목은 전체 폭 */
+.walk-pet-group-item:last-child:nth-child(odd) {
+  grid-column: 1 / -1;
+}
+
 @media (max-width: 520px) {
-  .walk-current-pet-list {
+  .walk-pet-group-card {
     grid-template-columns: 1fr;
+  }
+
+  .walk-pet-group-item:last-child:nth-child(odd) {
+    grid-column: auto;
+  }
+
+  .walk-pet-group-item:nth-child(odd):not(:last-child)::after {
+    display: none;
+  }
+
+  .walk-pet-group-item + .walk-pet-group-item::before {
+    content: "";
+    position: absolute;
+    top: 0;
+    left: 18px;
+    right: 18px;
+    border-top: 1px dashed var(--color-border);
   }
 }
 

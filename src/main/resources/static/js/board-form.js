@@ -16,6 +16,8 @@
   const courseId = params.get("courseId");
   const meetingId = params.get("meetingId");
   const editMode = meetingId != null;
+  const petList = document.querySelector("#board-pet-list"); // 반려견 리스트
+  let selectedPetIds = new Set(); // 수정: 이미 함께하기로 한 반려견 (목록을 그릴 때 체크)
   let courseSource = null; // { courseId } 또는 { course: {...} }
   let submitting = false;
 
@@ -171,6 +173,11 @@
     fields.petRequired.checked = !!meeting.petRequired;
     fields.participationCondition.value = meeting.participationCondition ?? "";
     fields.description.value = meeting.description ?? "";
+    // 반려견 목록이 먼저 그려졌을 수도 있어서 둘 다 처리
+    selectedPetIds = new Set((meeting.pets ?? []).map((pet) => String(pet.id)));
+    form.querySelectorAll('input[name="petIds"]').forEach((checkbox) => {
+      checkbox.checked = selectedPetIds.has(checkbox.value);
+    });
     showCourse({
       name: meeting.courseName,
       distanceM: meeting.distanceM,
@@ -250,6 +257,93 @@
     }
   }
 
+  // 반려견 목록 조회 (담당: 최주영)
+  async function loadPets() {
+    if (!petList) return;
+
+    try {
+      const response = await fetch("/api/pet-profile/pets", {
+        headers: { Accept: "application/json" },
+        credentials: "same-origin",
+      });
+
+      if (!response.ok) {
+        throw new Error(`Pet request failed: ${response.status}`);
+      }
+
+      const pets = await response.json();
+      petList.innerHTML = "";
+
+      if (!Array.isArray(pets) || !pets.length) {
+        const empty = document.createElement("span");
+        empty.className = "small text-muted";
+        empty.textContent = "등록된 반려견이 없습니다.";
+        petList.appendChild(empty);
+        return;
+      }
+
+      pets.forEach((pet) => {
+        const label = document.createElement("label");
+        label.className = "board-pet-option";
+
+        const checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.name = "petIds";
+        checkbox.value = String(pet.id);
+        checkbox.checked = selectedPetIds.has(checkbox.value);
+
+        const photo = document.createElement("div");
+        photo.className = "walk-pet-option-photo";
+
+        if (pet.profileImage) {
+          const img = document.createElement("img");
+          img.src = pet.profileImage;
+          img.alt = pet.name;
+          photo.appendChild(img);
+        } else {
+          photo.textContent = "🐾";
+        }
+
+        const info = document.createElement("div");
+        info.className = "walk-pet-option-info";
+
+        const name = document.createElement("strong");
+        name.textContent = pet.name;
+
+        const summary = document.createElement("span");
+        const summaryParts = [];
+
+        if (pet.breed) summaryParts.push(pet.breed);
+        if (pet.sizeLabel) summaryParts.push(pet.sizeLabel);
+        if (pet.ageInYears != null) summaryParts.push(`${pet.ageInYears}세`);
+
+        summary.textContent = summaryParts.join(" · ");
+
+        info.appendChild(name);
+        if (summaryParts.length) info.appendChild(summary);
+        if (pet.activityLevelLabel) {
+          const activity = document.createElement("span");
+          activity.className = "walk-current-pet-activity";
+          activity.textContent = `활동성 ${pet.activityLevelLabel}`;
+          info.appendChild(activity);
+        }
+
+        label.appendChild(checkbox);
+        label.appendChild(photo);
+        label.appendChild(info);
+        petList.appendChild(label);
+      });
+    } catch (error) {
+      console.error("반려견 정보 조회 실패:", error);
+      petList.innerHTML = "";
+
+      const errorText = document.createElement("span");
+      errorText.className = "small text-muted";
+      errorText.textContent = "반려견 정보를 불러오지 못했어요.";
+      petList.appendChild(errorText);
+    }
+  }
+
   // 서버와 같은 기준으로 먼저 확인 (최종 검증은 서버에서)
   function validate(values) {
     if (!values.title) return "제목을 입력해주세요.";
@@ -293,6 +387,9 @@
       petRequired: fields.petRequired.checked,
       participationCondition: fields.participationCondition.value.trim() || null,
       description: fields.description.value.trim() || null,
+      petIds: Array.from(
+        form.querySelectorAll('input[name="petIds"]:checked'),
+      ).map((checkbox) => Number(checkbox.value)),
     };
     const message = validate(values);
     if (message) {
@@ -352,4 +449,5 @@
   });
 
   loadCourse();
+  loadPets();
 })();

@@ -323,8 +323,8 @@
       list.innerHTML = "";
 
       pets.forEach(function (pet) {
-        var card = document.createElement("div");
-        card.className = "walk-current-pet-card";
+        var item = document.createElement("div");
+        item.className = "walk-pet-group-item";
 
         var photo = document.createElement("div");
         photo.className = "walk-current-pet-photo";
@@ -366,9 +366,9 @@
           info.appendChild(activity);
         }
 
-        card.appendChild(photo);
-        card.appendChild(info);
-        list.appendChild(card);
+        item.appendChild(photo);
+        item.appendChild(info);
+        list.appendChild(item);
       });
 
       detail.hidden = false;
@@ -531,7 +531,6 @@
 
           startWalking();
           render();
-          renderWalkPetDetail();
         });
       } else {
         var selectedRoute = readSelectedRoute();
