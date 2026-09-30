@@ -73,6 +73,10 @@
             <div class="hero-live-value" data-walk-elapsed>00:00</div>
           </div>
         </div>
+        <div class="walk-pet-summary" data-walk-pet-summary hidden>
+          <span class="walk-pet-summary-label">함께 걷는 반려견:</span>
+          <strong data-walk-pet-names></strong>
+        </div>
         <div class="hero-weekly-foot hero-live-foot">
           <span th:if="${weeklyWalk != null}"
                 th:text="|이번 주 ${weeklyWalk.walkCount}회 · ${#numbers.formatDecimal(weeklyWalk.distanceKm, 1, 1)}km · ${weeklyWalk.minutes}분|">이번 주 3회 · 5.2km · 96분</span>

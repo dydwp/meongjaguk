@@ -11,6 +11,7 @@ import java.util.List;
  * @param distanceM 걸은 거리 (m)
  * @param points    지나간 GPS 좌표 목록 (없으면 null 또는 빈 목록)
  * @param recommendedRoute 추천 경로에서 시작한 경우 코스 정보와 좌표
+ * @param petIds    함께 산책한 반려견 ID 목록 (선택하지 않으면 null 또는 빈 목록)
  */
 public record WalkSaveRequest(
         Long courseId,
@@ -18,7 +19,8 @@ public record WalkSaveRequest(
         Long endedAt,
         Integer distanceM,
         List<Point> points,
-        RecommendedRoute recommendedRoute
+        RecommendedRoute recommendedRoute,
+        List<Long> petIds
 ) {
 
     /** 좌표 한 점 - 브라우저 localStorage에 쌓인 {lat, lng, t} 그대로 */
