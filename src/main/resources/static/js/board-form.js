@@ -1,5 +1,6 @@
 // 추천 산책로 등록 (/board/new?route={key} 또는 /board/new?courseId={id})
 // 추천받은 새 코스는 게시글 등록 시 코스 정보를 함께 보내 한 번에 저장
+// 게시글 수정 (/board/edit?meetingId={id}): 같은 화면에 기존 값을 채우고 PUT으로 저장 (코스는 변경 불가)
 (() => {
   const page = document.querySelector("#board-form-page");
   if (!page) return;
@@ -13,7 +14,10 @@
   const params = new URLSearchParams(window.location.search);
   const routeKey = params.get("route");
   const courseId = params.get("courseId");
+  const meetingId = params.get("meetingId");
+  const editMode = meetingId != null;
   const petList = document.querySelector("#board-pet-list"); // 반려견 리스트
+  let selectedPetIds = new Set(); // 수정: 이미 함께하기로 한 반려견 (목록을 그릴 때 체크)
   let courseSource = null; // { courseId } 또는 { course: {...} }
   let submitting = false;
 
@@ -35,6 +39,10 @@
   function nowTimeText() {
     const now = new Date();
     return `${pad(now.getHours())}:${pad(now.getMinutes())}`;
+  }
+
+  function actionText() {
+    return editMode ? "수정" : "등록";
   }
 
   function showError(message) {
@@ -144,9 +152,67 @@
     };
   }
 
+  // 수정: 기존 게시글을 불러와 입력칸을 채움 (작성자가 아니면 안내만)
+  async function loadMeeting() {
+    if (!/^[1-9]\d*$/.test(meetingId)) return "missing";
+    const response = await fetch(
+      `${page.dataset.meetingApi}${encodeURIComponent(meetingId)}`,
+      { headers: { Accept: "application/json" } },
+    );
+    if (response.status === 404) return "missing";
+    if (!response.ok || response.redirected)
+      throw new Error(`Meeting request failed: ${response.status}`);
+    const meeting = await response.json();
+    if (!meeting.isHost) return "forbidden";
+
+    const fields = form.elements;
+    fields.title.value = meeting.title ?? "";
+    fields.meetingDate.value = meeting.meetingDate ?? "";
+    fields.meetingTime.value = (meeting.meetingTime ?? "").slice(0, 5);
+    fields.maxParticipants.value = meeting.maxParticipants ?? "";
+    fields.petRequired.checked = !!meeting.petRequired;
+    fields.participationCondition.value = meeting.participationCondition ?? "";
+    fields.description.value = meeting.description ?? "";
+    // 반려견 목록이 먼저 그려졌을 수도 있어서 둘 다 처리
+    selectedPetIds = new Set((meeting.pets ?? []).map((pet) => String(pet.id)));
+    form.querySelectorAll('input[name="petIds"]').forEach((checkbox) => {
+      checkbox.checked = selectedPetIds.has(checkbox.value);
+    });
+    showCourse({
+      name: meeting.courseName,
+      distanceM: meeting.distanceM,
+      estimatedMinutes: meeting.estimatedMinutes,
+      feature: "공유된 코스",
+    });
+    return "ok";
+  }
+
+  function detailHref() {
+    return `${page.dataset.detailUrl}?meetingId=${encodeURIComponent(meetingId)}`;
+  }
+
   async function loadCourse() {
     try {
-      if (routeKey) {
+      if (editMode) {
+        document.title = "멍자국 — 산책로 게시글 수정";
+        document.querySelector("#board-form-heading").textContent = "산책로 게시글 수정";
+        document.querySelector("#board-form-sub").textContent =
+          "모집 정보를 수정할 수 있어요 (코스는 바꿀 수 없어요)";
+        submitButton.textContent = "수정";
+        backLink.textContent = "산책로 게시판으로";
+        backLink.href = "/board";
+        const result = await loadMeeting();
+        if (result !== "ok") {
+          status.textContent =
+            result === "forbidden"
+              ? "본인이 작성한 글만 수정할 수 있어요."
+              : "모집 정보를 찾을 수 없어요.";
+          backLink.hidden = false;
+          return;
+        }
+        courseSource = {};
+        cancelLink.href = detailHref();
+      } else if (routeKey) {
         let course = null;
         try {
           course = loadRecommendedCourse();
@@ -224,6 +290,7 @@
         checkbox.type = "checkbox";
         checkbox.name = "petIds";
         checkbox.value = String(pet.id);
+        checkbox.checked = selectedPetIds.has(checkbox.value);
 
         const photo = document.createElement("div");
         photo.className = "walk-pet-option-photo";
@@ -332,7 +399,7 @@
 
     submitting = true;
     submitButton.disabled = true;
-    submitButton.textContent = "등록 중…";
+    submitButton.textContent = `${actionText()} 중…`;
     let done = false;
     try {
       const headers = {
@@ -342,14 +409,17 @@
       if (page.dataset.csrfHeader && page.dataset.csrfToken) {
         headers[page.dataset.csrfHeader] = page.dataset.csrfToken;
       }
-      const response = await fetch(page.dataset.submitUrl, {
-        method: "POST",
+      const response = await fetch(
+        editMode ? `${page.dataset.meetingApi}${encodeURIComponent(meetingId)}` : page.dataset.submitUrl,
+        {
+        method: editMode ? "PUT" : "POST",
         credentials: "same-origin",
         headers,
         body: JSON.stringify({ ...courseSource, ...values }),
-      });
+        },
+      );
       if (response.redirected || response.status === 401) {
-        showError("로그인이 필요해요. 로그인 후 다시 등록해주세요.");
+        showError(`로그인이 필요해요. 로그인 후 다시 ${actionText()}해주세요.`);
         return;
       }
       if (response.status === 403) {
@@ -357,23 +427,23 @@
         return;
       }
       const data = await response.json().catch(() => null);
-      if (response.status !== 201 || data?.meetingId == null) {
-        showError(data?.message || "등록하지 못했어요. 잠시 후 다시 시도해주세요.");
+      if (response.status !== (editMode ? 200 : 201) || data?.meetingId == null) {
+        showError(data?.message || `${actionText()}하지 못했어요. 잠시 후 다시 시도해주세요.`);
         return;
       }
       done = true;
-      // 뒤로 가기로 등록 화면에 돌아와 다시 제출하지 않도록 replace
+      // 뒤로 가기로 입력 화면에 돌아와 다시 제출하지 않도록 replace
       window.location.replace(
         `${page.dataset.detailUrl}?meetingId=${encodeURIComponent(data.meetingId)}`,
       );
     } catch (error) {
-      console.error("산책로 게시글 등록 실패:", error);
-      showError("등록하지 못했어요. 잠시 후 다시 시도해주세요.");
+      console.error(`산책로 게시글 ${actionText()} 실패:`, error);
+      showError(`${actionText()}하지 못했어요. 잠시 후 다시 시도해주세요.`);
     } finally {
       if (!done) {
         submitting = false;
         submitButton.disabled = false;
-        submitButton.textContent = "등록";
+        submitButton.textContent = actionText();
       }
     }
   });

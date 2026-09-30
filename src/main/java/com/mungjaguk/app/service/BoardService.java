@@ -217,6 +217,83 @@ public class BoardService {
      */
     @Transactional
     public Long createBoard(Long userId, BoardCreateRequest request) {
+        BoardFields fields = validateFields(request);
+
+        User host = userService.findById(userId);
+        Route course = resolveCourse(request);
+        if (request.courseId() == null) {
+            saveCoursePoints(course, request.points());
+        }
+
+        // 모집자가 함께 산책할 반려견 검증 (담당: 최주영)
+        List<Long> petIds = validatePetIds(userId, request.petIds());
+
+        Board saved = boardRepository.save(Board.create(host, course, fields.title(), fields.description(),
+                fields.meetingDate(), fields.meetingTime(), fields.maxParticipants(),
+                fields.petRequired(), fields.condition()));
+
+        walkMeetingPetRepository.savePetLinks(saved.getMeetingId(), petIds);
+
+        return saved.getMeetingId();
+    }
+
+    /**
+     * 산책로 게시글 수정 (작성자만)
+     * - 코스는 바꿀 수 없고 제목·일시·인원·조건·설명·함께할 반려견만 수정 (courseId/course/points는 무시)
+     * - 검증 기준은 등록과 같고, 최대 인원은 현재 참여 인원(작성자 + 수락된 신청자)보다 적을 수 없음
+     */
+    @Transactional
+    public void updateBoard(Long meetingId, Long userId, BoardCreateRequest request) {
+        Board board = findBoard(meetingId);
+        if (!board.isHostedBy(userId)) {
+            throw new AccessDeniedException("본인이 작성한 글만 수정할 수 있어요.");
+        }
+
+        BoardFields fields = validateFields(request);
+        long accepted = companionRequestRepository.countByMeetingIdAndStatus(meetingId, ApplicationStatus.ACCEPTED);
+        if (fields.maxParticipants() < 1 + accepted) {
+            throw new IllegalArgumentException("최대 인원은 현재 참여 인원(" + (1 + accepted) + "명)보다 적을 수 없어요.");
+        }
+
+        List<Long> petIds = validatePetIds(userId, request.petIds());
+
+        board.update(fields.title(), fields.description(), fields.meetingDate(), fields.meetingTime(),
+                fields.maxParticipants(), fields.petRequired(), fields.condition());
+
+        // 함께할 반려견은 선택한 목록으로 교체
+        walkMeetingPetRepository.deletePetLinks(meetingId);
+        walkMeetingPetRepository.savePetLinks(meetingId, petIds);
+    }
+
+    /**
+     * 산책로 게시글 삭제 (작성자만)
+     * - 동행 신청, 댓글, 함께할 반려견 연결, 이 글에 대한 알림을 먼저 지우고 게시글 삭제 (코스는 다른 곳에서 쓸 수 있어 남김)
+     */
+    @Transactional
+    public void deleteBoard(Long meetingId, Long userId) {
+        Board board = findBoard(meetingId);
+        if (!board.isHostedBy(userId)) {
+            throw new AccessDeniedException("본인이 작성한 글만 삭제할 수 있어요.");
+        }
+
+        companionRequestRepository.deleteByMeetingId(meetingId);
+        commentRepository.deleteByMeetingId(meetingId);
+        walkMeetingPetRepository.deletePetLinks(meetingId);
+        notificationService.deleteByMeeting(meetingId);
+        boardRepository.delete(board);
+    }
+
+    /** 등록·수정 공통 입력값 (검증 후 앞뒤 공백 제거된 값) */
+    private record BoardFields(String title, String description, LocalDate meetingDate, LocalTime meetingTime,
+                               int maxParticipants, boolean petRequired, String condition) {
+    }
+
+    /**
+     * 등록·수정 공통 검증
+     * - 제목 1~150자, 모임 일시는 현재 이후, 최대 인원 2~10명(본인 포함),
+     *   참여 조건 500자 이하, 설명 600자 이하
+     */
+    private BoardFields validateFields(BoardCreateRequest request) {
         if (request == null) {
             throw new IllegalArgumentException("등록할 내용을 입력해주세요.");
         }
@@ -262,22 +339,8 @@ public class BoardService {
             throw new IllegalArgumentException("설명은 " + Board.MAX_DESCRIPTION_LENGTH + "자까지 입력할 수 있어요.");
         }
 
-        User host = userService.findById(userId);
-        Route course = resolveCourse(request);
-        if (request.courseId() == null) {
-            saveCoursePoints(course, request.points());
-        }
-
-        // 모집자가 함께 산책할 반려견 검증 (담당: 최주영)
-        List<Long> petIds = validatePetIds(userId, request.petIds());
-
-        Board saved = boardRepository.save(Board.create(host, course, title, description,
-                meetingDate, meetingTime, maxParticipants,
-                Boolean.TRUE.equals(request.petRequired()), condition));
-
-        walkMeetingPetRepository.savePetLinks(saved.getMeetingId(), petIds);
-
-        return saved.getMeetingId();
+        return new BoardFields(title, description, meetingDate, meetingTime, maxParticipants,
+                Boolean.TRUE.equals(request.petRequired()), condition);
     }
 
     /** 댓글 목록: 최신순 (loginUserId는 비로그인이면 null) */

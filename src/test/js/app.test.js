@@ -314,7 +314,7 @@ test("산책 기록 화면은 열자마자 반려견을 고르고 산책을 시�
 
   assert.equal(walking(page), true);
   assert.equal(page.$("[data-walk-pet-detail]").hidden, false);
-  const cards = page.$$(".walk-current-pet-card");
+  const cards = page.$$(".walk-pet-group-item");
   assert.equal(cards.length, 1);
   assert.equal(cards[0].querySelector("strong").textContent, "보리");
   assert.equal(cards[0].querySelector(".walk-current-pet-activity").textContent, "활동성 높음");

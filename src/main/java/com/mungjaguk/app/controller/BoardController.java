@@ -17,6 +17,7 @@ import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
@@ -26,8 +27,8 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 산책로 게시판 API: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
- * (화면 연결 /board, /board/new, /course-detail-shared 는 MeetupController)
+ * 산책로 게시판 API: 목록/상세 조회, 게시글 등록/수정/삭제, 댓글 조회/작성/삭제
+ * (화면 연결 /board, /board/new, /board/edit, /course-detail-shared 는 MeetupController)
  */
 @RestController
 public class BoardController {
@@ -66,6 +67,29 @@ public class BoardController {
                                                 @AuthenticationPrincipal LoginUser loginUser) {
         Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
         return ResponseEntity.ok(boardService.getBoard(meetingId, loginUserId));
+    }
+
+    /** 산책로 게시글 수정 (작성자만, 코스는 변경 불가) */
+    @PutMapping("/api/meetings/{meetingId}")
+    public ResponseEntity<?> updateBoard(@PathVariable Long meetingId,
+                                         @RequestBody BoardCreateRequest request,
+                                         @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
+        }
+        boardService.updateBoard(meetingId, loginUser.getUserId(), request);
+        return ResponseEntity.ok(Map.of("meetingId", meetingId));
+    }
+
+    /** 산책로 게시글 삭제 (작성자만, 신청·댓글·알림도 함께 삭제) */
+    @DeleteMapping("/api/meetings/{meetingId}")
+    public ResponseEntity<Void> deleteBoard(@PathVariable Long meetingId,
+                                            @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        boardService.deleteBoard(meetingId, loginUser.getUserId());
+        return ResponseEntity.noContent().build();
     }
 
     /** 댓글 목록 (비회원도 조회 가능) */

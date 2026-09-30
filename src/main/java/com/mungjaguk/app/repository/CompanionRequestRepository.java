@@ -4,6 +4,7 @@ import com.mungjaguk.app.entity.ApplicationStatus;
 import com.mungjaguk.app.entity.CompanionRequest;
 import org.springframework.data.jpa.repository.EntityGraph;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
 
@@ -40,4 +41,9 @@ public interface CompanionRequestRepository extends JpaRepository<CompanionReque
            "group by r.meetingId")
     List<Object[]> countByMeetingIdsAndStatus(@Param("meetingIds") Collection<Long> meetingIds,
                                               @Param("status") ApplicationStatus status);
+
+    /** 모집글 삭제 시 신청 전부 삭제 */
+    @Modifying
+    @Query("delete from CompanionRequest r where r.meetingId = :meetingId")
+    int deleteByMeetingId(@Param("meetingId") Long meetingId);
 }

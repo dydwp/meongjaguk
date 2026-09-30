@@ -28,6 +28,11 @@ public class WalkMeetingPetRepository {
         }
     }
 
+    // 게시글 수정(반려견 교체)·삭제 시 연결 삭제
+    public void deletePetLinks(Long meetingId) {
+        jdbcTemplate.update("DELETE FROM walk_meeting_pets WHERE meeting_id = ?", meetingId);
+    }
+
     // 동행 모집 상세에서 연결된 반려견 조회 (담당: 최주영)
     public List<Long> findPetIdsByMeetingId(Long meetingId, Long userId) {
         String sql = """
