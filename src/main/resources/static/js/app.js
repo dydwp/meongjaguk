@@ -19,78 +19,6 @@
     });
   });
 
-  /* ---------- 동행 신청 토글 버튼 ---------- */
-  document.querySelectorAll("[data-join-btn]").forEach(function (btn) {
-    btn.addEventListener("click", function () {
-      var joined = btn.getAttribute("data-joined") === "true";
-      if (!joined) {
-        btn.setAttribute("data-joined", "true");
-        btn.textContent = "✓ 신청 완료";
-        btn.classList.add("is-done");
-        var countEl = document.querySelector("[data-join-count]");
-        if (countEl) {
-          var parts = countEl.textContent.split("/");
-          var n = parseInt(parts[0], 10) + 1;
-          countEl.textContent = n + "/" + parts[1];
-        }
-      } else {
-        btn.setAttribute("data-joined", "false");
-        btn.textContent = "동행 신청";
-        btn.classList.remove("is-done");
-        var countEl2 = document.querySelector("[data-join-count]");
-        if (countEl2) {
-          var parts2 = countEl2.textContent.split("/");
-          var n2 = Math.max(0, parseInt(parts2[0], 10) - 1);
-          countEl2.textContent = n2 + "/" + parts2[1];
-        }
-      }
-    });
-  });
-
-  /* ---------- 댓글 등록 ---------- */
-  document.querySelectorAll("[data-comment-form]").forEach(function (form) {
-    var input = form.querySelector("input");
-    var btn = form.querySelector("button");
-    var list = document.querySelector("[data-comment-list]");
-    var countEl = document.querySelector("[data-comment-count]");
-
-    function submit() {
-      var val = input.value.trim();
-      if (!val || !list) return;
-      var item = document.createElement("div");
-      item.className = "comment";
-      item.innerHTML =
-        '<div class="avatar avatar-sm">나</div>' +
-        '<div><span class="name">나<span class="time">· 방금 전</span></span>' +
-        "<p></p></div>";
-      item.querySelector("p").textContent = val;
-      list.appendChild(item);
-      input.value = "";
-      input.focus();
-      if (countEl) countEl.textContent = String(parseInt(countEl.textContent || "0", 10) + 1);
-    }
-
-    btn.addEventListener("click", submit);
-    input.addEventListener("keydown", function (e) {
-      if (e.key === "Enter") submit();
-    });
-  });
-
-  /* ---------- 신청 수락/거절 ---------- */
-  document.querySelectorAll("[data-request-item]").forEach(function (item) {
-    var acceptBtn = item.querySelector("[data-accept]");
-    var rejectBtn = item.querySelector("[data-reject]");
-    var actions = item.querySelector(".request-actions");
-
-    function resolve(label) {
-      actions.innerHTML = '<span class="tag-neutral">' + label + "</span>";
-      item.style.opacity = "0.7";
-    }
-
-    if (acceptBtn) acceptBtn.addEventListener("click", function () { resolve("수락됨"); });
-    if (rejectBtn) rejectBtn.addEventListener("click", function () { resolve("거절됨"); });
-  });
-
   /* ---------- 산책 상태 공유 (홈 화면 위젯 <-> 산책 기록 화면) ----------
      localStorage로 "지금 산책 중인지", 시작 시각, 지나온 GPS 좌표를 저장해서
      홈에서 시작한 산책을 산책 기록 화면에서도, 로그인 후에도 이어서 보여줍니다.
@@ -102,29 +30,53 @@
 
   function readSelectedRoute() {
     var routeKey = new URLSearchParams(window.location.search).get("route");
-    if (!document.querySelector("[data-auto-start-walk]") ||
-        !routeKey || !/^[a-zA-Z0-9-]+$/.test(routeKey)) return null;
+    if (
+      !document.querySelector("[data-auto-start-walk]") ||
+      !routeKey ||
+      !/^[a-zA-Z0-9-]+$/.test(routeKey)
+    )
+      return null;
     try {
       var route = JSON.parse(sessionStorage.getItem("walk-route:" + routeKey));
-      if (!route || !Array.isArray(route.points) || route.points.length < 2 ||
-          route.points.length > 5000 ||
-          !Number.isFinite(route.distance_m) || route.distance_m <= 0 ||
-          !Number.isFinite(route.estimated_minutes) || route.estimated_minutes <= 0 ||
-          route.points.some(function (point) {
-            return !point || !Number.isInteger(point.sequence) ||
-              !Number.isFinite(point.latitude) || !Number.isFinite(point.longitude) ||
-              Math.abs(point.latitude) > 90 || Math.abs(point.longitude) > 180;
-          })) return null;
+      if (
+        !route ||
+        !Array.isArray(route.points) ||
+        route.points.length < 2 ||
+        route.points.length > 5000 ||
+        !Number.isFinite(route.distance_m) ||
+        route.distance_m <= 0 ||
+        !Number.isFinite(route.estimated_minutes) ||
+        route.estimated_minutes <= 0 ||
+        route.points.some(function (point) {
+          return (
+            !point ||
+            !Number.isInteger(point.sequence) ||
+            !Number.isFinite(point.latitude) ||
+            !Number.isFinite(point.longitude) ||
+            Math.abs(point.latitude) > 90 ||
+            Math.abs(point.longitude) > 180
+          );
+        })
+      )
+        return null;
       return {
-        title: typeof route.title === "string" && route.title.trim()
-          ? route.title.trim().slice(0, 100) : "추천 산책로",
-        description: typeof route.description === "string"
-          ? route.description.slice(0, 1000) : "",
+        title:
+          typeof route.title === "string" && route.title.trim()
+            ? route.title.trim().slice(0, 100)
+            : "추천 산책로",
+        description:
+          typeof route.description === "string"
+            ? route.description.slice(0, 1000)
+            : "",
         distanceM: Math.round(route.distance_m),
         estimatedMinutes: Math.round(route.estimated_minutes),
         points: route.points.map(function (point) {
-          return { sequence: point.sequence, latitude: point.latitude, longitude: point.longitude };
-        })
+          return {
+            sequence: point.sequence,
+            latitude: point.latitude,
+            longitude: point.longitude,
+          };
+        }),
       };
     } catch (error) {
       console.error("추천 산책로 보관 실패:", error);
@@ -144,7 +96,7 @@
   // 데스크톱 브라우저의 낮은 위치 정확도를 고려해 200m 이하 좌표를 기록
   var MAX_ACCURACY_M = 200;
   // var MAX_ACCURACY_M = 50;  // 정확도가 50m보다 나쁜 위치는 버림
-  var MIN_MOVE_M = 5;       // 직전 좌표에서 5m 이상 움직였을 때만 기록 (제자리 흔들림 무시)
+  var MIN_MOVE_M = 5; // 직전 좌표에서 5m 이상 움직였을 때만 기록 (제자리 흔들림 무시)
 
   function isWalking() {
     return localStorage.getItem(WALK_ACTIVE_KEY) === "true";
@@ -186,9 +138,12 @@
     var toRad = Math.PI / 180;
     var dLat = (b.lat - a.lat) * toRad;
     var dLng = (b.lng - a.lng) * toRad;
-    var h = Math.sin(dLat / 2) * Math.sin(dLat / 2) +
-      Math.cos(a.lat * toRad) * Math.cos(b.lat * toRad) *
-      Math.sin(dLng / 2) * Math.sin(dLng / 2);
+    var h =
+      Math.sin(dLat / 2) * Math.sin(dLat / 2) +
+      Math.cos(a.lat * toRad) *
+        Math.cos(b.lat * toRad) *
+        Math.sin(dLng / 2) *
+        Math.sin(dLng / 2);
     return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
   // 지금까지 걸은 거리(m) = 좌표들 사이 거리를 모두 더한 값
@@ -206,7 +161,11 @@
     var c = position.coords;
     if (c.accuracy > MAX_ACCURACY_M) return;
 
-    var point = { lat: c.latitude, lng: c.longitude, t: position.timestamp || Date.now() };
+    var point = {
+      lat: c.latitude,
+      lng: c.longitude,
+      t: position.timestamp || Date.now(),
+    };
     var points = getWalkPoints();
     var last = points[points.length - 1];
     if (last && metersBetween(last, point) < MIN_MOVE_M) return;
@@ -215,7 +174,9 @@
     localStorage.setItem(WALK_POINTS_KEY, JSON.stringify(points));
   }
 
-  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+  function pad2(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
   function formatElapsed(ms) {
     var totalSec = Math.max(0, Math.floor(ms / 1000));
     var m = Math.floor(totalSec / 60);
@@ -241,13 +202,13 @@
       method: "POST",
       headers: headers,
       body: JSON.stringify({
-        courseId: null,                 // 자유 산책
+        courseId: null, // 자유 산책
         startedAt: startedAt,
         endedAt: endedAt,
-        distanceM: distanceM,           // 실제 GPS로 잰 거리
-        points: getWalkPoints(),        // 지나간 좌표 목록 [{lat, lng, t}, ...]
-        recommendedRoute: getPlannedRoute()
-      })
+        distanceM: distanceM, // 실제 GPS로 잰 거리
+        points: getWalkPoints(), // 지나간 좌표 목록 [{lat, lng, t}, ...]
+        recommendedRoute: getPlannedRoute(),
+      }),
     }).then(function (res) {
       if (!res.ok) throw new Error("저장 실패: " + res.status);
       return res.json();
@@ -261,15 +222,22 @@
     var startBtn = document.querySelector("[data-start-walk]");
     var endBtn = document.querySelector("[data-end-walk]");
     var cancelBtn = document.querySelector("[data-cancel-walk]"); // 저장 없이 취소 (산책 기록 화면)
-    var distanceEl = document.querySelector("[data-walk-distance]");        // "0.00 km" (산책 기록 화면)
+    var distanceEl = document.querySelector("[data-walk-distance]"); // "0.00 km" (산책 기록 화면)
     var distanceNumEl = document.querySelector("[data-walk-distance-num]"); // 숫자만, 단위는 화면에 따로 (메인)
     var elapsedEl = document.querySelector("[data-walk-elapsed]");
     var chipEl = document.querySelector("[data-walk-chip]");
     var autoStartHost = document.querySelector("[data-auto-start-walk]");
     var timer = null;
-    var watchId = null;   // GPS 추적 번호 (담당: 박용제)
+    var watchId = null; // GPS 추적 번호 (담당: 박용제)
 
-    if (!idles.length && !actives.length && !startBtn && !endBtn && !autoStartHost) return;
+    if (
+      !idles.length &&
+      !actives.length &&
+      !startBtn &&
+      !endBtn &&
+      !autoStartHost
+    )
+      return;
 
     if (autoStartHost) {
       if (!isWalking()) {
@@ -286,11 +254,15 @@
       var elapsed = Date.now() - walkStartedAt();
       if (elapsedEl) elapsedEl.textContent = formatElapsed(elapsed);
       if (distanceEl) distanceEl.textContent = formatDistance(walkedMeters());
-      if (distanceNumEl) distanceNumEl.textContent = (walkedMeters() / 1000).toFixed(2);
+      if (distanceNumEl)
+        distanceNumEl.textContent = (walkedMeters() / 1000).toFixed(2);
     }
 
     function stopTimer() {
-      if (timer) { clearInterval(timer); timer = null; }
+      if (timer) {
+        clearInterval(timer);
+        timer = null;
+      }
     }
 
     /* ----- GPS 추적 시작/중지 (담당: 박용제) ----- */
@@ -307,9 +279,14 @@
         function (position) {
           addWalkPoint(position);
           // 지도에 현재 위치·경로 다시 그리기 (walk-map.js)
-          window.dispatchEvent(new CustomEvent("walk:position", {
-            detail: { lat: position.coords.latitude, lng: position.coords.longitude }
-          }));
+          window.dispatchEvent(
+            new CustomEvent("walk:position", {
+              detail: {
+                lat: position.coords.latitude,
+                lng: position.coords.longitude,
+              },
+            }),
+          );
           setChip("실시간 위치 추적 중");
           tick();
         },
@@ -320,7 +297,7 @@
             setChip("위치를 찾는 중이에요");
           }
         },
-        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 }
+        { enableHighAccuracy: true, maximumAge: 5000, timeout: 20000 },
       );
     }
     function stopTracking() {
@@ -332,8 +309,12 @@
 
     function render() {
       var walking = isWalking();
-      idles.forEach(function (el) { el.hidden = walking; });
-      actives.forEach(function (el) { el.hidden = !walking; });
+      idles.forEach(function (el) {
+        el.hidden = walking;
+      });
+      actives.forEach(function (el) {
+        el.hidden = !walking;
+      });
       if (chipEl) {
         chipEl.textContent = walking ? "위치를 찾는 중이에요" : "지도 미리보기";
         chipEl.classList.toggle("floating", walking);
@@ -382,7 +363,7 @@
         if (endBtn.getAttribute("data-login-required") === "true") {
           var goLogin = confirm(
             "산책 기록을 저장하려면 로그인이 필요해요.\n" +
-            "로그인하면 지금 산책을 이어서 저장할 수 있어요. 로그인할까요?"
+              "로그인하면 지금 산책을 이어서 저장할 수 있어요. 로그인할까요?",
           );
           if (goLogin) {
             window.location.href = "/login";
@@ -412,32 +393,14 @@
     // 산책 취소: 기록을 저장하지 않고 산책을 끝냄 (회원·비회원 공통)
     if (cancelBtn) {
       cancelBtn.addEventListener("click", function () {
-        if (!confirm("산책을 취소할까요? 지금까지 걸은 기록은 저장되지 않아요.")) return;
+        if (
+          !confirm("산책을 취소할까요? 지금까지 걸은 기록은 저장되지 않아요.")
+        )
+          return;
         finishWalk(cancelBtn.getAttribute("data-cancel-redirect"));
       });
     }
 
     render();
   })();
-
-  /* ---------- 다크 모드 토글 (있는 경우) ---------- */
-  var themeToggle = document.getElementById("themeToggle");
-  if (themeToggle) {
-    var root = document.documentElement;
-    var stored = localStorage.getItem("mungjaguk-theme");
-    if (stored) root.setAttribute("data-theme", stored);
-    var syncLabel = function () {
-      var isDark =
-        root.getAttribute("data-theme") === "dark" ||
-        (!root.getAttribute("data-theme") && window.matchMedia("(prefers-color-scheme: dark)").matches);
-      themeToggle.textContent = isDark ? "☀️ 라이트 모드" : "🌙 다크 모드";
-    };
-    themeToggle.addEventListener("click", function () {
-      var next = root.getAttribute("data-theme") === "dark" ? "light" : "dark";
-      root.setAttribute("data-theme", next);
-      localStorage.setItem("mungjaguk-theme", next);
-      syncLabel();
-    });
-    syncLabel();
-  }
 })();
