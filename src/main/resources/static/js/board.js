@@ -484,7 +484,7 @@
                 alert(body.message || "댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요.");
                 return;
               }
-              commentList.appendChild(createComment(body));
+              commentList.prepend(createComment(body)); // 최신 댓글이 맨 위
               commentCount.textContent = String(parseInt(commentCount.textContent || "0", 10) + 1);
               commentInput.value = "";
               commentInput.focus();
@@ -548,6 +548,9 @@
   // 댓글 한 개 (작성자 아바타 + 이름 · 시간 + 내용)
   function createComment(comment) {
     var item = el("div", "comment");
+    // 댓글 구분선 (디자인 시스템 구분선 색)
+    item.style.paddingBottom = "14px";
+    item.style.borderBottom = "1px solid var(--color-border)";
     item.appendChild(el("div", comment.hostComment ? "avatar avatar-sm" : "avatar avatar-sm avatar-muted",
       comment.authorNickname.charAt(0)));
     var body = document.createElement("div");
