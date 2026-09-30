@@ -2,9 +2,12 @@ package com.mungjaguk.app.service;
 
 import com.mungjaguk.app.dto.CoursePointDto;
 import com.mungjaguk.app.dto.WalkSaveRequest;
+import com.mungjaguk.app.entity.Pet;
 import com.mungjaguk.app.entity.WalkRecord;
 import com.mungjaguk.app.entity.WalkRecordPoint;
 import com.mungjaguk.app.entity.WalkRecordPlannedPoint;
+import com.mungjaguk.app.repository.PetRepository;
+import com.mungjaguk.app.repository.WalkRecordPetRepository;
 import com.mungjaguk.app.repository.WalkRecordPointRepository;
 import com.mungjaguk.app.repository.WalkRecordPlannedPointRepository;
 import com.mungjaguk.app.repository.WalkRecordRepository;
@@ -18,6 +21,9 @@ import java.time.ZoneId;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 /** 산책 기록 저장 - 담당: 박용제 */
 @Service
@@ -31,6 +37,8 @@ public class WalkService {
     private final WalkRecordRepository walkRecordRepository;
     private final WalkRecordPointRepository walkRecordPointRepository;
     private final WalkRecordPlannedPointRepository plannedPointRepository;
+    private final WalkRecordPetRepository walkRecordPetRepository;
+    private final PetRepository petRepository;
 
     /** 끝난 산책(+ 경로 좌표)을 저장하고 저장된 기록 번호를 돌려줌 */
     @Transactional
@@ -42,6 +50,8 @@ public class WalkService {
 
         WalkSaveRequest.RecommendedRoute recommended = request.recommendedRoute();
         validateRecommendedRoute(recommended);
+        List<Long> petIds = validatePetIds(userId, request.petIds());
+
         if (recommended != null && request.courseId() != null) {
             throw new IllegalArgumentException("산책 경로 정보가 올바르지 않습니다.");
         }
@@ -65,6 +75,8 @@ public class WalkService {
         if (recommended != null) {
             savePlannedPoints(walkRecordId, recommended.points());
         }
+
+        walkRecordPetRepository.savePetLinks(walkRecordId, petIds);
 
         return walkRecordId;
     }
@@ -127,5 +139,28 @@ public class WalkService {
     /** 브라우저 밀리초 → 한국 시간 */
     private LocalDateTime toSeoulTime(long epochMillis) {
         return LocalDateTime.ofInstant(Instant.ofEpochMilli(epochMillis), SEOUL);
+    }
+
+    /* saveCompletedWalk()에서 산책 기록을 DB에 저장하기 전에 반려견 ID를 검증하는 메서드 */
+    private List<Long> validatePetIds(Long userId, List<Long> petIds) {
+        if (petIds == null || petIds.isEmpty()) {
+            return List.of();
+        }
+
+        if (petIds.stream().anyMatch(id -> id == null)) {
+            throw new IllegalArgumentException("반려견 정보가 올바르지 않습니다.");
+        }
+
+        List<Long> distinctPetIds = new LinkedHashSet<>(petIds).stream().toList();
+
+        Set<Long> myPetIds = petRepository.findByUser_UserIdOrderByPetIdAsc(userId).stream()
+                .map(Pet::getPetId)
+                .collect(Collectors.toSet());
+
+        if (!myPetIds.containsAll(distinctPetIds)) {
+            throw new IllegalArgumentException("본인의 반려견만 선택할 수 있습니다.");
+        }
+
+        return distinctPetIds;
     }
 }
