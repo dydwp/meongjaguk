@@ -25,6 +25,7 @@ import java.util.Map;
 import java.util.Set;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 /** 산책 저장(WalkService) → 활동 내역 조회/삭제(WalkRecordService)를 실제 DB로 */
@@ -53,7 +54,7 @@ class WalkRecordIntegrationTest extends IntegrationTestSupport {
                         new WalkSaveRequest.Point(37.5450002, 127.0440002, START + 60_000L)),
                 new WalkSaveRequest.RecommendedRoute(" 서울숲 코스 ", "공원을 따라 걷는 코스", 2300L, 35, List.of(
                         new CoursePointDto(2, 37.545, 127.044),
-                        new CoursePointDto(1, 37.544, 127.043))));
+                        new CoursePointDto(1, 37.544, 127.043))), null);
 
         Long id = walkService.saveCompletedWalk(me.getUserId(), request);
         flushAndClear();
@@ -79,7 +80,7 @@ class WalkRecordIntegrationTest extends IntegrationTestSupport {
         var course = data.route("한강 코스");
         data.coursePoints(course, 37.1, 127.1, 37.2, 127.2, 37.3, 127.3);
         Long id = walkService.saveCompletedWalk(me.getUserId(), new WalkSaveRequest(
-                course.getCourseId().longValue(), START, START + 600_000L, 1000, null, null));
+                course.getCourseId().longValue(), START, START + 600_000L, 1000, null, null, null));
         flushAndClear();
 
         assertEquals(3, walkRecordService.getPlannedPoints(id, me.getUserId()).size());
@@ -110,11 +111,36 @@ class WalkRecordIntegrationTest extends IntegrationTestSupport {
     }
 
     @Test
+    void selectedPetsAreLinkedToWalk() {
+        Pet bori = data.pet(me, "보리");
+        Pet choco = data.pet(me, "초코");
+
+        Long id = walkService.saveCompletedWalk(me.getUserId(), new WalkSaveRequest(null, START, START + 60_000L, 100,
+                null, null, List.of(choco.getPetId(), bori.getPetId(), choco.getPetId()))); // 중복은 한 번만
+        flushAndClear();
+
+        assertEquals(List.of("보리", "초코"), walkPets.findPetNamesByWalkRecordId(id, me.getUserId()));
+        assertEquals("보리 · 초코", walkRecordService.getDetail(id, me.getUserId()).orElseThrow().petNamesLabel());
+    }
+
+    @Test
+    void othersPetCannotBeSelected() {
+        Pet strangersPet = data.pet(data.user("남"), "남의 개");
+
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> walkService.saveCompletedWalk(me.getUserId(), new WalkSaveRequest(null, START, START + 60_000L,
+                        100, null, null, List.of(strangersPet.getPetId()))));
+        assertEquals("본인의 반려견만 선택할 수 있습니다.", e.getMessage());
+        flushAndClear();
+        assertTrue(records.findByUserIdOrderByStartedAtDesc(me.getUserId()).isEmpty());
+    }
+
+    @Test
     void deleteRemovesRecordAndAllPoints() {
         Long id = walkService.saveCompletedWalk(me.getUserId(), new WalkSaveRequest(null, START, START + 60_000L, 100,
                 List.of(new WalkSaveRequest.Point(37.1, 127.1, START)),
                 new WalkSaveRequest.RecommendedRoute("추천", null, 500L, 10, List.of(
-                        new CoursePointDto(1, 37.1, 127.1), new CoursePointDto(2, 37.2, 127.2)))));
+                        new CoursePointDto(1, 37.1, 127.1), new CoursePointDto(2, 37.2, 127.2))), null));
         flushAndClear();
 
         walkRecordService.deleteMyCompletedWalkRecord(id, me.getUserId());

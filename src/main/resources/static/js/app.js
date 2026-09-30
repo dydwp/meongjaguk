@@ -27,6 +27,7 @@
   var WALK_START_KEY = "mungjaguk-walk-start";
   var WALK_POINTS_KEY = "mungjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
   var WALK_PLANNED_KEY = "mungjaguk-walk-planned";
+  var WALK_PET_IDS_KEY = "mungjaguk-walk-pet-ids"; // 산책시 함께 산책하는 반려견
 
   function readSelectedRoute() {
     var routeKey = new URLSearchParams(window.location.search).get("route");
@@ -92,6 +93,288 @@
     }
   }
 
+  function getWalkPetIds() {
+    try {
+      return JSON.parse(localStorage.getItem(WALK_PET_IDS_KEY)) || [];
+    } catch (e) {
+      return [];
+    }
+  }
+
+  function getSelectedWalkPets() {
+    var selectedIds = getWalkPetIds();
+
+    if (!selectedIds.length) {
+      return Promise.resolve([]);
+    }
+
+    return fetch("/api/pet-profile/pets")
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("반려견 목록 조회 실패: " + res.status);
+        }
+        return res.json();
+      })
+      .then(function (pets) {
+        return pets.filter(function (pet) {
+          return selectedIds.includes(Number(pet.id));
+        });
+      })
+      .catch(function (err) {
+        console.error(err);
+        return [];
+      });
+  }
+
+  function setWalkPetIds(petIds) {
+    localStorage.setItem(WALK_PET_IDS_KEY, JSON.stringify(petIds || []));
+  }
+
+  function selectWalkPets() {
+    return fetch("/api/pet-profile/pets")
+      .then(function (res) {
+        if (!res.ok) {
+          throw new Error("반려견 목록 조회 실패: " + res.status);
+        }
+        return res.json();
+      })
+      .then(function (pets) {
+        if (!pets.length) {
+          setWalkPetIds([]);
+          return true;
+        }
+
+        return openWalkPetModal(pets);
+      })
+      .catch(function (err) {
+        console.error(err);
+        alert("반려견 정보를 불러오지 못했습니다.");
+        return false;
+      });
+  }
+
+  function openWalkPetModal(pets) {
+    return new Promise(function (resolve) {
+      var overlay = document.createElement("div");
+      overlay.className = "walk-pet-modal-overlay";
+
+      var modal = document.createElement("div");
+      modal.className = "walk-pet-modal";
+      modal.setAttribute("role", "dialog");
+      modal.setAttribute("aria-modal", "true");
+      modal.setAttribute("aria-labelledby", "walkPetModalTitle");
+
+      var title = document.createElement("h2");
+      title.id = "walkPetModalTitle";
+      title.textContent = "함께 산책할 반려견";
+
+      var description = document.createElement("p");
+      description.className = "walk-pet-modal-description";
+      description.textContent = "함께 산책하는 반려견을 선택해주세요. 선택하지 않아도 산책할 수 있어요.";
+
+      var list = document.createElement("div");
+      list.className = "walk-pet-modal-list";
+
+      pets.forEach(function (pet) {
+        var label = document.createElement("label");
+        label.className = "walk-pet-option";
+
+        var checkbox = document.createElement("input");
+        checkbox.type = "checkbox";
+        checkbox.value = String(pet.id);
+        checkbox.name = "walkPet";
+
+        var photo = document.createElement("div");
+        photo.className = "walk-pet-option-photo";
+
+        if (pet.profileImage) {
+          var img = document.createElement("img");
+          img.src = pet.profileImage;
+          img.alt = pet.name;
+          photo.appendChild(img);
+        } else {
+          photo.textContent = "🐾";
+        }
+
+        var info = document.createElement("span");
+        info.className = "walk-pet-option-info";
+
+        var name = document.createElement("strong");
+        name.textContent = pet.name;
+
+        var summary = document.createElement("span");
+        var summaryParts = [];
+
+        if (pet.breed) summaryParts.push(pet.breed);
+        if (pet.sizeLabel) summaryParts.push(pet.sizeLabel);
+        if (pet.ageInYears != null) summaryParts.push(pet.ageInYears + "세");
+
+        summary.textContent = summaryParts.join(" · ");
+
+        info.appendChild(name);
+        if (summaryParts.length) info.appendChild(summary);
+
+        label.appendChild(checkbox);
+        label.appendChild(photo);
+        label.appendChild(info);
+        list.appendChild(label);
+      });
+
+      var actions = document.createElement("div");
+      actions.className = "walk-pet-modal-actions";
+
+      var cancelBtn = document.createElement("button");
+      cancelBtn.type = "button";
+      cancelBtn.className = "btn btn-outline";
+      cancelBtn.textContent = "취소";
+
+      var startBtn = document.createElement("button");
+      startBtn.type = "button";
+      startBtn.className = "btn btn-primary";
+      startBtn.textContent = "산책 시작";
+
+      actions.appendChild(cancelBtn);
+      actions.appendChild(startBtn);
+
+      modal.appendChild(title);
+      modal.appendChild(description);
+      modal.appendChild(list);
+      modal.appendChild(actions);
+      overlay.appendChild(modal);
+      document.body.appendChild(overlay);
+
+      function closeModal(result) {
+        overlay.remove();
+        resolve(result);
+      }
+
+      cancelBtn.addEventListener("click", function () {
+        closeModal(false);
+      });
+
+      startBtn.addEventListener("click", function () {
+        var petIds = Array.from(
+          list.querySelectorAll('input[name="walkPet"]:checked')
+        ).map(function (checkbox) {
+          return Number(checkbox.value);
+        });
+
+        setWalkPetIds(petIds);
+        closeModal(true);
+      });
+
+      overlay.addEventListener("click", function (event) {
+        if (event.target === overlay) {
+          closeModal(false);
+        }
+      });
+    });
+  }
+
+  // 메인 - 산책시작시 반려견 이름 표시
+  function renderWalkPetSummary() {
+    var summaryEls = document.querySelectorAll("[data-walk-pet-summary]");
+    var nameEls = document.querySelectorAll("[data-walk-pet-names]");
+
+    if (!summaryEls.length) return;
+
+    if (!isWalking()) {
+      summaryEls.forEach(function (el) {
+        el.hidden = true;
+      });
+      return;
+    }
+
+    getSelectedWalkPets().then(function (pets) {
+      if (!pets.length) {
+        summaryEls.forEach(function (el) {
+          el.hidden = true;
+        });
+        return;
+      }
+
+      var names = pets.map(function (pet) {
+        return pet.name;
+      }).join(" · ");
+
+      nameEls.forEach(function (el) {
+        el.textContent = names;
+      });
+
+      summaryEls.forEach(function (el) {
+        el.hidden = false;
+      });
+    });
+  }
+
+  // 산책 기록 상세 페이지 - 반려견 카드 렌더링
+  function renderWalkPetDetail() {
+    var detail = document.querySelector("[data-walk-pet-detail]");
+    var list = document.querySelector("[data-walk-pet-list]");
+
+    if (!detail || !list || !isWalking()) return;
+
+    getSelectedWalkPets().then(function (pets) {
+      if (!pets.length) {
+        detail.hidden = true;
+        return;
+      }
+
+      list.innerHTML = "";
+
+      pets.forEach(function (pet) {
+        var card = document.createElement("div");
+        card.className = "walk-current-pet-card";
+
+        var photo = document.createElement("div");
+        photo.className = "walk-current-pet-photo";
+
+        if (pet.profileImage) {
+          var img = document.createElement("img");
+          img.src = pet.profileImage;
+          img.alt = pet.name;
+          photo.appendChild(img);
+        } else {
+          photo.textContent = "🐾";
+        }
+
+        var info = document.createElement("div");
+        info.className = "walk-current-pet-info";
+
+        var name = document.createElement("strong");
+        name.textContent = pet.name;
+
+        var summary = document.createElement("span");
+        var summaryParts = [];
+
+        if (pet.breed) summaryParts.push(pet.breed);
+        if (pet.sizeLabel) summaryParts.push(pet.sizeLabel);
+        if (pet.ageInYears != null) summaryParts.push(pet.ageInYears + "세");
+
+        summary.textContent = summaryParts.join(" · ");
+
+        info.appendChild(name);
+
+        if (summaryParts.length) {
+          info.appendChild(summary);
+        }
+
+        if (pet.activityLevelLabel) {
+          var activity = document.createElement("span");
+          activity.className = "walk-current-pet-activity";
+          activity.textContent = "활동성 " + pet.activityLevelLabel;
+          info.appendChild(activity);
+        }
+
+        card.appendChild(photo);
+        card.appendChild(info);
+        list.appendChild(card);
+      });
+
+      detail.hidden = false;
+    });
+  }
+
   // GPS 오차 걸러내기 기준 (담당: 박용제)
   // 데스크톱 브라우저의 낮은 위치 정확도를 고려해 200m 이하 좌표를 기록
   var MAX_ACCURACY_M = 200;
@@ -120,6 +403,7 @@
     localStorage.removeItem(WALK_START_KEY);
     localStorage.removeItem(WALK_POINTS_KEY);
     localStorage.removeItem(WALK_PLANNED_KEY);
+    localStorage.removeItem(WALK_PET_IDS_KEY);
     localStorage.removeItem("mungjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
     window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도 경로·체크 표시 지우기 (walk-map.js, home-widgets.js)
   }
@@ -141,9 +425,9 @@
     var h =
       Math.sin(dLat / 2) * Math.sin(dLat / 2) +
       Math.cos(a.lat * toRad) *
-        Math.cos(b.lat * toRad) *
-        Math.sin(dLng / 2) *
-        Math.sin(dLng / 2);
+      Math.cos(b.lat * toRad) *
+      Math.sin(dLng / 2) *
+      Math.sin(dLng / 2);
     return R * 2 * Math.atan2(Math.sqrt(h), Math.sqrt(1 - h));
   }
   // 지금까지 걸은 거리(m) = 좌표들 사이 거리를 모두 더한 값
@@ -208,6 +492,7 @@
         distanceM: distanceM, // 실제 GPS로 잰 거리
         points: getWalkPoints(), // 지나간 좌표 목록 [{lat, lng, t}, ...]
         recommendedRoute: getPlannedRoute(),
+        petIds: getWalkPetIds() // 함께 산책한 반려견 목록
       }),
     }).then(function (res) {
       if (!res.ok) throw new Error("저장 실패: " + res.status);
@@ -241,7 +526,13 @@
 
     if (autoStartHost) {
       if (!isWalking()) {
-        startWalking();
+        selectWalkPets().then(function (canStart) { // 산책 반려견 선택
+          if (!canStart) return;
+
+          startWalking();
+          render();
+          renderWalkPetDetail();
+        });
       } else {
         var selectedRoute = readSelectedRoute();
         if (selectedRoute) {
@@ -327,6 +618,8 @@
       } else {
         stopTracking();
       }
+      renderWalkPetSummary();
+      renderWalkPetDetail();
     }
 
     // 산책 종료 처리 (저장·취소 여부와 상관없이 공통). redirect가 있으면 그 화면으로 이동
@@ -350,8 +643,13 @@
           }
           return;
         }
-        startWalking();
-        render();
+
+        selectWalkPets().then(function (canStart) {
+          if (!canStart) return;
+
+          startWalking();
+          render();
+        });
       });
     }
     if (endBtn) {
@@ -363,7 +661,7 @@
         if (endBtn.getAttribute("data-login-required") === "true") {
           var goLogin = confirm(
             "산책 기록을 저장하려면 로그인이 필요해요.\n" +
-              "로그인하면 지금 산책을 이어서 저장할 수 있어요. 로그인할까요?",
+            "로그인하면 지금 산책을 이어서 저장할 수 있어요. 로그인할까요?",
           );
           if (goLogin) {
             window.location.href = "/login";

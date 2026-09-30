@@ -6,6 +6,11 @@
 const fs = require("node:fs");
 const path = require("node:path");
 const { JSDOM, VirtualConsole } = require("jsdom");
+const { after } = require("node:test");
+
+// 테스트가 중간에 실패해도 열린 페이지(타이머 포함)를 모두 닫아서 프로세스가 멈추지 않게 함
+const openWindows = new Set();
+after(() => openWindows.forEach((w) => w.close()));
 
 const ROOT = path.resolve(__dirname, "../../../..");
 const JS_DIR = path.join(ROOT, "src/main/resources/static/js");
@@ -111,6 +116,7 @@ function openPage(options = {}) {
   });
   const { window } = dom;
   const { document } = window;
+  openWindows.add(window);
 
   // ----- 기록용 -----
   const calls = { fetch: [], alerts: [], confirms: [], navigations: [], scrolls: [], timeouts: [] };
@@ -222,7 +228,7 @@ function openPage(options = {}) {
       el.dispatchEvent(new window.MouseEvent("click", { bubbles: true, cancelable: true }));
       return el;
     },
-    close() { window.close(); },
+    close() { openWindows.delete(window); window.close(); },
   };
 }
 
