@@ -24,6 +24,8 @@ public class SecurityConfig {
                 .authorizeHttpRequests(auth -> auth
                         .requestMatchers("/css/**", "/js/**", "/images/**", "/favicon.ico", "/error").permitAll()
                         .requestMatchers("/", "/login").permitAll()
+                        // 추가(박용제): Docker·AWS 상태 확인 주소는 로그인 없이 (상태 UP/DOWN 만 응답)
+                        .requestMatchers(HttpMethod.GET, "/actuator/health").permitAll()
                         .requestMatchers("/routes", "/course-detail").permitAll()
                         .requestMatchers("/board", "/course-detail-shared").permitAll()
                         // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게

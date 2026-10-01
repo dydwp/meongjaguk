@@ -75,8 +75,8 @@ services:
       mysql:
         condition: service_healthy
     healthcheck:
-      # 8081 포트가 응답하는지 확인 (JRE 이미지에 curl 이 없어 bash 로 접속 시도)
-      test: ["CMD-SHELL", "bash -c '</dev/tcp/127.0.0.1/8081' || exit 1"]
+      # Spring Actuator 상태 확인: UP 이 아니면 unhealthy (DB 연결 끊김 등도 감지)
+      test: ["CMD-SHELL", "curl -fs http://127.0.0.1:8081/actuator/health | grep -q '\"status\":\"UP\"' || exit 1"]
       interval: 15s
       timeout: 5s
       retries: 5
