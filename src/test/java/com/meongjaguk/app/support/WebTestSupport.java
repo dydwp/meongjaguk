@@ -6,6 +6,7 @@ import com.meongjaguk.app.service.PetImageStorage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Import;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.test.web.servlet.MockMvc;
 import org.springframework.test.web.servlet.request.RequestPostProcessor;
@@ -18,6 +19,8 @@ import static org.springframework.security.test.web.servlet.request.SecurityMock
  * - 서비스는 각 테스트에서 @MockitoBean 으로 대신함
  */
 @ActiveProfiles("test")
+// CI 등 OS 환경변수(SPRING_DATASOURCE_* 등)보다 테스트 설정(H2)을 우선 적용
+@TestPropertySource(locations = "classpath:application-test.properties")
 @Import({SecurityConfig.class, PetImageStorage.class})
 public abstract class WebTestSupport {
 
