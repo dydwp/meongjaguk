@@ -8,7 +8,8 @@ infra/
 ├── README.md                 ← 이 문서 (배포 순서와 명령어)
 ├── docker-compose.prod.yml   ← 배포용 실행 설정
 ├── .env.prod.example         ← 배포 서버 환경변수 양식 (복사해서 .env.prod 로 사용, 커밋 금지)
-└── deploy.sh                 ← 배포 스크립트 (코드 받기 → 빌드 → 실행 → 상태 확인)
+├── deploy.sh                 ← 전체 배포 스크립트 (코드 받기 → 빌드 → 실행 → 상태 확인)
+└── ai-deploy.sh              ← AI 서버만 배포하는 스크립트
 ```
 
 ## 구성
@@ -179,6 +180,7 @@ alias dcp='docker compose -f infra/docker-compose.prod.yml --env-file infra/.env
 | 하는 일 | 명령어 |
 |---|---|
 | 새 버전 배포 | `./infra/deploy.sh` |
+| AI 서버만 배포 | `bash infra/ai-deploy.sh` (`SKIP_PULL=1`로 코드 받기 생략) |
 | 상태 보기 | `dcp ps` |
 | 로그 보기 | `dcp logs -f --tail 100 app` (또는 `ai-server`, `mysql`) |
 | 앱만 재시작 | `dcp restart app` |
