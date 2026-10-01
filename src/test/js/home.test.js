@@ -167,6 +167,7 @@ test("보관 목록이 없으면 현재 위치로 6개를 받아 추천 페이�
   const page = openHomeRoutes({ fetch: () => response({ routes: [1, 2, 3, 4, 5, 6].map(route) }) });
   await settle();
 
+  assert.equal(page.calls.fetch[0].url, "/api/routes/recommend");
   assert.equal(JSON.parse(page.calls.fetch[0].body).top_k, 6);
   assert.equal(page.$$("#home-route-list .route-item").length, 3);
   const saved = JSON.parse(page.window.sessionStorage.getItem("walk-recommendations:v1"));

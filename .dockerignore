@@ -1,0 +1,25 @@
+# 빌드 결과물 / 도구 설정
+target
+.git
+.github
+.idea
+.vscode
+.venv
+node_modules
+
+# 비밀값 (이미지에 절대 포함 금지)
+.env
+infra
+src/main/resources/application-secret.properties
+
+# 사용자가 업로드한 반려견 사진 (.gitkeep 만 포함)
+src/main/resources/static/images/pets/*
+!src/main/resources/static/images/pets/.gitkeep
+
+# Spring 이미지 빌드에 필요 없는 폴더/파일
+ai-server
+sql
+wireframe
+*.zip
+*.docx
+*.md
