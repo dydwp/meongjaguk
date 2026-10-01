@@ -15,21 +15,37 @@ const ROUTE = {
   ],
 };
 
-function openForm({ query = "?route=r-1", session = { "walk-route:r-1": ROUTE }, fetch } = {}) {
+const PETS = [
+  { id: 1, name: "보리", breed: "푸들", sizeLabel: "소형", ageInYears: 3, profileImage: null, activityLevelLabel: "높음" },
+  { id: 2, name: "초코", breed: "비숑", sizeLabel: "소형", ageInYears: 5, profileImage: null, activityLevelLabel: null },
+];
+
+function openForm({ query = "?route=r-1", session = { "walk-route:r-1": ROUTE }, fetch, path = "/board/new", pets = PETS } = {}) {
   return openPage({
     html: template("board/form.html"),
-    url: "http://localhost:8081/board/new" + query,
+    url: "http://localhost:8081" + path + query,
     scripts: ["board-form.js"],
     sessionStorage: session,
-    fetch,
+    // 반려견 목록은 항상 따로 응답 (테스트별 fetch는 나머지 요청만 처리)
+    fetch: (url, call) => {
+      if (url === "/api/pet-profile/pets") return response(pets);
+      if (!fetch) throw new Error("unexpected " + url);
+      return typeof fetch === "function" ? fetch(url, call) : fetch;
+    },
     setup(window) {
       const page = window.document.querySelector("#board-form-page");
       Object.assign(page.dataset, {
-        apiBase: "/api/courses/", submitUrl: "/api/meetings", detailUrl: "/course-detail-shared",
+        apiBase: "/api/courses/", submitUrl: "/api/meetings", meetingApi: "/api/meetings/",
+        detailUrl: "/course-detail-shared",
         courseDetailUrl: "/course-detail", csrfHeader: "X-CSRF-TOKEN", csrfToken: "token-123",
       });
     },
   });
+}
+
+// 반려견 목록 요청을 뺀 나머지 요청
+function apiCalls(page) {
+  return page.calls.fetch.filter((call) => call.url !== "/api/pet-profile/pets");
 }
 
 function fill(page, values) {
@@ -83,7 +99,7 @@ test("등록된 코스(courseId)는 API로 코스 정보를 가져온다", async
   });
   await settle();
 
-  assert.equal(page.calls.fetch[0].url, "/api/courses/3");
+  assert.equal(apiCalls(page)[0].url, "/api/courses/3");
   assert.equal(page.$("#board-form-course-name").textContent, "한강 코스");
   assert.equal(page.$("#board-form-region").hidden, true);
   page.close();
@@ -118,7 +134,7 @@ test("서버와 같은 기준으로 입력값을 먼저 확인한다", async () 
     assert.equal(error(), message);
     assert.equal(page.$("#board-form-error").hidden, false);
   }
-  assert.equal(page.calls.fetch.length, 0);
+  assert.equal(apiCalls(page).length, 0);
   page.close();
 });
 
@@ -130,7 +146,7 @@ test("등록하면 코스·좌표·입력값을 함께 보내고 상세 화면�
   submit(page);
   await settle();
 
-  const call = page.calls.fetch[0];
+  const call = apiCalls(page)[0];
   assert.equal(call.url, "/api/meetings");
   assert.equal(call.headers["X-CSRF-TOKEN"], "token-123");
   const body = JSON.parse(call.body);
@@ -143,8 +159,39 @@ test("등록하면 코스·좌표·입력값을 함께 보내고 상세 화면�
   assert.equal(body.course.distanceM, 1834);
   assert.deepEqual([body.course.startLatitude, body.course.startLongitude], [37.544, 127.043]); // sequence 1
   assert.equal(body.points.length, 2);
+  assert.deepEqual(body.petIds, []);
   assert.deepEqual(page.calls.navigations, ["/course-detail-shared?meetingId=77"]);
   page.close();
+});
+
+test("내 반려견 목록을 체크박스로 보여주고, 고른 반려견을 petIds로 보낸다", async () => {
+  const page = openForm({ fetch: () => response({ meetingId: 77 }, { status: 201 }) });
+  await settle();
+
+  const options = page.$$("#board-pet-list .board-pet-option");
+  assert.equal(options.length, 2);
+  assert.equal(options[0].querySelector("strong").textContent, "보리");
+  assert.equal(options[0].querySelector(".walk-current-pet-activity").textContent, "활동성 높음");
+
+  page.$$('input[name="petIds"]')[1].checked = true;
+  fill(page, VALID);
+  submit(page);
+  await settle();
+
+  assert.deepEqual(JSON.parse(apiCalls(page).at(-1).body).petIds, [2]);
+  page.close();
+});
+
+test("반려견이 없거나 목록을 못 불러오면 안내 문구를 보여준다", async () => {
+  const empty = openForm({ pets: [] });
+  await settle();
+  assert.equal(empty.$("#board-pet-list").textContent, "등록된 반려견이 없습니다.");
+  empty.close();
+
+  const failed = openForm({ pets: null });
+  await settle();
+  assert.equal(failed.$("#board-pet-list").textContent, "등록된 반려견이 없습니다.");
+  failed.close();
 });
 
 test("등록 실패 원인별로 안내하고 다시 누를 수 있게 한다", async () => {
@@ -166,4 +213,100 @@ test("등록 실패 원인별로 안내하고 다시 누를 수 있게 한다", 
     assert.deepEqual(page.calls.navigations, []);
     page.close();
   }
+});
+
+// ---------- 수정 (/board/edit?meetingId=10) ----------
+
+const MEETING = {
+  meetingId: 10, title: "저녁 산책", description: "같이 걸어요", courseName: "서울숲 코스",
+  distanceM: 2600, estimatedMinutes: 40, meetingDate: "2099-10-03", meetingTime: "19:00:00",
+  petRequired: true, participationCondition: "소형견", maxParticipants: 4, isHost: true,
+  pets: [{ id: 2, name: "초코" }],
+};
+
+function openEdit(meeting = MEETING, onPut = () => response({ meetingId: 10 })) {
+  return openForm({
+    path: "/board/edit",
+    query: "?meetingId=10",
+    session: {},
+    fetch: (url, call) => {
+      if (call.method === "PUT") return onPut(call);
+      if (url === "/api/meetings/10") return meeting ? response(meeting) : response({}, { status: 404 });
+      throw new Error("unexpected " + url);
+    },
+  });
+}
+
+test("수정 화면은 기존 값을 채우고 코스 정보를 보여준다", async () => {
+  const page = openEdit();
+  await settle();
+
+  assert.equal(page.$("#board-form-heading").textContent, "산책로 게시글 수정");
+  assert.equal(page.$("#board-form-submit").textContent, "수정");
+  assert.equal(page.$("#board-form").hidden, false);
+  assert.equal(page.$("#board-form-course-name").textContent, "서울숲 코스");
+  const f = page.$("#board-form").elements;
+  assert.equal(f.title.value, "저녁 산책");
+  assert.equal(f.meetingDate.value, "2099-10-03");
+  assert.equal(f.meetingTime.value, "19:00");
+  assert.equal(f.maxParticipants.value, "4");
+  assert.equal(f.petRequired.checked, true);
+  assert.equal(f.participationCondition.value, "소형견");
+  assert.equal(f.description.value, "같이 걸어요");
+  assert.equal(page.$("#board-form-cancel").getAttribute("href"), "/course-detail-shared?meetingId=10");
+  // 이미 함께하기로 한 반려견은 체크된 상태
+  assert.deepEqual(page.$$('input[name="petIds"]').map((c) => c.checked), [false, true]);
+  page.close();
+});
+
+test("작성자가 아니거나 없는 글이면 수정 폼을 열지 않는다", async () => {
+  for (const [meeting, message] of [
+    [{ ...MEETING, isHost: false }, "본인이 작성한 글만 수정할 수 있어요."],
+    [null, "모집 정보를 찾을 수 없어요."],
+  ]) {
+    const page = openEdit(meeting);
+    await settle();
+    assert.equal(page.$("#board-form").hidden, true);
+    assert.equal(page.$("#board-form-status").textContent, message);
+    assert.equal(page.$("#board-form-back").hidden, false);
+    page.close();
+  }
+});
+
+test("수정하면 PUT으로 입력값만 보내고 상세 화면으로 이동한다", async () => {
+  const page = openEdit();
+  await settle();
+
+  fill(page, { title: " 새 제목 ", maxParticipants: "6" });
+  submit(page);
+  await settle();
+
+  const call = page.calls.fetch.at(-1);
+  assert.equal(call.method, "PUT");
+  assert.equal(call.url, "/api/meetings/10");
+  assert.equal(call.headers["X-CSRF-TOKEN"], "token-123");
+  const body = JSON.parse(call.body);
+  assert.equal(body.title, "새 제목");
+  assert.equal(body.maxParticipants, 6);
+  assert.equal(body.meetingTime, "19:00");
+  assert.equal(body.course, undefined);
+  assert.equal(body.courseId, undefined);
+  assert.deepEqual(body.petIds, [2]);
+  assert.deepEqual(page.calls.navigations, ["/course-detail-shared?meetingId=10"]);
+  page.close();
+});
+
+test("수정이 거부되면 서버가 준 이유를 보여주고 다시 누를 수 있게 한다", async () => {
+  const page = openEdit(MEETING, () =>
+    response({ message: "최대 인원은 현재 참여 인원(3명)보다 적을 수 없어요." }, { status: 400 }));
+  await settle();
+
+  submit(page);
+  await settle();
+
+  assert.equal(page.$("#board-form-error").textContent, "최대 인원은 현재 참여 인원(3명)보다 적을 수 없어요.");
+  assert.equal(page.$("#board-form-submit").disabled, false);
+  assert.equal(page.$("#board-form-submit").textContent, "수정");
+  assert.deepEqual(page.calls.navigations, []);
+  page.close();
 });

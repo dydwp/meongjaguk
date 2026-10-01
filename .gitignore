@@ -30,6 +30,10 @@ out/
 
 ### 비밀 설정 파일 (절대 커밋 금지) ###
 src/main/resources/application-secret.properties
+# 로컬 환경변수 파일 (.env.example 은 커밋)
+.env
+# 배포 서버 환경변수 파일 (infra/.env.prod.example 은 커밋)
+infra/.env.prod
 
 # 반려견 업로드 사진은 로컬에 보관
 /src/main/resources/static/images/pets/*

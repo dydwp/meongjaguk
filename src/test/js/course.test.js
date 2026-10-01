@@ -36,7 +36,7 @@ test("현재 위치로 AI 서버에 6개를 요청해 카드로 보여주고 목
   await settle();
 
   const call = page.calls.fetch[0];
-  assert.equal(call.url, "http://127.0.0.1:8000/api/routes/recommend");
+  assert.equal(call.url, "/api/routes/recommend");
   assert.deepEqual(JSON.parse(call.body), { latitude: 37.5443, longitude: 127.0374, top_k: 6 });
 
   const cards = page.$$("#walk-recommend-list .route-item");

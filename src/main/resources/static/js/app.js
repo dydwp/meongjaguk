@@ -23,11 +23,11 @@
      localStorage로 "지금 산책 중인지", 시작 시각, 지나온 GPS 좌표를 저장해서
      홈에서 시작한 산책을 산책 기록 화면에서도, 로그인 후에도 이어서 보여줍니다.
   ------------------------------------ */
-  var WALK_ACTIVE_KEY = "mungjaguk-walk-active";
-  var WALK_START_KEY = "mungjaguk-walk-start";
-  var WALK_POINTS_KEY = "mungjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
-  var WALK_PLANNED_KEY = "mungjaguk-walk-planned";
-  var WALK_PET_IDS_KEY = "mungjaguk-walk-pet-ids"; // 산책시 함께 산책하는 반려견
+  var WALK_ACTIVE_KEY = "meongjaguk-walk-active";
+  var WALK_START_KEY = "meongjaguk-walk-start";
+  var WALK_POINTS_KEY = "meongjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
+  var WALK_PLANNED_KEY = "meongjaguk-walk-planned";
+  var WALK_PET_IDS_KEY = "meongjaguk-walk-pet-ids"; // 산책시 함께 산책하는 반려견
 
   function readSelectedRoute() {
     var routeKey = new URLSearchParams(window.location.search).get("route");
@@ -404,7 +404,7 @@
     localStorage.removeItem(WALK_POINTS_KEY);
     localStorage.removeItem(WALK_PLANNED_KEY);
     localStorage.removeItem(WALK_PET_IDS_KEY);
-    localStorage.removeItem("mungjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
+    localStorage.removeItem("meongjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
     window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도 경로·체크 표시 지우기 (walk-map.js, home-widgets.js)
   }
 
