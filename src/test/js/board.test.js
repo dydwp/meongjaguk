@@ -114,12 +114,13 @@ const COMMENTS = [
   { commentId: 1, authorNickname: "용제", hostComment: true, mine: false, content: "환영해요", createdAt: hoursAgo(30) },
 ];
 
-function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao } = {}) {
+function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao, confirm } = {}) {
   return openPage({
     html: template("board/detail.html"),
     url: url || "http://localhost:8081/course-detail-shared?meetingId=10",
     scripts: ["board.js"],
     kakao,
+    confirm,
     setup(window) {
       const root = window.document.querySelector("[data-meeting-detail]");
       root.setAttribute("data-logged-in", String(loggedIn));
@@ -143,12 +144,15 @@ test("상세 화면에 모집 정보·참여자·댓글을 그린다", async () 
   const text = (s) => page.$(s).textContent;
   assert.equal(page.$("[data-meeting-detail]").hidden, false);
   assert.equal(text("[data-title]"), "저녁 산책");
-  assert.equal(text("[data-course-name]"), "코스 · 서울숲 코스");
-  assert.equal(text("[data-distance]"), "거리 · 2.6km");
-  assert.equal(text("[data-minutes]"), "예상 소요시간 · 약 40분");
-  assert.equal(text("[data-when]"), "모임 일시 · 2099.10.03 19:00");
-  assert.equal(text("[data-pet]"), "반려견 동반 · 필수");
-  assert.equal(text("[data-condition]"), "참여 조건 · 소형견");
+  assert.equal(text("[data-course-name]"), "서울숲 코스");
+  assert.equal(text("[data-distance]"), "2.6km");
+  assert.equal(text("[data-minutes]"), "약 40분");
+  assert.equal(text("[data-when]"), "2099.10.03 19:00");
+  assert.equal(text("[data-pet]"), "필수");
+  assert.ok(page.$("[data-pet]").classList.contains("meeting-pet-required"));
+  assert.equal(text("[data-condition]"), "소형견");
+  assert.equal(page.$("[data-description-section]").hidden, false);
+  assert.equal(text("[data-description]"), "같이 걸어요");
   assert.equal(text("[data-shared-at]"), "2026.09.20 공유");
   assert.equal(text("[data-join-count]"), "2/4");
   assert.deepEqual(page.$$("[data-participant-avatars] .avatar").map((a) => a.textContent), ["용", "민"]);
@@ -164,13 +168,35 @@ test("상세 화면에 모집 정보·참여자·댓글을 그린다", async () 
   page.close();
 });
 
-test("참여 조건·설명이 없으면 해당 줄을 지운다", async () => {
+test("참여 조건이 없으면 '없음', 설명이 없으면 설명 칸을 숨긴다", async () => {
   const page = openDetail({ meeting: { ...DETAIL, participationCondition: null, description: null, petRequired: false } });
   await settle();
 
-  assert.equal(page.$("[data-condition]"), null);
-  assert.equal(page.$("[data-description]"), null);
-  assert.equal(page.$("[data-pet]").textContent, "반려견 동반 · 선택");
+  assert.equal(page.$("[data-condition]").textContent, "없음");
+  assert.equal(page.$("[data-description-section]").hidden, true);
+  assert.equal(page.$("[data-pet]").textContent, "선택");
+  assert.ok(!page.$("[data-pet]").classList.contains("meeting-pet-required"));
+  page.close();
+});
+
+test("모집자가 함께할 반려견이 있으면 반려견 카드를 보여준다", async () => {
+  const none = openDetail();
+  await settle();
+  assert.equal(none.$("[data-meeting-pets]").hidden, true);
+  none.close();
+
+  const page = openDetail({
+    meeting: {
+      ...DETAIL,
+      pets: [{ id: 1, name: "보리", breed: "푸들", sizeLabel: "소형", ageInYears: 3, profileImage: null, activityLevelLabel: "높음" }],
+    },
+  });
+  await settle();
+  assert.equal(page.$("[data-meeting-pets]").hidden, false);
+  const items = page.$$("[data-meeting-pet-list] .walk-pet-group-item");
+  assert.equal(items.length, 1);
+  assert.equal(items[0].querySelector("strong").textContent, "보리");
+  assert.equal(items[0].querySelector(".walk-current-pet-activity").textContent, "활동성 높음");
   page.close();
 });
 
@@ -300,6 +326,58 @@ test("댓글 삭제는 확인 후 요청하고 목록에서 지운다", async ()
   assert.deepEqual(page.calls.confirms, ["댓글을 삭제할까요?"]);
   assert.equal(page.$$("[data-meeting-comment-list] .comment").length, 1);
   assert.equal(page.$("[data-meeting-comment-count]").textContent, "1");
+  page.close();
+});
+
+test("수정·삭제 버튼은 작성자에게만 보이고, 수정은 수정 화면으로 연결된다", async () => {
+  const guest = openDetail();
+  await settle();
+  assert.equal(guest.$("[data-host-actions]").hidden, true);
+  guest.close();
+
+  const host = openDetail({ meeting: { ...DETAIL, isHost: true } });
+  await settle();
+  assert.equal(host.$("[data-host-actions]").hidden, false);
+  assert.equal(host.$("[data-edit-link]").getAttribute("href"), "/board/edit?meetingId=10");
+  host.close();
+});
+
+test("글 삭제는 확인 후 CSRF 토큰과 함께 요청하고 게시판으로 이동한다 (취소하면 요청 안 함)", async () => {
+  const cancelled = openDetail({ meeting: { ...DETAIL, isHost: true }, confirm: false });
+  await settle();
+  cancelled.click("[data-delete-btn]");
+  await settle();
+  assert.equal(cancelled.calls.fetch.some((c) => c.method === "DELETE"), false);
+  cancelled.close();
+
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true },
+    routes: { "DELETE /api/meetings/10": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  page.click("[data-delete-btn]");
+  await settle();
+
+  assert.match(page.calls.confirms[0], /이 모집 글을 삭제할까요\?/);
+  assert.equal(page.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(page.calls.navigations, ["/board"]);
+  page.close();
+});
+
+test("글 삭제가 거부되면 이유를 알려주고 다시 누를 수 있게 한다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true },
+    routes: {
+      "DELETE /api/meetings/10": () => response({ message: "본인이 작성한 글만 삭제할 수 있어요." }, { status: 403 }),
+    },
+  });
+  await settle();
+  page.click("[data-delete-btn]");
+  await settle();
+
+  assert.deepEqual(page.calls.alerts, ["본인이 작성한 글만 삭제할 수 있어요."]);
+  assert.equal(page.$("[data-delete-btn]").disabled, false);
+  assert.deepEqual(page.calls.navigations, []);
   page.close();
 });
 

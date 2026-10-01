@@ -1,5 +1,5 @@
 /* ==========================================================================
-   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 동행 신청·취소 / 댓글)
+   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 글 수정·삭제 / 동행 신청·취소 / 댓글)
    담당: 김환중
    ========================================================================== */
 (function () {
@@ -342,6 +342,7 @@
         meetingClosed = meeting.status !== "RECRUITING";
         if (meeting.isHost) {
           renderDisabledButton("HOST", "내가 공유한 모집이에요");
+          showHostActions();
         } else {
           renderApplyButton(meeting.myApplicationStatus);
         }
@@ -353,6 +354,51 @@
         console.error("모집 정보를 불러오지 못했습니다.", err);
         showNotFound("모집 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
       });
+
+    /* ---------- 게시글 수정 / 삭제 (작성자만) ---------- */
+    var hostActions = detailRoot.querySelector("[data-host-actions]");
+    var deleteBtn = detailRoot.querySelector("[data-delete-btn]");
+
+    function showHostActions() {
+      detailRoot.querySelector("[data-edit-link]").href =
+        "/board/edit?meetingId=" + encodeURIComponent(meetingId);
+      hostActions.hidden = false;
+    }
+
+    deleteBtn.addEventListener("click", function () {
+      if (deleteBtn.disabled) return;
+      if (!confirm("이 모집 글을 삭제할까요?\n동행 신청과 댓글도 함께 삭제되고 복구할 수 없어요.")) return;
+
+      var headers = {};
+      if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+
+      deleteBtn.disabled = true;
+      fetch("/api/meetings/" + encodeURIComponent(meetingId), {
+        method: "DELETE",
+        headers: headers
+      })
+        .then(function (res) {
+          if (res.redirected || res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          if (res.ok) {
+            window.location.replace("/board"); // 뒤로 가기로 삭제된 글에 돌아오지 않도록
+            return;
+          }
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) {
+              alert(body.message || "글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+              deleteBtn.disabled = false;
+            });
+        })
+        .catch(function (err) {
+          console.error("게시글 삭제 실패", err);
+          alert("글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+          deleteBtn.disabled = false;
+        });
+    });
 
     /* ---------- 동행 신청 / 취소 ---------- */
     applyBtn.addEventListener("click", function () {
@@ -584,30 +630,102 @@
     }
   }
 
+  // 반려견 프로필 렌더링
+  function renderMeetingPets(pets) {
+    var section = detailRoot.querySelector("[data-meeting-pets]");
+    var list = detailRoot.querySelector("[data-meeting-pet-list]");
+
+    if (!section || !list) return;
+
+    list.replaceChildren();
+
+    if (!Array.isArray(pets) || pets.length === 0) {
+      section.hidden = true;
+      return;
+    }
+
+    pets.forEach(function (pet) {
+      var item = el("div", "walk-pet-group-item");
+
+      var photo = el("div", "walk-current-pet-photo");
+
+      if (pet.profileImage) {
+        var img = document.createElement("img");
+        img.src = pet.profileImage;
+        img.alt = pet.name || "반려견";
+        photo.appendChild(img);
+      } else {
+        photo.textContent = "🐾";
+      }
+
+      var info = el("div", "walk-current-pet-info");
+      info.appendChild(el("strong", null, pet.name || "반려견"));
+
+      var parts = [];
+      if (pet.breed) parts.push(pet.breed);
+      if (pet.sizeLabel) parts.push(pet.sizeLabel);
+      if (pet.ageInYears != null) parts.push(pet.ageInYears + "세");
+
+      if (parts.length) {
+        info.appendChild(el("span", null, parts.join(" · ")));
+      }
+
+      if (pet.activityLevelLabel) {
+        info.appendChild(
+          el("span", "walk-current-pet-activity",
+            "활동성 " + pet.activityLevelLabel)
+        );
+      }
+
+      item.appendChild(photo);
+      item.appendChild(info);
+      list.appendChild(item);
+    });
+
+    section.hidden = false;
+  }
+
   function renderDetail(meeting) {
     var q = function (sel) { return detailRoot.querySelector(sel); };
 
     q("[data-status]").replaceChildren(statusTag(meeting.status));
     q("[data-title]").textContent = meeting.title;
-    q("[data-course-name]").textContent = "코스 · " + meeting.courseName;
+    q("[data-course-name]").textContent = meeting.courseName || "-";
     q("[data-distance]").textContent =
-      "거리 · " + (meeting.distanceM != null ? (meeting.distanceM / 1000).toFixed(1) + "km" : "-");
+      meeting.distanceM != null ? (meeting.distanceM / 1000).toFixed(1) + "km" : "-";
     q("[data-minutes]").textContent =
-      "예상 소요시간 · " + (meeting.estimatedMinutes != null ? "약 " + meeting.estimatedMinutes + "분" : "-");
+      meeting.estimatedMinutes != null ? "약 " + meeting.estimatedMinutes + "분" : "-";
     q("[data-when]").textContent =
-      "모임 일시 · " + formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime);
-    q("[data-pet]").textContent = "반려견 동반 · " + (meeting.petRequired ? "필수" : "선택");
+      formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime) || "-";
 
+    // 참여자의 반려견 동반 필수 조건 (조건부 class 적용)
+    var petCondition = q("[data-pet]");
+    petCondition.textContent = meeting.petRequired ? "필수" : "선택";
+    petCondition.classList.toggle("meeting-pet-required", meeting.petRequired);
+
+    // 참여 조건
     var condition = q("[data-condition]");
+
     if (meeting.participationCondition) {
-      condition.textContent = "참여 조건 · " + meeting.participationCondition;
+      condition.textContent = meeting.participationCondition;
     } else {
-      condition.remove();
+      condition.textContent = "없음";
     }
 
+    // 설명 영역
+    var descriptionSection = q("[data-description-section]");
     var description = q("[data-description]");
-    if (meeting.description) description.textContent = meeting.description;
-    else description.remove();
+
+    if (descriptionSection && description) {
+      if (meeting.description) {
+        description.textContent = meeting.description;
+        descriptionSection.hidden = false;
+      } else {
+        descriptionSection.hidden = true;
+      }
+    }
+
+    renderMeetingPets(meeting.pets);
 
     q("[data-host-avatar]").textContent = meeting.hostNickname.charAt(0);
     q("[data-host-name]").textContent = meeting.hostNickname;

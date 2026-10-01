@@ -12,9 +12,9 @@
   "use strict";
 
   var DEFAULT_CENTER = { lat: 37.5665, lng: 126.978 }; // 위치를 모를 때: 서울시청 (walk-map.js와 같음)
-  var WEATHER_CACHE_KEY = "mungjaguk-weather";
+  var WEATHER_CACHE_KEY = "meongjaguk-weather";
   var WEATHER_CACHE_MS = 30 * 60 * 1000;               // 30분 동안은 다시 조회하지 않음
-  var CHECKLIST_KEY = "mungjaguk-walk-checklist";
+  var CHECKLIST_KEY = "meongjaguk-walk-checklist";
 
   function pad2(n) { return n < 10 ? "0" + n : String(n); }
   function todayText() {
