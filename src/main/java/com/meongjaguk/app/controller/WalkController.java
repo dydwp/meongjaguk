@@ -27,7 +27,7 @@ public class WalkController {
     private final String kakaoMapsJavaScriptKey;
 
     public WalkController(WalkRecordService walkRecordService,
-                        @Value("${kakao.maps.javascript-key:}") String kakaoMapsJavaScriptKey) {
+                        @Value("${kakao.map.js-key:}") String kakaoMapsJavaScriptKey) {
         this.walkRecordService = walkRecordService;
         this.kakaoMapsJavaScriptKey = kakaoMapsJavaScriptKey;
     }
