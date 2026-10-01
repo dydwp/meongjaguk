@@ -182,7 +182,7 @@
   }
 
   async function requestRoutes(position, top_k) {
-    const response = await fetch("http://127.0.0.1:8000/api/routes/recommend", {
+    const response = await fetch("/api/routes/recommend", { // Spring 이 AI 서버로 중계
       method: "POST",
       headers: { "Content-Type": "application/json", Accept: "application/json" },
       body: JSON.stringify({ ...position, top_k }),
