@@ -9,6 +9,7 @@ node_modules
 
 # 비밀값 (이미지에 절대 포함 금지)
 .env
+infra
 src/main/resources/application-secret.properties
 
 # 사용자가 업로드한 반려견 사진 (.gitkeep 만 포함)
