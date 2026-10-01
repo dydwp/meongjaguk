@@ -28,4 +28,9 @@ COPY --from=build /workspace/target/*.jar app.jar
 
 USER app
 EXPOSE 8081
+
+# 앱 상태 확인: /actuator/health 가 UP 이 아니면 unhealthy (DB 연결 끊김 등도 감지)
+HEALTHCHECK --interval=15s --timeout=5s --start-period=60s --retries=5 \
+    CMD curl -fs http://127.0.0.1:8081/actuator/health | grep -q '"status":"UP"' || exit 1
+
 ENTRYPOINT ["java", "-jar", "app.jar"]

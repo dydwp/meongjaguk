@@ -42,6 +42,12 @@
       <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
     </dependency>
 
+    <!-- 상태 확인: /actuator/health (Docker·AWS health check 용) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
+    </dependency>
+
     <!-- DB: JPA + MySQL -->
     <dependency>
       <groupId>org.springframework.boot</groupId>
