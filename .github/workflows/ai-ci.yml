@@ -2,9 +2,9 @@ name: CI
 
 on:
   push:
-    branches: [features/jeong]
+    branches: [main, dev]
   pull_request:
-    branches: [dev]
+    branches: [main, dev]
 
 jobs:
   ai-test:
