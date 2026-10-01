@@ -20,7 +20,7 @@ from app.route_description import RoutePlaceLookup, build_route_description
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 MODEL_PATH = BASE_DIR / "model" / "walk_route_model.json"
-GRAPH_PATH = BASE_DIR / "data" / "seoul_walk.graphml"
+GRAPH_PATH = BASE_DIR / "data" / "seoul_walk_runtime.graphml"
 GREEN_PATH = BASE_DIR / "data" / "seoul_green.gpkg"
 
 
