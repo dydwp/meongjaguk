@@ -5,11 +5,11 @@ on:
   pull_request:
     branches: [dev, main]
     paths-ignore:
-      - 'ai-server/**'
+      - "ai-server/**"
   push:
     branches: [main]
     paths-ignore:
-      - 'ai-server/**'
+      - "ai-server/**"
   # Actions 탭에서 수동 실행
   workflow_dispatch:
 
@@ -58,7 +58,7 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: '21'
+          java-version: "21"
           cache: maven
 
       - name: Grant execute permission for mvnw
