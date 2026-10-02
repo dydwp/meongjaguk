@@ -143,6 +143,23 @@
     localStorage.setItem(WALK_PET_IDS_KEY, JSON.stringify(petIds || []));
   }
 
+  function loadMeetingPetIds(meetingId) {
+  return fetch("/api/meetings/" + encodeURIComponent(meetingId))
+    .then(function (res) {
+      if (!res.ok) throw new Error("동행 모집 정보 조회 실패: " + res.status);
+      return res.json();
+    })
+    .then(function (meeting) {
+      if (!Array.isArray(meeting.pets)) return [];
+
+      return meeting.pets.map(function (pet) {
+        return Number(pet.id);
+      }).filter(function (id) {
+        return Number.isInteger(id) && id > 0;
+      });
+    });
+}
+
   function selectWalkPets() {
     return fetch("/api/pet-profile/pets")
       .then(function (res) {
@@ -540,17 +557,30 @@
       return;
 
     if (autoStartHost) {
-      var urlMeetingId = readMeetingIdParam(); // 동행 산책이면 모집글 번호 (추가: 김환중)
-      if (!isWalking()) {
-        selectWalkPets().then(function (canStart) { // 산책 반려견 선택
-          if (!canStart) return;
+      var urlMeetingId = readMeetingIdParam();  // 동행 산책이면 모집글 번호 (추가: 김환중)
 
-          startWalking();
-          // 동행 산책이면 모집글 번호 저장, 개인 산책이면 지움 (추가: 김환중)
-          if (urlMeetingId) localStorage.setItem(WALK_MEETING_KEY, urlMeetingId);
-          else localStorage.removeItem(WALK_MEETING_KEY);
-          render();
-        });
+      if (!isWalking()) {
+        if (urlMeetingId) {
+          loadMeetingPetIds(urlMeetingId) // 기존 반려견정보 가져오기
+            .then(function (petIds) {
+              setWalkPetIds(petIds);
+              startWalking();
+              localStorage.setItem(WALK_MEETING_KEY, urlMeetingId); // 동행 산책이면 모집글 번호 저장, 개인 산책이면 지움 (추가: 김환중)
+              render();
+            })
+            .catch(function (err) {
+              console.error(err);
+              alert("모집글의 반려견 정보를 불러오지 못했습니다.");
+            });
+        } else {
+          selectWalkPets().then(function (canStart) { // 산책 반려견 선택(추가: 최주영)
+            if (!canStart) return;
+
+            startWalking();
+            localStorage.removeItem(WALK_MEETING_KEY);
+            render();
+          });
+        }
       } else {
         // 다른 산책(개인 산책 등)이 진행 중이면 동행 산책으로 연결하지 않음 (추가: 김환중)
         if (urlMeetingId && localStorage.getItem(WALK_MEETING_KEY) !== urlMeetingId) {

@@ -10,6 +10,7 @@ import com.meongjaguk.app.entity.WalkRecordPoint;
 import com.meongjaguk.app.entity.WalkRecordPlannedPoint;
 import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.PetRepository;
+import com.meongjaguk.app.repository.WalkMeetingPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPointRepository;
 import com.meongjaguk.app.repository.WalkRecordPlannedPointRepository;
@@ -37,6 +38,7 @@ public class WalkService {
     private static final int MAX_POINTS = 10_000; // 비정상적으로 많은 좌표 방지
     private static final int MAX_PLANNED_POINTS = 5_000;
 
+    private final WalkMeetingPetRepository walkMeetingPetRepository;
     private final WalkRecordRepository walkRecordRepository;
     private final WalkRecordPointRepository walkRecordPointRepository;
     private final WalkRecordPlannedPointRepository plannedPointRepository;
@@ -61,8 +63,13 @@ public class WalkService {
             courseId = meeting.getCourse().getCourseId().longValue();
             recommended = null;
         }
+
+        // 반려견 ID를 검증 (추가: 최주영)
         validateRecommendedRoute(recommended);
-        List<Long> petIds = validatePetIds(userId, request.petIds());
+
+        List<Long> petIds = meeting == null
+                ? validatePetIds(userId, request.petIds())  // request.petIds 사용
+                : walkMeetingPetRepository.findPetIdsByMeetingId(meeting.getMeetingId(), userId); // 저장된 모집글 반려견 사용
 
         if (recommended != null && courseId != null) {
             throw new IllegalArgumentException("산책 경로 정보가 올바르지 않습니다.");
