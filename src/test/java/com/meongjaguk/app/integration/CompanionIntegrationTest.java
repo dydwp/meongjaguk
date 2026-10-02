@@ -2,9 +2,11 @@ package com.meongjaguk.app.integration;
 
 import com.meongjaguk.app.entity.ApplicationStatus;
 import com.meongjaguk.app.entity.Board;
+import com.meongjaguk.app.entity.BoardStatus;
 import com.meongjaguk.app.entity.CompanionRequest;
 import com.meongjaguk.app.entity.Notification;
 import com.meongjaguk.app.entity.User;
+import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.CompanionRequestRepository;
 import com.meongjaguk.app.repository.NotificationRepository;
 import com.meongjaguk.app.service.CompanionService;
@@ -28,6 +30,7 @@ class CompanionIntegrationTest extends IntegrationTestSupport {
 
     @Autowired CompanionService companionService;
     @Autowired CompanionRequestRepository requests;
+    @Autowired BoardRepository boards;
     @Autowired NotificationRepository notifications;
 
     private User host;
@@ -83,10 +86,23 @@ class CompanionIntegrationTest extends IntegrationTestSupport {
         flushAndClear();
 
         assertEquals(ApplicationStatus.ACCEPTED, requests.findById(request.getId()).orElseThrow().getStatus());
+        assertEquals(BoardStatus.RECRUITING, boards.findById(board.getMeetingId()).orElseThrow().getStatus());
         Notification notification = notifications
                 .findTop10ByUserIdOrderByCreatedAtDescNotificationIdDesc(applicant.getUserId()).get(0);
         assertEquals(Notification.TYPE_COMPANION_ACCEPTED, notification.getType());
         assertEquals("'저녁 산책' 모집에 함께 걷게 됐어요.", notification.getMessage());
+    }
+
+    @Test
+    void acceptingLastAvailablePlaceClosesMeetingInDatabase() {
+        data.acceptedRequest(board, data.user("first participant"));
+        CompanionRequest request = data.pendingRequest(board, applicant);
+
+        companionService.acceptForHost(request.getId(), host.getUserId());
+        flushAndClear();
+
+        assertEquals(ApplicationStatus.ACCEPTED, requests.findById(request.getId()).orElseThrow().getStatus());
+        assertEquals(BoardStatus.CLOSED, boards.findById(board.getMeetingId()).orElseThrow().getStatus());
     }
 
     @Test
