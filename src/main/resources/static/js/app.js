@@ -23,11 +23,12 @@
      localStorage로 "지금 산책 중인지", 시작 시각, 지나온 GPS 좌표를 저장해서
      홈에서 시작한 산책을 산책 기록 화면에서도, 로그인 후에도 이어서 보여줍니다.
   ------------------------------------ */
-  var WALK_ACTIVE_KEY = "mungjaguk-walk-active";
-  var WALK_START_KEY = "mungjaguk-walk-start";
-  var WALK_POINTS_KEY = "mungjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
-  var WALK_PLANNED_KEY = "mungjaguk-walk-planned";
-  var WALK_PET_IDS_KEY = "mungjaguk-walk-pet-ids"; // 산책시 함께 산책하는 반려견
+  var WALK_ACTIVE_KEY = "meongjaguk-walk-active";
+  var WALK_START_KEY = "meongjaguk-walk-start";
+  var WALK_POINTS_KEY = "meongjaguk-walk-points"; // [{lat, lng, t}, ...] (담당: 박용제)
+  var WALK_PLANNED_KEY = "meongjaguk-walk-planned";
+  var WALK_PET_IDS_KEY = "meongjaguk-walk-pet-ids"; // 산책시 함께 산책하는 반려견
+  var WALK_MEETING_KEY = "meongjaguk-walk-meeting-id"; // 동행 산책 모집글 번호 (추가: 김환중)
 
   function readSelectedRoute() {
     var routeKey = new URLSearchParams(window.location.search).get("route");
@@ -101,6 +102,18 @@
     }
   }
 
+  // 산책 기록 화면 주소의 동행 모집글 번호 (숫자만 허용) (추가: 김환중)
+  function readMeetingIdParam() {
+    var value = new URLSearchParams(window.location.search).get("meetingId");
+    return value && /^[1-9][0-9]{0,17}$/.test(value) ? value : null;
+  }
+
+  // 진행 중인 동행 산책의 모집글 번호 (개인 산책이면 null) (추가: 김환중)
+  function getWalkMeetingId() {
+    var value = localStorage.getItem(WALK_MEETING_KEY);
+    return value && /^[1-9][0-9]{0,17}$/.test(value) ? Number(value) : null;
+  }
+
   function getSelectedWalkPets() {
     var selectedIds = getWalkPetIds();
 
@@ -129,6 +142,23 @@
   function setWalkPetIds(petIds) {
     localStorage.setItem(WALK_PET_IDS_KEY, JSON.stringify(petIds || []));
   }
+
+  function loadMeetingPetIds(meetingId) {
+  return fetch("/api/meetings/" + encodeURIComponent(meetingId))
+    .then(function (res) {
+      if (!res.ok) throw new Error("동행 모집 정보 조회 실패: " + res.status);
+      return res.json();
+    })
+    .then(function (meeting) {
+      if (!Array.isArray(meeting.pets)) return [];
+
+      return meeting.pets.map(function (pet) {
+        return Number(pet.id);
+      }).filter(function (id) {
+        return Number.isInteger(id) && id > 0;
+      });
+    });
+}
 
   function selectWalkPets() {
     return fetch("/api/pet-profile/pets")
@@ -404,7 +434,8 @@
     localStorage.removeItem(WALK_POINTS_KEY);
     localStorage.removeItem(WALK_PLANNED_KEY);
     localStorage.removeItem(WALK_PET_IDS_KEY);
-    localStorage.removeItem("mungjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
+    localStorage.removeItem(WALK_MEETING_KEY); // 동행 산책 모집글 번호 (추가: 김환중)
+    localStorage.removeItem("meongjaguk-walk-checklist"); // 나가기 전 체크 초기화 (home-widgets.js와 같은 저장 이름)
     window.dispatchEvent(new CustomEvent("walk:stopped")); // 지도 경로·체크 표시 지우기 (walk-map.js, home-widgets.js)
   }
 
@@ -492,7 +523,8 @@
         distanceM: distanceM, // 실제 GPS로 잰 거리
         points: getWalkPoints(), // 지나간 좌표 목록 [{lat, lng, t}, ...]
         recommendedRoute: getPlannedRoute(),
-        petIds: getWalkPetIds() // 함께 산책한 반려견 목록
+        petIds: getWalkPetIds(), // 함께 산책한 반려견 목록
+        meetingId: getWalkMeetingId() // 동행 산책 모집글 번호, 개인 산책이면 null (추가: 김환중)
       }),
     }).then(function (res) {
       if (!res.ok) throw new Error("저장 실패: " + res.status);
@@ -525,14 +557,35 @@
       return;
 
     if (autoStartHost) {
-      if (!isWalking()) {
-        selectWalkPets().then(function (canStart) { // 산책 반려견 선택
-          if (!canStart) return;
+      var urlMeetingId = readMeetingIdParam();  // 동행 산책이면 모집글 번호 (추가: 김환중)
 
-          startWalking();
-          render();
-        });
+      if (!isWalking()) {
+        if (urlMeetingId) {
+          loadMeetingPetIds(urlMeetingId) // 기존 반려견정보 가져오기
+            .then(function (petIds) {
+              setWalkPetIds(petIds);
+              startWalking();
+              localStorage.setItem(WALK_MEETING_KEY, urlMeetingId); // 동행 산책이면 모집글 번호 저장, 개인 산책이면 지움 (추가: 김환중)
+              render();
+            })
+            .catch(function (err) {
+              console.error(err);
+              alert("모집글의 반려견 정보를 불러오지 못했습니다.");
+            });
+        } else {
+          selectWalkPets().then(function (canStart) { // 산책 반려견 선택(추가: 최주영)
+            if (!canStart) return;
+
+            startWalking();
+            localStorage.removeItem(WALK_MEETING_KEY);
+            render();
+          });
+        }
       } else {
+        // 다른 산책(개인 산책 등)이 진행 중이면 동행 산책으로 연결하지 않음 (추가: 김환중)
+        if (urlMeetingId && localStorage.getItem(WALK_MEETING_KEY) !== urlMeetingId) {
+          alert("진행 중인 산책을 먼저 종료해주세요.");
+        }
         var selectedRoute = readSelectedRoute();
         if (selectedRoute) {
           localStorage.setItem(WALK_PLANNED_KEY, JSON.stringify(selectedRoute));
@@ -672,10 +725,14 @@
 
         // [회원] 기록 저장 후 종료. 실패하면 산책을 유지해서 다시 누를 수 있게 함
         endBtn.disabled = true;
+        var savingMeetingId = getWalkMeetingId(); // 종료하면 지워지므로 미리 읽어 둠 (추가: 김환중)
         saveWalkRecord(walkStartedAt(), Date.now(), walkedMeters())
           .then(function () {
             alert("산책 기록을 저장했어요!");
-            finishWalk(endBtn.getAttribute("data-end-redirect"));
+            // 동행 산책이면 모집 상세로 이동 (추가: 김환중)
+            finishWalk(savingMeetingId
+              ? "/course-detail-shared?meetingId=" + savingMeetingId
+              : endBtn.getAttribute("data-end-redirect"));
           })
           .catch(function (err) {
             console.error(err);

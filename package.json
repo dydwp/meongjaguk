@@ -1,5 +1,5 @@
 {
-  "name": "mungjaguk-frontend-tests",
+  "name": "meongjaguk-frontend-tests",
   "private": true,
   "description": "멍자국 프론트엔드(static/js) 테스트 - Node 내장 테스트 러너 + jsdom",
   "scripts": {

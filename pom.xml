@@ -11,10 +11,10 @@
     <relativePath/>
   </parent>
 
-  <groupId>com.mungjaguk</groupId>
-  <artifactId>mungjaguk</artifactId>
+  <groupId>com.meongjaguk</groupId>
+  <artifactId>meongjaguk</artifactId>
   <version>0.0.1-SNAPSHOT</version>
-  <name>mungjaguk</name>
+  <name>meongjaguk</name>
   <description>멍자국 - 반려동물 산책 도우미 서비스</description>
 
   <properties>
@@ -40,6 +40,12 @@
     <dependency>
       <groupId>org.springframework.boot</groupId>
       <artifactId>spring-boot-starter-security-oauth2-client</artifactId>
+    </dependency>
+
+    <!-- 상태 확인: /actuator/health (Docker·AWS health check 용) -->
+    <dependency>
+      <groupId>org.springframework.boot</groupId>
+      <artifactId>spring-boot-starter-actuator</artifactId>
     </dependency>
 
     <!-- DB: JPA + MySQL -->

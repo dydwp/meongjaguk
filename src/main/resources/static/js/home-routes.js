@@ -13,7 +13,7 @@
   const showCount = Number(list.dataset.limit) || 3;
   const requestCount = 6; // walk-recommend.js 첫 요청 개수와 같게 (보관 형식 공유)
   const cacheKey = "walk-recommendations:v1";
-  const apiUrl = "http://127.0.0.1:8000/api/routes/recommend";
+  const apiUrl = "/api/routes/recommend"; // Spring 이 AI 서버로 중계
 
   function validRoutes(routes) {
     return (

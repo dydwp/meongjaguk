@@ -51,7 +51,7 @@ test("날씨·미세먼지로 산책 등급과 오늘 추천 시간을 보여주
   assert.equal(page.$("[data-weather-status]").hidden, true);
   // 위치는 소수 2자리(약 1km)로 줄여서 보냄
   assert.ok(page.calls.fetch.every((c) => c.url.includes("latitude=37.54&longitude=127.04")));
-  assert.ok(JSON.parse(page.window.sessionStorage.getItem("mungjaguk-weather")).view);
+  assert.ok(JSON.parse(page.window.sessionStorage.getItem("meongjaguk-weather")).view);
   page.close();
 });
 
@@ -89,7 +89,7 @@ test("위치 권한이 없으면 서울시청 기준으로, 보관된 날씨가 
   denied.close();
 
   const view = { icon: "🌤️", temp: "19°", grade: "산책 좋음", detail: "보관된 날씨" };
-  const cached = openWeather({ session: { "mungjaguk-weather": { savedAt: Date.now(), view } } });
+  const cached = openWeather({ session: { "meongjaguk-weather": { savedAt: Date.now(), view } } });
   await settle();
   assert.equal(cached.calls.fetch.length, 0);
   assert.deepEqual(weatherText(cached), ["🌤️", "19°", "산책 좋음", "보관된 날씨"]);
@@ -103,7 +103,7 @@ function openChecklist(saved) {
     html: template("index.html"),
     scripts: ["home-widgets.js"],
     geolocation: {},
-    localStorage: saved ? { "mungjaguk-walk-checklist": saved } : {},
+    localStorage: saved ? { "meongjaguk-walk-checklist": saved } : {},
   });
 }
 const checked = (page) => page.$$("[data-walk-checklist] input").filter((i) => i.checked).map((i) => i.value);
@@ -114,7 +114,7 @@ test("체크 상태를 오늘 날짜로 저장하고, 다시 열면 이어서 �
   leash.checked = true;
   leash.dispatchEvent(new page.window.Event("change"));
 
-  const saved = JSON.parse(page.window.localStorage.getItem("mungjaguk-walk-checklist"));
+  const saved = JSON.parse(page.window.localStorage.getItem("meongjaguk-walk-checklist"));
   assert.deepEqual(saved, { date: todayText(), checked: ["leash"] });
   page.close();
 
@@ -167,6 +167,7 @@ test("보관 목록이 없으면 현재 위치로 6개를 받아 추천 페이�
   const page = openHomeRoutes({ fetch: () => response({ routes: [1, 2, 3, 4, 5, 6].map(route) }) });
   await settle();
 
+  assert.equal(page.calls.fetch[0].url, "/api/routes/recommend");
   assert.equal(JSON.parse(page.calls.fetch[0].body).top_k, 6);
   assert.equal(page.$$("#home-route-list .route-item").length, 3);
   const saved = JSON.parse(page.window.sessionStorage.getItem("walk-recommendations:v1"));
@@ -203,7 +204,7 @@ test("지도는 산책 중이면 걸은 경로를 그리고, 새 위치·산책 
     scripts: ["walk-map.js"],
     kakao: true,
     geolocation: {},
-    localStorage: { "mungjaguk-walk-active": "true", "mungjaguk-walk-points": points },
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-points": points },
   });
   const { maps, polylines, markers } = page.calls.kakao;
 
@@ -214,11 +215,11 @@ test("지도는 산책 중이면 걸은 경로를 그리고, 새 위치·산책 
   assert.equal(markers[0].map, maps[0], "시작 지점 표시");
   assert.equal(maps[0].center.lat, 37.501, "마지막 위치로 이동");
 
-  page.window.localStorage.setItem("mungjaguk-walk-points", JSON.stringify([...points, { lat: 37.502, lng: 127.0 }]));
+  page.window.localStorage.setItem("meongjaguk-walk-points", JSON.stringify([...points, { lat: 37.502, lng: 127.0 }]));
   page.window.dispatchEvent(new page.window.CustomEvent("walk:position", { detail: { lat: 37.502, lng: 127.0 } }));
   assert.equal(line.path.length, 3);
 
-  page.window.localStorage.setItem("mungjaguk-walk-active", "false");
+  page.window.localStorage.setItem("meongjaguk-walk-active", "false");
   page.window.dispatchEvent(new page.window.CustomEvent("walk:stopped"));
   assert.equal(line.path.length, 0);
   assert.equal(markers[0].map, null);
@@ -243,6 +244,94 @@ test("산책 기록 화면에서 추천 경로로 시작하면 추천 경로·�
   assert.equal(page.$("[data-walk-route-legend]").hidden, false);
   assert.deepEqual(page.calls.kakao.polylines[0].path.map((p) => p.lat), [37.544, 37.545]);
   assert.deepEqual(page.calls.kakao.markers.slice(0, 2).map((m) => m.options.title), ["추천 경로 시작", "추천 경로 도착"]);
+  page.close();
+});
+
+// ---------- 동행 산책 기록 화면 (추가: 김환중) ----------
+
+const MEETING = {
+  meetingId: 10,
+  title: "저녁 산책",
+  points: [{ sequence: 2, latitude: 37.552, longitude: 127.041 }, { sequence: 1, latitude: 37.551, longitude: 127.04 }],
+};
+const WALKED = [{ lat: 37.5, lng: 127.0 }, { lat: 37.501, lng: 127.0 }];
+
+function openMeetingWalk({ url = "http://localhost:8081/walk-record?meetingId=10", meeting = MEETING, localStorage } = {}) {
+  return openPage({
+    html: template("walk/record.html"),
+    url,
+    scripts: ["walk-map.js"],
+    kakao: true,
+    geolocation: {},
+    localStorage,
+    fetch: () => (meeting instanceof Error ? meeting : response(meeting)),
+  });
+}
+
+test("동행 산책 시작 화면이면 모집글 제목과 모집 코스를 계획 경로로 표시한다", async () => {
+  const page = openMeetingWalk();
+
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책");
+  await settle();
+
+  assert.deepEqual(page.calls.fetch.map((c) => c.url), ["/api/meetings/10"]);
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책 · 저녁 산책");
+  assert.equal(page.$("[data-walk-route-legend]").hidden, false);
+  assert.equal(page.$("[data-walk-planned-label]").textContent, "모집 코스");
+  const { polylines, markers, maps } = page.calls.kakao;
+  assert.equal(polylines.length, 2, "실제 경로 + 모집 코스");
+  assert.deepEqual(polylines[1].path.map((p) => p.lat), [37.551, 37.552]);
+  assert.equal(polylines[0].options.strokeColor, "#E08F4F", "실제 경로는 추천 산책로와 같은 색");
+  assert.deepEqual(markers.slice(-2).map((m) => m.options.title), ["모집 코스 시작", "모집 코스 도착"]);
+  assert.ok(maps[0].bounds, "모집 코스에 맞춰 범위 조정");
+  page.close();
+});
+
+test("모집 정보를 못 불러오거나 좌표가 없으면 제목은 '동행 산책', 지도는 실제 경로만", async () => {
+  for (const meeting of [new TypeError("network"), { ...MEETING, points: [] }]) {
+    const page = openMeetingWalk({
+      meeting,
+      localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-meeting-id": "10", "meongjaguk-walk-points": WALKED },
+    });
+    await settle();
+
+    assert.equal(page.$("[data-walk-title]").textContent, "동행 산책");
+    assert.equal(page.$("[data-walk-route-legend]").hidden, true);
+    const { polylines } = page.calls.kakao;
+    assert.equal(polylines.length, 1, "계획 경로 없음");
+    assert.equal(polylines[0].path.length, 2, "실제 경로는 그대로");
+    assert.ok(page.consoleLog.some(([level]) => level === "error"), "콘솔에 기록");
+    page.close();
+  }
+});
+
+test("산책 중이면 주소에 번호가 없어도 저장된 동행 모집글로 표시한다", async () => {
+  const page = openMeetingWalk({
+    url: "http://localhost:8081/walk-record",
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-meeting-id": "10", "meongjaguk-walk-points": WALKED },
+  });
+  await settle();
+
+  assert.deepEqual(page.calls.fetch.map((c) => c.url), ["/api/meetings/10"]);
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책 · 저녁 산책");
+  assert.equal(page.calls.kakao.polylines.length, 2);
+  assert.equal(page.$("[data-walk-route-legend]").hidden, false);
+  page.close();
+});
+
+test("개인 산책 중에 동행 주소를 열어도 자유 산책 그대로 보여주고 모집글을 조회하지 않는다", async () => {
+  const page = openMeetingWalk({
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-points": WALKED },
+  });
+  await settle();
+
+  assert.equal(page.calls.fetch.length, 0);
+  assert.equal(page.$("[data-walk-title]").textContent, "자유 산책");
+  assert.equal(page.$("[data-walk-route-legend]").hidden, true);
+  const { polylines, markers } = page.calls.kakao;
+  assert.equal(polylines.length, 1);
+  assert.equal(polylines[0].options.strokeColor, "#5C8D4E", "자유 산책 선 색");
+  assert.equal(markers[0].options.title, "시작");
   page.close();
 });
 
