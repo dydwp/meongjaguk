@@ -1,5 +1,5 @@
 /* ==========================================================================
-   멍자국 — 산책로 게시판 (목록 / 공유 산책로 상세 / 글 수정·삭제 / 동행 신청·취소 / 댓글)
+   멍자국 — 동행 게시판 (목록 / 공유 산책로 상세 / 글 수정·삭제 / 동행 신청·취소 / 댓글)
    담당: 김환중
    ========================================================================== */
 (function () {
@@ -9,7 +9,7 @@
     RECRUITING: "모집 중",
     CLOSED: "모집 마감",
     IN_PROGRESS: "산책 중",
-    COMPLETED: "완료"
+    COMPLETED: "완료",
   };
 
   // 목록 카드 지도 미리보기 경로 (기존 목업 경로 재사용)
@@ -19,11 +19,13 @@
     "M40 90 C 80 50, 150 85, 200 55 S 280 30, 330 45",
     "M30 60 C 80 30, 130 75, 190 50 S 260 20, 340 55",
     "M40 50 C 100 90, 150 40, 210 70 S 290 100, 330 70",
-    "M30 70 C 80 40, 140 80, 200 55 S 270 30, 340 50"
+    "M30 70 C 80 40, 140 80, 200 55 S 270 30, 340 50",
   ];
 
   /* ---------- 공통 유틸 ---------- */
-  function pad2(n) { return n < 10 ? "0" + n : String(n); }
+  function pad2(n) {
+    return n < 10 ? "0" + n : String(n);
+  }
 
   function formatDistance(distanceM, minutes) {
     var parts = [];
@@ -76,19 +78,33 @@
   var ROUTE_COLOR = "#2f8060";
 
   function isValidLatLng(lat, lng) {
-    return Number.isFinite(lat) && Number.isFinite(lng) && Math.abs(lat) <= 90 && Math.abs(lng) <= 180;
+    return (
+      Number.isFinite(lat) &&
+      Number.isFinite(lng) &&
+      Math.abs(lat) <= 90 &&
+      Math.abs(lng) <= 180
+    );
   }
 
   function validPoints(points) {
     if (!Array.isArray(points) || points.length < 2) return null;
-    var ok = points.every(function (p) { return p && isValidLatLng(p.latitude, p.longitude); });
-    return ok ? points.slice().sort(function (a, b) { return a.sequence - b.sequence; }) : null;
+    var ok = points.every(function (p) {
+      return p && isValidLatLng(p.latitude, p.longitude);
+    });
+    return ok
+      ? points.slice().sort(function (a, b) {
+          return a.sequence - b.sequence;
+        })
+      : null;
   }
 
   // 지도로 그릴 수 있는지: 경로 좌표 2개 이상 또는 출발 좌표
   function canDrawMap(data) {
-    return !!(window.kakao && kakao.maps && kakao.maps.Map) &&
-      (validPoints(data.points) !== null || isValidLatLng(data.startLatitude, data.startLongitude));
+    return (
+      !!(window.kakao && kakao.maps && kakao.maps.Map) &&
+      (validPoints(data.points) !== null ||
+        isValidLatLng(data.startLatitude, data.startLongitude))
+    );
   }
 
   // .map-preview 안의 점선 그림(SVG)과 "지도 미리보기" 글씨를 지도로 교체할 준비
@@ -97,8 +113,8 @@
     if (chip) chip.remove();
     preview.classList.add("has-map"); // 기존 CSS: SVG 숨김
     var box = document.createElement("div");
-    box.className = "walk-map";       // 기존 CSS: 영역 전체 채우기
-    box.style.zIndex = "0";           // 지도가 "참여 n/m" 표시를 덮지 않게
+    box.className = "walk-map"; // 기존 CSS: 영역 전체 채우기
+    box.style.zIndex = "0"; // 지도가 "참여 n/m" 표시를 덮지 않게
     if (!interactive) box.style.pointerEvents = "none"; // 카드 클릭은 상세 이동
     preview.insertBefore(box, preview.firstChild);
     return box;
@@ -125,21 +141,33 @@
       var position = new maps.LatLng(data.startLatitude, data.startLongitude);
       options.center = position;
       var single = new maps.Map(box, options);
-      new maps.Marker({ map: single, position: position, title: "산책로 시작점" });
+      new maps.Marker({
+        map: single,
+        position: position,
+        title: "산책로 시작점",
+      });
       return single;
     }
 
-    var path = sorted.map(function (p) { return new maps.LatLng(p.latitude, p.longitude); });
+    var path = sorted.map(function (p) {
+      return new maps.LatLng(p.latitude, p.longitude);
+    });
     options.center = path[0];
     options.level = 4;
     var map = new maps.Map(box, options);
     new maps.Polyline({
-      map: map, path: path, strokeWeight: interactive ? 5 : 4,
-      strokeColor: ROUTE_COLOR, strokeOpacity: 0.9, strokeStyle: "solid"
+      map: map,
+      path: path,
+      strokeWeight: interactive ? 5 : 4,
+      strokeColor: ROUTE_COLOR,
+      strokeOpacity: 0.9,
+      strokeStyle: "solid",
     });
 
     var bounds = new maps.LatLngBounds();
-    path.forEach(function (p) { bounds.extend(p); });
+    path.forEach(function (p) {
+      bounds.extend(p);
+    });
     function fit() {
       map.relayout();
       if (interactive) map.setBounds(bounds, 60, 40, 40, 40);
@@ -153,13 +181,21 @@
       var text = document.createElement("span");
       text.className = "tag";
       text.style.cssText =
-        "background:white;border:1px solid " + ROUTE_COLOR + ";white-space:nowrap;transform:translateY(-42px);";
+        "background:white;border:1px solid " +
+        ROUTE_COLOR +
+        ";white-space:nowrap;transform:translateY(-42px);";
       text.textContent = label;
-      new maps.CustomOverlay({ map: map, position: position, content: text, yAnchor: 1 });
+      new maps.CustomOverlay({
+        map: map,
+        position: position,
+        content: text,
+        yAnchor: 1,
+      });
     }
     var first = sorted[0];
     var last = sorted[sorted.length - 1];
-    var roundTrip = Math.abs(first.latitude - last.latitude) < 0.000001 &&
+    var roundTrip =
+      Math.abs(first.latitude - last.latitude) < 0.000001 &&
       Math.abs(first.longitude - last.longitude) < 0.000001;
     mark(path[0], roundTrip ? "시작 · 도착" : "시작");
     if (!roundTrip) mark(path[path.length - 1], "도착");
@@ -169,25 +205,29 @@
   }
 
   // 목록 카드 지도는 화면에 보일 때만 만들기 (카드가 많아도 느려지지 않게)
-  var cardMapObserver = ("IntersectionObserver" in window)
-    ? new IntersectionObserver(function (entries) {
-        entries.forEach(function (entry) {
-          if (!entry.isIntersecting) return;
-          cardMapObserver.unobserve(entry.target);
-          var box = entry.target;
-          try {
-            drawCourseMap(box, box._courseData, false);
-          } catch (err) {
-            console.error("카드 지도 표시 실패", err);
-            box.parentElement.classList.remove("has-map"); // 실패하면 점선 그림으로
-            box.remove();
-          }
-        });
-      }, { rootMargin: "100px 0px" })
-    : null;
+  var cardMapObserver =
+    "IntersectionObserver" in window
+      ? new IntersectionObserver(
+          function (entries) {
+            entries.forEach(function (entry) {
+              if (!entry.isIntersecting) return;
+              cardMapObserver.unobserve(entry.target);
+              var box = entry.target;
+              try {
+                drawCourseMap(box, box._courseData, false);
+              } catch (err) {
+                console.error("카드 지도 표시 실패", err);
+                box.parentElement.classList.remove("has-map"); // 실패하면 점선 그림으로
+                box.remove();
+              }
+            });
+          },
+          { rootMargin: "100px 0px" },
+        )
+      : null;
 
   /* ======================================================================
-     산책로 게시판 목록 (/board)
+     동행 게시판 목록 (/board)
      ====================================================================== */
   var boardList = document.querySelector("[data-meeting-list]");
   if (boardList) {
@@ -199,10 +239,10 @@
     var PAGE_SIZE = 6;
     var statusText = document.querySelector("[data-meeting-status]");
     var sentinel = document.querySelector("[data-meeting-sentinel]");
-    var cursor = null;       // 마지막으로 불러온 게시글 번호
+    var cursor = null; // 마지막으로 불러온 게시글 번호
     var hasNext = true;
     var loading = false;
-    var cardCount = 0;       // 지도 미리보기 경로를 돌려 쓰기 위한 순번
+    var cardCount = 0; // 지도 미리보기 경로를 돌려 쓰기 위한 순번
 
     function showStatus(text) {
       statusText.textContent = text;
@@ -214,7 +254,10 @@
       loading = true;
       showStatus("게시글을 불러오는 중이에요...");
 
-      var url = "/api/meetings?size=" + PAGE_SIZE + (cursor != null ? "&cursor=" + encodeURIComponent(cursor) : "");
+      var url =
+        "/api/meetings?size=" +
+        PAGE_SIZE +
+        (cursor != null ? "&cursor=" + encodeURIComponent(cursor) : "");
       fetch(url)
         .then(function (res) {
           if (!res.ok) throw new Error("status " + res.status);
@@ -265,7 +308,9 @@
   function createMeetingCard(meeting, index) {
     var card = document.createElement("a");
     card.className = "board-card";
-    card.href = "/course-detail-shared?meetingId=" + encodeURIComponent(meeting.meetingId);
+    card.href =
+      "/course-detail-shared?meetingId=" +
+      encodeURIComponent(meeting.meetingId);
 
     card.innerHTML =
       '<div class="map-preview">' +
@@ -282,7 +327,9 @@
       '  <p class="meta mb-0" data-distance></p>' +
       "</div>";
 
-    card.querySelector("path").setAttribute("d", PREVIEW_PATHS[index % PREVIEW_PATHS.length]);
+    card
+      .querySelector("path")
+      .setAttribute("d", PREVIEW_PATHS[index % PREVIEW_PATHS.length]);
     // 좌표가 있으면 실제 지도 (없으면 점선 그림 유지)
     if (cardMapObserver && canDrawMap(meeting)) {
       var box = prepareMapBox(card.querySelector(".map-preview"), false);
@@ -298,10 +345,14 @@
 
     card.querySelector("[data-host]").textContent =
       meeting.hostNickname + " · " + formatRelative(meeting.createdAt);
-    card.querySelector("[data-when]").textContent =
-      formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime);
-    card.querySelector("[data-distance]").textContent =
-      formatDistance(meeting.distanceM, meeting.estimatedMinutes);
+    card.querySelector("[data-when]").textContent = formatMeetingDateTime(
+      meeting.meetingDate,
+      meeting.meetingTime,
+    );
+    card.querySelector("[data-distance]").textContent = formatDistance(
+      meeting.distanceM,
+      meeting.estimatedMinutes,
+    );
 
     return card;
   }
@@ -315,7 +366,9 @@
   }
 
   function initDetail() {
-    var meetingId = new URLSearchParams(window.location.search).get("meetingId");
+    var meetingId = new URLSearchParams(window.location.search).get(
+      "meetingId",
+    );
     if (!meetingId) {
       showNotFound("모집 정보를 찾을 수 없어요.");
       return;
@@ -352,7 +405,9 @@
       })
       .catch(function (err) {
         console.error("모집 정보를 불러오지 못했습니다.", err);
-        showNotFound("모집 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+        showNotFound(
+          "모집 정보를 불러오지 못했어요. 잠시 후 다시 시도해주세요.",
+        );
       });
 
     /* ---------- 게시글 수정 / 삭제 (작성자만) ---------- */
@@ -367,7 +422,12 @@
 
     deleteBtn.addEventListener("click", function () {
       if (deleteBtn.disabled) return;
-      if (!confirm("이 모집 글을 삭제할까요?\n동행 신청과 댓글도 함께 삭제되고 복구할 수 없어요.")) return;
+      if (
+        !confirm(
+          "이 모집 글을 삭제할까요?\n동행 신청과 댓글도 함께 삭제되고 복구할 수 없어요.",
+        )
+      )
+        return;
 
       var headers = {};
       if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
@@ -375,7 +435,7 @@
       deleteBtn.disabled = true;
       fetch("/api/meetings/" + encodeURIComponent(meetingId), {
         method: "DELETE",
-        headers: headers
+        headers: headers,
       })
         .then(function (res) {
           if (res.redirected || res.status === 401) {
@@ -386,10 +446,16 @@
             window.location.replace("/board"); // 뒤로 가기로 삭제된 글에 돌아오지 않도록
             return;
           }
-          return res.json()
-            .catch(function () { return {}; })
+          return res
+            .json()
+            .catch(function () {
+              return {};
+            })
             .then(function (body) {
-              alert(body.message || "글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+              alert(
+                body.message ||
+                  "글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.",
+              );
               deleteBtn.disabled = false;
             });
         })
@@ -419,10 +485,13 @@
       if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
       applyBtn.disabled = true;
-      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/applications", {
-        method: method,
-        headers: headers
-      })
+      fetch(
+        "/api/meetings/" + encodeURIComponent(meetingId) + "/applications",
+        {
+          method: method,
+          headers: headers,
+        },
+      )
         .then(function (res) {
           if (res.redirected || res.status === 401) {
             window.location.href = "/login";
@@ -432,11 +501,19 @@
             renderApplyButton(nextStatus);
             return;
           }
-          return res.json()
-            .catch(function () { return {}; })
+          return res
+            .json()
+            .catch(function () {
+              return {};
+            })
             .then(function (body) {
-              alert(body.message || "요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.");
-              renderApplyButton(applyBtn.getAttribute("data-application-status"));
+              alert(
+                body.message ||
+                  "요청을 처리하지 못했어요. 잠시 후 다시 시도해주세요.",
+              );
+              renderApplyButton(
+                applyBtn.getAttribute("data-application-status"),
+              );
             });
         })
         .catch(function (err) {
@@ -492,12 +569,17 @@
           return res.json();
         })
         .then(function (comments) {
-          commentList.replaceChildren.apply(commentList, comments.map(createComment));
+          commentList.replaceChildren.apply(
+            commentList,
+            comments.map(createComment),
+          );
           commentCount.textContent = String(comments.length);
         })
         .catch(function (err) {
           console.error("댓글을 불러오지 못했습니다.", err);
-          commentList.replaceChildren(el("p", "small text-muted", "댓글을 불러오지 못했어요."));
+          commentList.replaceChildren(
+            el("p", "small text-muted", "댓글을 불러오지 못했어요."),
+          );
         });
     }
 
@@ -516,22 +598,30 @@
       fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/comments", {
         method: "POST",
         headers: headers,
-        body: JSON.stringify({ content: content })
+        body: JSON.stringify({ content: content }),
       })
         .then(function (res) {
           if (res.redirected || res.status === 401) {
             window.location.href = "/login";
             return;
           }
-          return res.json()
-            .catch(function () { return {}; })
+          return res
+            .json()
+            .catch(function () {
+              return {};
+            })
             .then(function (body) {
               if (!res.ok) {
-                alert(body.message || "댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요.");
+                alert(
+                  body.message ||
+                    "댓글을 등록하지 못했어요. 잠시 후 다시 시도해주세요.",
+                );
                 return;
               }
               commentList.prepend(createComment(body)); // 최신 댓글이 맨 위
-              commentCount.textContent = String(parseInt(commentCount.textContent || "0", 10) + 1);
+              commentCount.textContent = String(
+                parseInt(commentCount.textContent || "0", 10) + 1,
+              );
               commentInput.value = "";
               commentInput.focus();
             });
@@ -555,11 +645,16 @@
       if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
 
       btn.disabled = true;
-      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/comments/" +
-            encodeURIComponent(btn.getAttribute("data-comment-delete")), {
-        method: "DELETE",
-        headers: headers
-      })
+      fetch(
+        "/api/meetings/" +
+          encodeURIComponent(meetingId) +
+          "/comments/" +
+          encodeURIComponent(btn.getAttribute("data-comment-delete")),
+        {
+          method: "DELETE",
+          headers: headers,
+        },
+      )
         .then(function (res) {
           if (res.redirected || res.status === 401) {
             window.location.href = "/login";
@@ -567,13 +662,21 @@
           }
           if (res.ok) {
             btn.closest(".comment").remove();
-            commentCount.textContent = String(Math.max(0, parseInt(commentCount.textContent || "0", 10) - 1));
+            commentCount.textContent = String(
+              Math.max(0, parseInt(commentCount.textContent || "0", 10) - 1),
+            );
             return;
           }
-          return res.json()
-            .catch(function () { return {}; })
+          return res
+            .json()
+            .catch(function () {
+              return {};
+            })
             .then(function (body) {
-              alert(body.message || "댓글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
+              alert(
+                body.message ||
+                  "댓글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.",
+              );
               btn.disabled = false;
             });
         })
@@ -597,17 +700,27 @@
     // 댓글 구분선 (디자인 시스템 구분선 색)
     item.style.paddingBottom = "14px";
     item.style.borderBottom = "1px solid var(--color-border)";
-    item.appendChild(el("div", comment.hostComment ? "avatar avatar-sm" : "avatar avatar-sm avatar-muted",
-      comment.authorNickname.charAt(0)));
+    item.appendChild(
+      el(
+        "div",
+        comment.hostComment
+          ? "avatar avatar-sm"
+          : "avatar avatar-sm avatar-muted",
+        comment.authorNickname.charAt(0),
+      ),
+    );
     var body = document.createElement("div");
     var name = el("span", "name", comment.authorNickname);
-    name.appendChild(el("span", "time", "· " + formatRelative(comment.createdAt)));
+    name.appendChild(
+      el("span", "time", "· " + formatRelative(comment.createdAt)),
+    );
     // 내가 쓴 댓글에만 삭제 버튼
     if (comment.mine) {
       var del = el("button", "time", "삭제");
       del.type = "button";
       del.setAttribute("data-comment-delete", comment.commentId);
-      del.style.cssText = "background:none; border:0; padding:0; cursor:pointer; text-decoration:underline;";
+      del.style.cssText =
+        "background:none; border:0; padding:0; cursor:pointer; text-decoration:underline;";
       name.appendChild(del);
     }
     body.appendChild(name);
@@ -672,8 +785,11 @@
 
       if (pet.activityLevelLabel) {
         info.appendChild(
-          el("span", "walk-current-pet-activity",
-            "활동성 " + pet.activityLevelLabel)
+          el(
+            "span",
+            "walk-current-pet-activity",
+            "활동성 " + pet.activityLevelLabel,
+          ),
         );
       }
 
@@ -686,15 +802,21 @@
   }
 
   function renderDetail(meeting) {
-    var q = function (sel) { return detailRoot.querySelector(sel); };
+    var q = function (sel) {
+      return detailRoot.querySelector(sel);
+    };
 
     q("[data-status]").replaceChildren(statusTag(meeting.status));
     q("[data-title]").textContent = meeting.title;
     q("[data-course-name]").textContent = meeting.courseName || "-";
     q("[data-distance]").textContent =
-      meeting.distanceM != null ? (meeting.distanceM / 1000).toFixed(1) + "km" : "-";
+      meeting.distanceM != null
+        ? (meeting.distanceM / 1000).toFixed(1) + "km"
+        : "-";
     q("[data-minutes]").textContent =
-      meeting.estimatedMinutes != null ? "약 " + meeting.estimatedMinutes + "분" : "-";
+      meeting.estimatedMinutes != null
+        ? "약 " + meeting.estimatedMinutes + "분"
+        : "-";
     q("[data-when]").textContent =
       formatMeetingDateTime(meeting.meetingDate, meeting.meetingTime) || "-";
 
@@ -732,13 +854,21 @@
     q("[data-shared-at]").textContent = formatDate(meeting.createdAt) + " 공유";
 
     var avatars = q("[data-participant-avatars]");
-    avatars.replaceChildren.apply(avatars, meeting.participantNicknames.map(function (name, i, arr) {
-      var avatar = el("div", i === 0 ? "avatar avatar-sm" : "avatar avatar-sm avatar-muted", name.charAt(0));
-      avatar.style.border = "2px solid var(--color-surface)";
-      if (i < arr.length - 1) avatar.style.marginRight = "-8px";
-      return avatar;
-    }));
-    q("[data-join-count]").textContent = meeting.currentParticipants + "/" + meeting.maxParticipants;
+    avatars.replaceChildren.apply(
+      avatars,
+      meeting.participantNicknames.map(function (name, i, arr) {
+        var avatar = el(
+          "div",
+          i === 0 ? "avatar avatar-sm" : "avatar avatar-sm avatar-muted",
+          name.charAt(0),
+        );
+        avatar.style.border = "2px solid var(--color-surface)";
+        if (i < arr.length - 1) avatar.style.marginRight = "-8px";
+        return avatar;
+      }),
+    );
+    q("[data-join-count]").textContent =
+      meeting.currentParticipants + "/" + meeting.maxParticipants;
   }
 
   function showNotFound(message) {

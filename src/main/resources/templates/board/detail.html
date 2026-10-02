@@ -1,141 +1,183 @@
-<!DOCTYPE html>
-<html lang="ko" xmlns:th="http://www.thymeleaf.org"
-      th:replace="~{layout/default :: page(title='멍자국 — 산책로 상세 (공유)', active='board', content=~{::main}, showFooter=false, showScript=true)}">
-<head><title>멍자국 — 산책로 상세 (공유)</title></head>
-<body>
-
-<main class="page">
-  <div data-meeting-detail hidden
-       th:attr="data-logged-in=${loginUser != null},data-csrf-header=${_csrf?.headerName},data-csrf-token=${_csrf?.token}">
-    <div class="map-preview" style="height:280px;">
-      <svg viewBox="0 0 900 280" preserveAspectRatio="none">
-        <path d="M90 210 C 190 150, 280 200, 360 160 S 480 100, 600 90 S 760 70, 820 55"
-              fill="none" stroke="var(--color-primary)" stroke-width="3.5" stroke-dasharray="8 8" stroke-linecap="round"/>
-        <circle cx="90" cy="210" r="6" fill="var(--color-primary)"/>
-        <circle cx="820" cy="55" r="6" fill="var(--color-accent)"/>
-      </svg>
-      <span class="map-chip">지도 미리보기</span>
-    </div>
-
-    <!-- 모집글 상세 내용 : 모임 정보 카드로 교체 및 반려견 프로필 카드 추가 (담당: 최주영) -->
-    <div class="mt-24">
-      <div class="meeting-detail-tags">
-        <span class="tag-secondary">공유된 코스</span>
-        <span data-status></span>
-      </div>
-
-      <h1 class="meeting-detail-title" data-title></h1>
-
-      <!-- 모임 정보 -->
-      <section class="card card-pad meeting-info-card">
-        <h2 class="block-label">모임 정보</h2>
-
-        <div class="meeting-info-grid">
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">코스</span>
-            <strong data-course-name></strong>
-          </div>
-
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">거리</span>
-            <strong data-distance></strong>
-          </div>
-
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">예상 시간</span>
-            <strong data-minutes></strong>
-          </div>
-
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">모임 일시</span>
-            <strong data-when></strong>
-          </div>
-
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">참여 시 반려견 동반</span>
-            <strong data-pet></strong>
-          </div>
-
-          <div class="meeting-info-item">
-            <span class="meeting-info-label">참여 조건</span>
-            <strong data-condition></strong>
-          </div>
-        </div>
-      </section>
-
-      <!-- 설명 -->
-      <section class="card card-pad mt-16" data-description-section hidden>
-        <h2 class="block-label">모임 설명</h2>
-        <p class="meeting-description text-muted" data-description></p>
-      </section>
-
-      <!-- 함께하는 반려견 프로필 카드 -->
-      <section class="card card-pad mt-16" data-meeting-pets hidden>
-        <h2 class="block-label">함께하는 반려견</h2>
-        <div class="walk-pet-group-card" data-meeting-pet-list></div>
-      </section>
-    </div>
-
-    <!-- 모집자 및 참여 현황 -->
-    <section class="card card-pad mt-24 meeting-host-card">
-      <h2 class="block-label">모집자 및 참여 현황</h2>
-
-      <div class="meeting-host-profile">
-        <div class="avatar avatar-sm" data-host-avatar></div>
-
-        <div>
-          <strong class="meeting-host-name" data-host-name></strong>
-          <div class="small text-muted" data-shared-at></div>
-        </div>
-        <!-- 작성자에게만 보임: 게시글 수정 / 삭제 (작은 글자 링크) -->
-        <span class="small text-muted" style="margin-left:auto;" data-host-actions hidden>
-          <a data-edit-link style="color:inherit; text-decoration:underline;">수정</a>
-          ·
-          <button type="button" data-delete-btn
-                  style="background:none; border:0; padding:0; font:inherit; color:inherit; cursor:pointer; text-decoration:underline;">삭제</button>
-        </span>
-      </div>
-
-      <div class="meeting-participant-row">
-        <div>
-          <span class="meeting-info-label">참여 현황</span>
-
-          <div class="meeting-participant-avatars"
-              data-participant-avatars></div>
+<!doctype html>
+<html
+  lang="ko"
+  xmlns:th="http://www.thymeleaf.org"
+  th:replace="~{layout/default :: page(title='멍자국 — 산책로 상세 (공유)', active='board', content=~{::main}, showFooter=false, showScript=true)}"
+>
+  <head>
+    <title>멍자국 — 산책로 상세 (공유)</title>
+  </head>
+  <body>
+    <main class="page">
+      <div
+        data-meeting-detail
+        hidden
+        th:attr="data-logged-in=${loginUser != null},data-csrf-header=${_csrf?.headerName},data-csrf-token=${_csrf?.token}"
+      >
+        <div class="map-preview" style="height: 280px">
+          <svg viewBox="0 0 900 280" preserveAspectRatio="none">
+            <path
+              d="M90 210 C 190 150, 280 200, 360 160 S 480 100, 600 90 S 760 70, 820 55"
+              fill="none"
+              stroke="var(--color-primary)"
+              stroke-width="3.5"
+              stroke-dasharray="8 8"
+              stroke-linecap="round"
+            />
+            <circle cx="90" cy="210" r="6" fill="var(--color-primary)" />
+            <circle cx="820" cy="55" r="6" fill="var(--color-accent)" />
+          </svg>
+          <span class="map-chip">지도 미리보기</span>
         </div>
 
-        <strong class="meeting-participant-count">
-          <span data-join-count></span>명 참여 중
-        </strong>
+        <!-- 모집글 상세 내용 : 모임 정보 카드로 교체 및 반려견 프로필 카드 추가 (담당: 최주영) -->
+        <div class="mt-24">
+          <div class="meeting-detail-tags">
+            <span class="tag-secondary">공유된 코스</span>
+            <span data-status></span>
+          </div>
+
+          <h1 class="meeting-detail-title" data-title></h1>
+
+          <!-- 모임 정보 -->
+          <section class="card card-pad meeting-info-card">
+            <h2 class="block-label">모임 정보</h2>
+
+            <div class="meeting-info-grid">
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">코스</span>
+                <strong data-course-name></strong>
+              </div>
+
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">거리</span>
+                <strong data-distance></strong>
+              </div>
+
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">예상 시간</span>
+                <strong data-minutes></strong>
+              </div>
+
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">모임 일시</span>
+                <strong data-when></strong>
+              </div>
+
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">참여 시 반려견 동반</span>
+                <strong data-pet></strong>
+              </div>
+
+              <div class="meeting-info-item">
+                <span class="meeting-info-label">참여 조건</span>
+                <strong data-condition></strong>
+              </div>
+            </div>
+          </section>
+
+          <!-- 설명 -->
+          <section class="card card-pad mt-16" data-description-section hidden>
+            <h2 class="block-label">모임 설명</h2>
+            <p class="meeting-description text-muted" data-description></p>
+          </section>
+
+          <!-- 함께하는 반려견 프로필 카드 -->
+          <section class="card card-pad mt-16" data-meeting-pets hidden>
+            <h2 class="block-label">함께하는 반려견</h2>
+            <div class="walk-pet-group-card" data-meeting-pet-list></div>
+          </section>
+        </div>
+
+        <!-- 모집자 및 참여 현황 -->
+        <section class="card card-pad mt-24 meeting-host-card">
+          <h2 class="block-label">모집자 및 참여 현황</h2>
+
+          <div class="meeting-host-profile">
+            <div class="avatar avatar-sm" data-host-avatar></div>
+
+            <div>
+              <strong class="meeting-host-name" data-host-name></strong>
+              <div class="small text-muted" data-shared-at></div>
+            </div>
+            <!-- 작성자에게만 보임: 게시글 수정 / 삭제 (작은 글자 링크) -->
+            <span
+              class="small text-muted"
+              style="margin-left: auto"
+              data-host-actions
+              hidden
+            >
+              <a
+                data-edit-link
+                style="color: inherit; text-decoration: underline"
+                >수정</a
+              >
+              ·
+              <button
+                type="button"
+                data-delete-btn
+                style="
+                  background: none;
+                  border: 0;
+                  padding: 0;
+                  font: inherit;
+                  color: inherit;
+                  cursor: pointer;
+                  text-decoration: underline;
+                "
+              >
+                삭제
+              </button>
+            </span>
+          </div>
+
+          <div class="meeting-participant-row">
+            <div>
+              <span class="meeting-info-label">참여 현황</span>
+
+              <div
+                class="meeting-participant-avatars"
+                data-participant-avatars
+              ></div>
+            </div>
+
+            <strong class="meeting-participant-count">
+              <span data-join-count></span>명 참여 중
+            </strong>
+          </div>
+
+          <div class="btn-row mt-16">
+            <button type="button" class="btn btn-highlight" data-apply-btn>
+              동행 신청
+            </button>
+          </div>
+        </section>
+
+        <div class="mt-24">
+          <h2 class="block-label">
+            댓글 <span data-meeting-comment-count>0</span>
+          </h2>
+          <div class="comment-input" data-meeting-comment-form>
+            <input
+              type="text"
+              placeholder="댓글을 남겨보세요"
+              maxlength="500"
+            />
+            <button type="button">등록</button>
+          </div>
+
+          <div data-meeting-comment-list></div>
+        </div>
       </div>
 
-      <div class="btn-row mt-16">
-        <button type="button"
-                class="btn btn-highlight"
-                data-apply-btn>
-          동행 신청
-        </button>
-      </div>
-    </section>
-
-    <div class="mt-24">
-      <h2 class="block-label">댓글 <span data-meeting-comment-count>0</span></h2>
-      <div class="comment-input" data-meeting-comment-form>
-        <input type="text" placeholder="댓글을 남겨보세요" maxlength="500" />
-        <button type="button">등록</button>
+      <div class="mt-24" data-meeting-empty hidden>
+        <p class="text-muted"></p>
+        <a th:href="@{/board}" class="btn btn-outline" style="width: auto"
+          >동행 게시판으로</a
+        >
       </div>
 
-      <div data-meeting-comment-list></div>
-    </div>
-  </div>
-
-  <div class="mt-24" data-meeting-empty hidden>
-    <p class="text-muted"></p>
-    <a th:href="@{/board}" class="btn btn-outline" style="width:auto;">산책로 게시판으로</a>
-  </div>
-
-  <script th:src="@{/js/board.js}" defer></script>
-</main>
-
-</body>
+      <script th:src="@{/js/board.js}" defer></script>
+    </main>
+  </body>
 </html>

@@ -1,82 +1,141 @@
-<!DOCTYPE html>
+<!doctype html>
 <html lang="ko" xmlns:th="http://www.thymeleaf.org">
-<head><meta charset="UTF-8" /></head>
-<body>
+  <head>
+    <meta charset="UTF-8" />
+  </head>
+  <body>
+    <header th:fragment="header(active)" class="app-header">
+      <!-- 왼쪽: 메뉴 -->
+      <ul class="app-nav">
+        <!-- 항상 보임 -->
+        <li>
+          <a
+            th:href="@{/board}"
+            th:classappend="${active == 'board'} ? 'active'"
+            >동행 게시판</a
+          >
+        </li>
+        <!-- 로그인 상태에서만 -->
+        <li th:if="${loginUser != null}">
+          <a
+            th:href="@{/mypage}"
+            th:classappend="${active == 'mypage'} ? 'active'"
+            >마이페이지</a
+          >
+        </li>
+      </ul>
 
-<header th:fragment="header(active)" class="app-header">
-  <!-- 왼쪽: 메뉴 -->
-  <ul class="app-nav">
-    <!-- 항상 보임 -->
-    <li><a th:href="@{/board}" th:classappend="${active == 'board'} ? 'active'">산책로 게시판</a></li>
-    <!-- 로그인 상태에서만 -->
-    <li th:if="${loginUser != null}">
-      <a th:href="@{/mypage}" th:classappend="${active == 'mypage'} ? 'active'">마이페이지</a>
-    </li>
-  </ul>
-
-  <!-- 가운데: 로고 (고리 + 초록 알약 + 발자국) -->
-  <a th:href="@{/}" class="logo" aria-label="멍자국 홈">
-    <span class="logo-ring" aria-hidden="true"></span>
-    <span class="logo-pill">
-      <span class="logo-dot" aria-hidden="true"></span>
-      멍자국
-      <svg class="logo-paw" viewBox="-10 -12 20 24" aria-hidden="true">
-        <ellipse cx="0" cy="5" rx="7" ry="6"/>
-        <circle cx="-7" cy="-5" r="2.8"/>
-        <circle cx="-2.5" cy="-9" r="2.8"/>
-        <circle cx="2.5" cy="-9" r="2.8"/>
-        <circle cx="7" cy="-5" r="2.8"/>
-      </svg>
-    </span>
-  </a>
-
-  <!-- 오른쪽: 로그인 사용자 / 로그인 버튼 -->
-  <div class="app-user">
-    <th:block th:if="${loginUser != null}">
-      <!-- 알림: 종 아이콘 + 안 읽은 수, 누르면 아래로 최신 10개 (notifications.js) -->
-      <div class="nav-bell-wrap" data-notifications>
-        <button type="button" class="nav-bell" aria-label="알림" aria-haspopup="true" aria-expanded="false"
-                data-notification-toggle>
-          <svg viewBox="0 0 24 24" width="20" height="20" aria-hidden="true">
-            <path d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z" fill="none" stroke="currentColor"
-                  stroke-width="1.9" stroke-linejoin="round"/>
-            <path d="M10 19.5a2 2 0 0 0 4 0" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"/>
+      <!-- 가운데: 로고 (고리 + 초록 알약 + 발자국) -->
+      <a th:href="@{/}" class="logo" aria-label="멍자국 홈">
+        <span class="logo-ring" aria-hidden="true"></span>
+        <span class="logo-pill">
+          <span class="logo-dot" aria-hidden="true"></span>
+          멍자국
+          <svg class="logo-paw" viewBox="-10 -12 20 24" aria-hidden="true">
+            <ellipse cx="0" cy="5" rx="7" ry="6" />
+            <circle cx="-7" cy="-5" r="2.8" />
+            <circle cx="-2.5" cy="-9" r="2.8" />
+            <circle cx="2.5" cy="-9" r="2.8" />
+            <circle cx="7" cy="-5" r="2.8" />
           </svg>
-          <span class="nav-bell-badge" data-notification-badge hidden></span>
-        </button>
-        <div class="notification-panel" data-notification-panel role="dialog" aria-label="알림" hidden>
-          <div class="notification-head">알림</div>
-          <p class="notification-empty" data-notification-empty>알림을 불러오는 중이에요.</p>
-          <ul class="notification-list" data-notification-list></ul>
-        </div>
+        </span>
+      </a>
+
+      <!-- 오른쪽: 로그인 사용자 / 로그인 버튼 -->
+      <div class="app-user">
+        <th:block th:if="${loginUser != null}">
+          <!-- 알림: 종 아이콘 + 안 읽은 수, 누르면 아래로 최신 10개 (notifications.js) -->
+          <div class="nav-bell-wrap" data-notifications>
+            <button
+              type="button"
+              class="nav-bell"
+              aria-label="알림"
+              aria-haspopup="true"
+              aria-expanded="false"
+              data-notification-toggle
+            >
+              <svg
+                viewBox="0 0 24 24"
+                width="20"
+                height="20"
+                aria-hidden="true"
+              >
+                <path
+                  d="M6 10a6 6 0 0 1 12 0c0 4 1.5 5.5 2 6.5H4c.5-1 2-2.5 2-6.5Z"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.9"
+                  stroke-linejoin="round"
+                />
+                <path
+                  d="M10 19.5a2 2 0 0 0 4 0"
+                  fill="none"
+                  stroke="currentColor"
+                  stroke-width="1.9"
+                  stroke-linecap="round"
+                />
+              </svg>
+              <span
+                class="nav-bell-badge"
+                data-notification-badge
+                hidden
+              ></span>
+            </button>
+            <div
+              class="notification-panel"
+              data-notification-panel
+              role="dialog"
+              aria-label="알림"
+              hidden
+            >
+              <div class="notification-head">알림</div>
+              <p class="notification-empty" data-notification-empty>
+                알림을 불러오는 중이에요.
+              </p>
+              <ul class="notification-list" data-notification-list></ul>
+            </div>
+          </div>
+          <span
+            class="avatar avatar-sm nav-avatar"
+            aria-hidden="true"
+            th:text="${#strings.isEmpty(loginUser.nickname)} ? '?' : ${#strings.substring(loginUser.nickname, 0, 1)}"
+            >박</span
+          >
+          <span class="nav-user" th:text="|${loginUser.nickname}님|"
+            >닉네임님</span
+          >
+          <form th:action="@{/logout}" method="post" class="nav-logout-form">
+            <button type="submit" class="nav-logout">로그아웃</button>
+          </form>
+        </th:block>
+        <a
+          th:if="${loginUser == null}"
+          th:href="@{/login}"
+          class="nav-login"
+          th:classappend="${active == 'login'} ? 'active'"
+          >로그인</a
+        >
       </div>
-      <span class="avatar avatar-sm nav-avatar" aria-hidden="true"
-            th:text="${#strings.isEmpty(loginUser.nickname)} ? '?' : ${#strings.substring(loginUser.nickname, 0, 1)}">박</span>
-      <span class="nav-user" th:text="|${loginUser.nickname}님|">닉네임님</span>
-      <form th:action="@{/logout}" method="post" class="nav-logout-form">
-        <button type="submit" class="nav-logout">로그아웃</button>
-      </form>
-    </th:block>
-    <a th:if="${loginUser == null}" th:href="@{/login}" class="nav-login"
-       th:classappend="${active == 'login'} ? 'active'">로그인</a>
-  </div>
 
-  <!-- 아래: 점선 + 가운데 발자국 두 개 (장식) -->
-  <div class="header-trail" aria-hidden="true">
-    <svg viewBox="0 0 40 24">
-      <g transform="translate(10,15) rotate(-20) scale(.62)">
-        <ellipse cx="0" cy="5" rx="7" ry="6"/>
-        <circle cx="-7" cy="-5" r="2.8"/><circle cx="-2.5" cy="-9" r="2.8"/>
-        <circle cx="2.5" cy="-9" r="2.8"/><circle cx="7" cy="-5" r="2.8"/>
-      </g>
-      <g transform="translate(29,9) rotate(15) scale(.62)">
-        <ellipse cx="0" cy="5" rx="7" ry="6"/>
-        <circle cx="-7" cy="-5" r="2.8"/><circle cx="-2.5" cy="-9" r="2.8"/>
-        <circle cx="2.5" cy="-9" r="2.8"/><circle cx="7" cy="-5" r="2.8"/>
-      </g>
-    </svg>
-  </div>
-</header>
-
-</body>
+      <!-- 아래: 점선 + 가운데 발자국 두 개 (장식) -->
+      <div class="header-trail" aria-hidden="true">
+        <svg viewBox="0 0 40 24">
+          <g transform="translate(10,15) rotate(-20) scale(.62)">
+            <ellipse cx="0" cy="5" rx="7" ry="6" />
+            <circle cx="-7" cy="-5" r="2.8" />
+            <circle cx="-2.5" cy="-9" r="2.8" />
+            <circle cx="2.5" cy="-9" r="2.8" />
+            <circle cx="7" cy="-5" r="2.8" />
+          </g>
+          <g transform="translate(29,9) rotate(15) scale(.62)">
+            <ellipse cx="0" cy="5" rx="7" ry="6" />
+            <circle cx="-7" cy="-5" r="2.8" />
+            <circle cx="-2.5" cy="-9" r="2.8" />
+            <circle cx="2.5" cy="-9" r="2.8" />
+            <circle cx="7" cy="-5" r="2.8" />
+          </g>
+        </svg>
+      </div>
+    </header>
+  </body>
 </html>

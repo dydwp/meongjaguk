@@ -25,7 +25,6 @@ import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.RouteRepository;
 import com.meongjaguk.app.repository.WalkMeetingPetRepository;
 
-
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
 import org.springframework.stereotype.Service;
@@ -45,8 +44,8 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * 산책로 게시판: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
- */
+ * 동행 게시판: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
+ */동행 게시판
 @Service
 @Transactional(readOnly = true)
 public class BoardService {
@@ -66,15 +65,15 @@ public class BoardService {
     private static final int MAX_COURSE_POINTS = 5000;
 
     public BoardService(BoardRepository boardRepository,
-                        CompanionRequestRepository companionRequestRepository,
-                        BoardCommentRepository commentRepository,
-                        UserService userService,
-                        RouteRepository routeRepository,
-                        CoursePointRepository coursePointRepository,
-                        NotificationService notificationService,
-                        WalkMeetingPetRepository walkMeetingPetRepository,
-                        PetRepository petRepository,
-                        PetService petService) {
+            CompanionRequestRepository companionRequestRepository,
+            BoardCommentRepository commentRepository,
+            UserService userService,
+            RouteRepository routeRepository,
+            CoursePointRepository coursePointRepository,
+            NotificationService notificationService,
+            WalkMeetingPetRepository walkMeetingPetRepository,
+            PetRepository petRepository,
+            PetService petService) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
@@ -88,8 +87,8 @@ public class BoardService {
     }
 
     /**
-     * 산책로 게시판 목록 (무한스크롤)
-     * - cursor가 없으면 첫 페이지, 있으면 그 게시글 번호보다 오래된 글
+     * 동행 게시판 목록 (무한스크롤)
+     * 동행 게시판r가 없으면 첫 페이지, 있으면 그 게시글 번호보다 오래된 글
      * - size개 + 1개를 조회해서 다음 페이지가 있는지 판단
      */
     public BoardPageDto getBoards(Long cursor, int size) {
@@ -119,7 +118,8 @@ public class BoardService {
             meetingIds.add(board.getMeetingId());
         }
         Map<Long, Long> acceptedCounts = new HashMap<>();
-        for (Object[] row : companionRequestRepository.countByMeetingIdsAndStatus(meetingIds, ApplicationStatus.ACCEPTED)) {
+        for (Object[] row : companionRequestRepository.countByMeetingIdsAndStatus(meetingIds,
+                ApplicationStatus.ACCEPTED)) {
             acceptedCounts.put((Long) row[0], (Long) row[1]);
         }
 
@@ -128,7 +128,8 @@ public class BoardService {
             courseIds.add(board.getCourse().getCourseId());
         }
         Map<Integer, List<CoursePointDto>> pointsByCourse = new HashMap<>();
-        for (CoursePoint point : coursePointRepository.findByCourse_CourseIdInOrderByCourse_CourseIdAscSequenceNoAsc(courseIds)) {
+        for (CoursePoint point : coursePointRepository
+                .findByCourse_CourseIdInOrderByCourse_CourseIdAscSequenceNoAsc(courseIds)) {
             pointsByCourse.computeIfAbsent(point.getCourse().getCourseId(), id -> new ArrayList<>())
                     .add(toPointDto(point));
         }
@@ -182,29 +183,29 @@ public class BoardService {
         List<PetCardView> pets = petService.getMyPetsByIds(hostUserId, petIds);
 
         return new BoardDetailDto(
-            board.getMeetingId(),
-            board.getTitle(),
-            board.getDescription(),
-            course.getCourseName(),
-            course.getDistanceM(),
-            course.getEstimatedMinutes(),
-            board.getMeetingDate(),
-            board.getMeetingTime(),
-            board.isPetRequired(),
-            board.getParticipationCondition(),
-            board.getHost().getNickname(),
-            board.getCreatedAt(),
-            participants,
-            participants.size(),
-            board.getMaxParticipants(),
-            displayStatus(board, accepted.size()),
-            isHost,
-            myStatus,
-            course.getStartLatitude(),
-            course.getStartLongitude(),
-            coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
-                                .stream().map(BoardService::toPointDto).toList(),
-            pets);
+                board.getMeetingId(),
+                board.getTitle(),
+                board.getDescription(),
+                course.getCourseName(),
+                course.getDistanceM(),
+                course.getEstimatedMinutes(),
+                board.getMeetingDate(),
+                board.getMeetingTime(),
+                board.isPetRequired(),
+                board.getParticipationCondition(),
+                board.getHost().getNickname(),
+                board.getCreatedAt(),
+                participants,
+                participants.size(),
+                board.getMaxParticipants(),
+                displayStatus(board, accepted.size()),
+                isHost,
+                myStatus,
+                course.getStartLatitude(),
+                course.getStartLongitude(),
+                coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
+                        .stream().map(BoardService::toPointDto).toList(),
+                pets);
     }
 
     /**
@@ -212,7 +213,7 @@ public class BoardService {
      * - courseId가 있으면 기존 코스를 사용, 없으면 추천 코스(course)를 게시글과 함께 저장
      * - 코스와 게시글은 한 트랜잭션으로 저장되어 등록 실패 시 코스도 남지 않음
      * - 제목 1~150자, 모임 일시는 현재 이후, 최대 인원 2~10명(본인 포함),
-     *   참여 조건 500자 이하, 설명 600자 이하
+     * 참여 조건 500자 이하, 설명 600자 이하
      * - 새 코스면 경로 좌표(points)도 course_points에 함께 저장 (추가: 김환중)
      */
     @Transactional
@@ -285,13 +286,13 @@ public class BoardService {
 
     /** 등록·수정 공통 입력값 (검증 후 앞뒤 공백 제거된 값) */
     private record BoardFields(String title, String description, LocalDate meetingDate, LocalTime meetingTime,
-                               int maxParticipants, boolean petRequired, String condition) {
+            int maxParticipants, boolean petRequired, String condition) {
     }
 
     /**
      * 등록·수정 공통 검증
      * - 제목 1~150자, 모임 일시는 현재 이후, 최대 인원 2~10명(본인 포함),
-     *   참여 조건 500자 이하, 설명 600자 이하
+     * 참여 조건 500자 이하, 설명 600자 이하
      */
     private BoardFields validateFields(BoardCreateRequest request) {
         if (request == null) {
@@ -404,8 +405,8 @@ public class BoardService {
     /**
      * 화면 표시용 모집 상태
      * - DB가 모집 중(RECRUITING)이어도 아래 경우는 모집 마감(CLOSED)으로 표시
-     *   · 정원이 찼을 때 (DB를 CLOSED로 바꾸는 자동 마감은 수락 기능에서 Board.close()로 처리)
-     *   · 모임 일시가 지났을 때
+     * · 정원이 찼을 때 (DB를 CLOSED로 바꾸는 자동 마감은 수락 기능에서 Board.close()로 처리)
+     * · 모임 일시가 지났을 때
      */
     private String displayStatus(Board board, long acceptedCount) {
         if (board.getStatus() == BoardStatus.RECRUITING
@@ -500,7 +501,8 @@ public class BoardService {
 
     /* 모집 글에 연결할 반려견 소유권 검증 (담당: 최주영) */
     private List<Long> validatePetIds(Long userId, List<Long> petIds) {
-        if (petIds == null || petIds.isEmpty()) return List.of();
+        if (petIds == null || petIds.isEmpty())
+            return List.of();
 
         if (petIds.stream().anyMatch(id -> id == null)) {
             throw new IllegalArgumentException("반려견 정보가 올바르지 않습니다.");

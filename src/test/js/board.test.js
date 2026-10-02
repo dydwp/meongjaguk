@@ -1,16 +1,33 @@
-// 산책로 게시판 목록·상세·동행 신청·댓글 (board.js) - board/list.html, board/detail.html
+// 동행 게시판 목록·상세·동행 신청·댓글 (board.js) - board/list.html, board/detail.html
 const { test } = require("node:test");
 const assert = require("node:assert/strict");
-const { openPage, template, response, settle, localDateTime } = require("./support/browser");
+const {
+  openPage,
+  template,
+  response,
+  settle,
+  localDateTime,
+} = require("./support/browser");
 
 const hoursAgo = (n) => localDateTime(n * 3600_000);
 
 function card(id, extra = {}) {
   return {
-    meetingId: id, title: "모집 " + id, hostNickname: "용제", createdAt: hoursAgo(3),
-    meetingDate: "2099-10-03", meetingTime: "19:00:00", distanceM: 2600, estimatedMinutes: 40,
-    currentParticipants: 2, maxParticipants: 4, status: "RECRUITING",
-    startLatitude: 37.544, startLongitude: 127.043, points: [], ...extra,
+    meetingId: id,
+    title: "모집 " + id,
+    hostNickname: "용제",
+    createdAt: hoursAgo(3),
+    meetingDate: "2099-10-03",
+    meetingTime: "19:00:00",
+    distanceM: 2600,
+    estimatedMinutes: 40,
+    currentParticipants: 2,
+    maxParticipants: 4,
+    status: "RECRUITING",
+    startLatitude: 37.544,
+    startLongitude: 127.043,
+    points: [],
+    ...extra,
   };
 }
 
@@ -23,7 +40,9 @@ function openList(pages, kakao = false) {
     scripts: ["board.js"],
     kakao,
     fetch: (url) => {
-      const cursor = new URL(url, "http://localhost").searchParams.get("cursor");
+      const cursor = new URL(url, "http://localhost").searchParams.get(
+        "cursor",
+      );
       const page = pages[cursor ?? "first"];
       return page instanceof Error ? page : response(page);
     },
@@ -31,20 +50,41 @@ function openList(pages, kakao = false) {
 }
 
 test("게시판 목록 카드에 제목·상태·작성자·일시·거리·참여 인원을 보여준다", async () => {
-  const page = openList({ first: { items: [card(9), card(8, { status: "CLOSED", distanceM: null })], hasNext: false, nextCursor: 8 } });
+  const page = openList({
+    first: {
+      items: [card(9), card(8, { status: "CLOSED", distanceM: null })],
+      hasNext: false,
+      nextCursor: 8,
+    },
+  });
   await settle();
 
   const cards = page.$$(".board-card");
   assert.equal(cards.length, 2);
-  assert.equal(cards[0].getAttribute("href"), "/course-detail-shared?meetingId=9");
+  assert.equal(
+    cards[0].getAttribute("href"),
+    "/course-detail-shared?meetingId=9",
+  );
   assert.equal(cards[0].querySelector("h3").textContent, "모집 9 모집 중");
   assert.equal(cards[0].querySelector(".tag-secondary").textContent, "모집 중");
-  assert.equal(cards[0].querySelector("[data-host]").textContent, "용제 · 3시간 전");
-  assert.equal(cards[0].querySelector("[data-when]").textContent, "2099.10.03 19:00");
-  assert.equal(cards[0].querySelector("[data-distance]").textContent, "2.6km · 약 40분");
+  assert.equal(
+    cards[0].querySelector("[data-host]").textContent,
+    "용제 · 3시간 전",
+  );
+  assert.equal(
+    cards[0].querySelector("[data-when]").textContent,
+    "2099.10.03 19:00",
+  );
+  assert.equal(
+    cards[0].querySelector("[data-distance]").textContent,
+    "2.6km · 약 40분",
+  );
   assert.equal(cards[0].querySelector(".map-tag").textContent, "참여 2/4");
   assert.equal(cards[1].querySelector(".tag-neutral").textContent, "모집 마감");
-  assert.equal(cards[1].querySelector("[data-distance]").textContent, "약 40분");
+  assert.equal(
+    cards[1].querySelector("[data-distance]").textContent,
+    "약 40분",
+  );
   assert.equal(page.$("[data-meeting-status]").hidden, true);
   assert.equal(page.calls.fetch[0].url, "/api/meetings?size=6");
   page.close();
@@ -57,22 +97,35 @@ test("다음 페이지가 있으면 마지막 게시글 번호(cursor)로 이어
   });
   await settle(20);
 
-  assert.deepEqual(page.calls.fetch.map((c) => c.url), ["/api/meetings?size=6", "/api/meetings?size=6&cursor=8"]);
+  assert.deepEqual(
+    page.calls.fetch.map((c) => c.url),
+    ["/api/meetings?size=6", "/api/meetings?size=6&cursor=8"],
+  );
   assert.equal(page.$$(".board-card").length, 3);
-  const listObserver = page.observers.find((o) => o.callback.toString().includes("loadNextPage"));
+  const listObserver = page.observers.find((o) =>
+    o.callback.toString().includes("loadNextPage"),
+  );
   assert.ok(listObserver.disconnected, "마지막 페이지면 무한스크롤 감시 중단");
   page.close();
 });
 
 test("게시글이 없거나 불러오지 못하면 안내 문구를 보여준다", async () => {
-  const empty = openList({ first: { items: [], hasNext: false, nextCursor: null } });
+  const empty = openList({
+    first: { items: [], hasNext: false, nextCursor: null },
+  });
   await settle();
-  assert.equal(empty.$("[data-meeting-status]").textContent, "아직 공유된 산책로가 없어요.");
+  assert.equal(
+    empty.$("[data-meeting-status]").textContent,
+    "아직 공유된 산책로가 없어요.",
+  );
   empty.close();
 
   const failed = openList({ first: new Error("network") });
   await settle();
-  assert.equal(failed.$("[data-meeting-status]").textContent, "게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요.");
+  assert.equal(
+    failed.$("[data-meeting-status]").textContent,
+    "게시글을 불러오지 못했어요. 잠시 후 다시 시도해주세요.",
+  );
   failed.close();
 });
 
@@ -81,12 +134,19 @@ test("경로 좌표가 있는 카드는 화면에 보일 때 카카오 지도로
     { sequence: 2, latitude: 37.545, longitude: 127.044 },
     { sequence: 1, latitude: 37.544, longitude: 127.043 },
   ];
-  const page = openList({ first: { items: [card(9, { points })], hasNext: false, nextCursor: 9 } }, true);
+  const page = openList(
+    { first: { items: [card(9, { points })], hasNext: false, nextCursor: 9 } },
+    true,
+  );
   await settle();
 
   const mapBox = page.$(".board-card .walk-map");
   assert.ok(mapBox, "지도 영역 준비");
-  assert.equal(page.calls.kakao.maps.length, 0, "보이기 전에는 지도를 만들지 않음");
+  assert.equal(
+    page.calls.kakao.maps.length,
+    0,
+    "보이기 전에는 지도를 만들지 않음",
+  );
 
   const cardObserver = page.observers.find((o) => o.targets.has(mapBox));
   cardObserver.trigger(mapBox);
@@ -94,27 +154,70 @@ test("경로 좌표가 있는 카드는 화면에 보일 때 카카오 지도로
   assert.equal(page.calls.kakao.maps.length, 1);
   assert.equal(page.calls.kakao.maps[0].options.draggable, false); // 목록 카드는 움직이지 않는 지도
   const line = page.calls.kakao.polylines[0];
-  assert.deepEqual(line.path.map((p) => p.lat), [37.544, 37.545]); // sequence 순서
-  assert.deepEqual(page.calls.kakao.markers.map((m) => m.options.title), ["시작", "도착"]);
+  assert.deepEqual(
+    line.path.map((p) => p.lat),
+    [37.544, 37.545],
+  ); // sequence 순서
+  assert.deepEqual(
+    page.calls.kakao.markers.map((m) => m.options.title),
+    ["시작", "도착"],
+  );
   page.close();
 });
 
 // ---------- 상세 ----------
 
 const DETAIL = {
-  meetingId: 10, title: "저녁 산책", description: "같이 걸어요", courseName: "서울숲 코스",
-  distanceM: 2600, estimatedMinutes: 40, meetingDate: "2099-10-03", meetingTime: "19:00:00",
-  petRequired: true, participationCondition: "소형견", hostNickname: "용제", createdAt: "2026-09-20T18:30:00",
-  participantNicknames: ["용제", "민준"], currentParticipants: 2, maxParticipants: 4, status: "RECRUITING",
-  isHost: false, myApplicationStatus: null, startLatitude: 37.544, startLongitude: 127.043, points: [],
+  meetingId: 10,
+  title: "저녁 산책",
+  description: "같이 걸어요",
+  courseName: "서울숲 코스",
+  distanceM: 2600,
+  estimatedMinutes: 40,
+  meetingDate: "2099-10-03",
+  meetingTime: "19:00:00",
+  petRequired: true,
+  participationCondition: "소형견",
+  hostNickname: "용제",
+  createdAt: "2026-09-20T18:30:00",
+  participantNicknames: ["용제", "민준"],
+  currentParticipants: 2,
+  maxParticipants: 4,
+  status: "RECRUITING",
+  isHost: false,
+  myApplicationStatus: null,
+  startLatitude: 37.544,
+  startLongitude: 127.043,
+  points: [],
 };
 
 const COMMENTS = [
-  { commentId: 2, authorNickname: "민준", hostComment: false, mine: true, content: "참여할게요", createdAt: hoursAgo(0) },
-  { commentId: 1, authorNickname: "용제", hostComment: true, mine: false, content: "환영해요", createdAt: hoursAgo(30) },
+  {
+    commentId: 2,
+    authorNickname: "민준",
+    hostComment: false,
+    mine: true,
+    content: "참여할게요",
+    createdAt: hoursAgo(0),
+  },
+  {
+    commentId: 1,
+    authorNickname: "용제",
+    hostComment: true,
+    mine: false,
+    content: "환영해요",
+    createdAt: hoursAgo(30),
+  },
 ];
 
-function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao, confirm } = {}) {
+function openDetail({
+  meeting = DETAIL,
+  loggedIn = true,
+  routes = {},
+  url,
+  kakao,
+  confirm,
+} = {}) {
   return openPage({
     html: template("board/detail.html"),
     url: url || "http://localhost:8081/course-detail-shared?meetingId=10",
@@ -130,7 +233,10 @@ function openDetail({ meeting = DETAIL, loggedIn = true, routes = {}, url, kakao
     fetch: (u, call) => {
       const key = `${call.method} ${u}`;
       if (routes[key]) return routes[key](call);
-      if (key === "GET /api/meetings/10") return meeting instanceof Error ? meeting : response(meeting, { status: meeting ? 200 : 404 });
+      if (key === "GET /api/meetings/10")
+        return meeting instanceof Error
+          ? meeting
+          : response(meeting, { status: meeting ? 200 : 404 });
       if (key === "GET /api/meetings/10/comments") return response(COMMENTS);
       throw new Error("unexpected " + key);
     },
@@ -155,21 +261,39 @@ test("상세 화면에 모집 정보·참여자·댓글을 그린다", async () 
   assert.equal(text("[data-description]"), "같이 걸어요");
   assert.equal(text("[data-shared-at]"), "2026.09.20 공유");
   assert.equal(text("[data-join-count]"), "2/4");
-  assert.deepEqual(page.$$("[data-participant-avatars] .avatar").map((a) => a.textContent), ["용", "민"]);
+  assert.deepEqual(
+    page.$$("[data-participant-avatars] .avatar").map((a) => a.textContent),
+    ["용", "민"],
+  );
   assert.equal(text("[data-apply-btn]"), "동행 신청");
 
   assert.equal(text("[data-meeting-comment-count]"), "2");
   const comments = page.$$("[data-meeting-comment-list] .comment");
   assert.equal(comments.length, 2);
-  assert.ok(comments[0].querySelector("[data-comment-delete='2']"), "내 댓글에만 삭제 버튼");
+  assert.ok(
+    comments[0].querySelector("[data-comment-delete='2']"),
+    "내 댓글에만 삭제 버튼",
+  );
   assert.equal(comments[1].querySelector("[data-comment-delete]"), null);
-  assert.ok(comments[1].querySelector(".avatar").classList.contains("avatar-sm"));
-  assert.ok(!comments[1].querySelector(".avatar").classList.contains("avatar-muted"), "작성자 댓글 아바타 강조");
+  assert.ok(
+    comments[1].querySelector(".avatar").classList.contains("avatar-sm"),
+  );
+  assert.ok(
+    !comments[1].querySelector(".avatar").classList.contains("avatar-muted"),
+    "작성자 댓글 아바타 강조",
+  );
   page.close();
 });
 
 test("참여 조건이 없으면 '없음', 설명이 없으면 설명 칸을 숨긴다", async () => {
-  const page = openDetail({ meeting: { ...DETAIL, participationCondition: null, description: null, petRequired: false } });
+  const page = openDetail({
+    meeting: {
+      ...DETAIL,
+      participationCondition: null,
+      description: null,
+      petRequired: false,
+    },
+  });
   await settle();
 
   assert.equal(page.$("[data-condition]").textContent, "없음");
@@ -188,7 +312,17 @@ test("모집자가 함께할 반려견이 있으면 반려견 카드를 보여�
   const page = openDetail({
     meeting: {
       ...DETAIL,
-      pets: [{ id: 1, name: "보리", breed: "푸들", sizeLabel: "소형", ageInYears: 3, profileImage: null, activityLevelLabel: "높음" }],
+      pets: [
+        {
+          id: 1,
+          name: "보리",
+          breed: "푸들",
+          sizeLabel: "소형",
+          ageInYears: 3,
+          profileImage: null,
+          activityLevelLabel: "높음",
+        },
+      ],
     },
   });
   await settle();
@@ -196,7 +330,10 @@ test("모집자가 함께할 반려견이 있으면 반려견 카드를 보여�
   const items = page.$$("[data-meeting-pet-list] .walk-pet-group-item");
   assert.equal(items.length, 1);
   assert.equal(items[0].querySelector("strong").textContent, "보리");
-  assert.equal(items[0].querySelector(".walk-current-pet-activity").textContent, "활동성 높음");
+  assert.equal(
+    items[0].querySelector(".walk-current-pet-activity").textContent,
+    "활동성 높음",
+  );
   page.close();
 });
 
@@ -205,10 +342,15 @@ test("없는 모집이면 안내 화면을 보여준다", async () => {
   await settle();
   assert.equal(notFound.$("[data-meeting-detail]").hidden, true);
   assert.equal(notFound.$("[data-meeting-empty]").hidden, false);
-  assert.equal(notFound.$("[data-meeting-empty] p").textContent, "모집 정보를 찾을 수 없어요.");
+  assert.equal(
+    notFound.$("[data-meeting-empty] p").textContent,
+    "모집 정보를 찾을 수 없어요.",
+  );
   notFound.close();
 
-  const noId = openDetail({ url: "http://localhost:8081/course-detail-shared" });
+  const noId = openDetail({
+    url: "http://localhost:8081/course-detail-shared",
+  });
   await settle();
   assert.equal(noId.calls.fetch.length, 0);
   assert.equal(noId.$("[data-meeting-empty]").hidden, false);
@@ -236,8 +378,10 @@ test("신청 버튼은 내 상태에 따라 바뀐다 (작성자 / 마감 / 대�
 test("동행 신청 → 신청 완료, 다시 누르면 신청 취소 (CSRF 토큰 포함)", async () => {
   const page = openDetail({
     routes: {
-      "POST /api/meetings/10/applications": () => response({ status: "PENDING" }, { status: 201 }),
-      "DELETE /api/meetings/10/applications": () => response(undefined, { status: 204 }),
+      "POST /api/meetings/10/applications": () =>
+        response({ status: "PENDING" }, { status: 201 }),
+      "DELETE /api/meetings/10/applications": () =>
+        response(undefined, { status: 204 }),
     },
   });
   await settle();
@@ -259,7 +403,10 @@ test("신청이 거부되면 서버가 준 이유를 알려준다", async () => 
   const page = openDetail({
     routes: {
       "POST /api/meetings/10/applications": () =>
-        response({ message: "정원이 다 차서 신청할 수 없어요." }, { status: 409 }),
+        response(
+          { message: "정원이 다 차서 신청할 수 없어요." },
+          { status: 409 },
+        ),
     },
   });
   await settle();
@@ -288,10 +435,18 @@ test("비회원이 신청이나 댓글 등록을 누르면 로그인 화면으�
 test("댓글을 등록하면 맨 위에 추가하고 개수를 늘린다 (빈 댓글은 보내지 않음)", async () => {
   const page = openDetail({
     routes: {
-      "POST /api/meetings/10/comments": (call) => response({
-        commentId: 3, authorNickname: "서연", hostComment: false, mine: true,
-        content: JSON.parse(call.body).content, createdAt: hoursAgo(0),
-      }, { status: 201 }),
+      "POST /api/meetings/10/comments": (call) =>
+        response(
+          {
+            commentId: 3,
+            authorNickname: "서연",
+            hostComment: false,
+            mine: true,
+            content: JSON.parse(call.body).content,
+            createdAt: hoursAgo(0),
+          },
+          { status: 201 },
+        ),
     },
   });
   await settle();
@@ -302,13 +457,18 @@ test("댓글을 등록하면 맨 위에 추가하고 개수를 늘린다 (빈 �
   assert.equal(page.calls.fetch.filter((c) => c.method === "POST").length, 0);
 
   input.value = "  같이 가요  ";
-  input.dispatchEvent(new page.window.KeyboardEvent("keydown", { key: "Enter" }));
+  input.dispatchEvent(
+    new page.window.KeyboardEvent("keydown", { key: "Enter" }),
+  );
   await settle();
 
   const post = page.calls.fetch.find((c) => c.method === "POST");
   assert.deepEqual(JSON.parse(post.body), { content: "같이 가요" });
   assert.equal(post.headers["X-CSRF-TOKEN"], "token-123");
-  assert.equal(page.$("[data-meeting-comment-list] .comment p").textContent, "같이 가요");
+  assert.equal(
+    page.$("[data-meeting-comment-list] .comment p").textContent,
+    "같이 가요",
+  );
   assert.equal(page.$("[data-meeting-comment-count]").textContent, "3");
   assert.equal(input.value, "");
   page.close();
@@ -316,7 +476,10 @@ test("댓글을 등록하면 맨 위에 추가하고 개수를 늘린다 (빈 �
 
 test("댓글 삭제는 확인 후 요청하고 목록에서 지운다", async () => {
   const page = openDetail({
-    routes: { "DELETE /api/meetings/10/comments/2": () => response(undefined, { status: 204 }) },
+    routes: {
+      "DELETE /api/meetings/10/comments/2": () =>
+        response(undefined, { status: 204 }),
+    },
   });
   await settle();
 
@@ -338,21 +501,32 @@ test("수정·삭제 버튼은 작성자에게만 보이고, 수정은 수정 �
   const host = openDetail({ meeting: { ...DETAIL, isHost: true } });
   await settle();
   assert.equal(host.$("[data-host-actions]").hidden, false);
-  assert.equal(host.$("[data-edit-link]").getAttribute("href"), "/board/edit?meetingId=10");
+  assert.equal(
+    host.$("[data-edit-link]").getAttribute("href"),
+    "/board/edit?meetingId=10",
+  );
   host.close();
 });
 
 test("글 삭제는 확인 후 CSRF 토큰과 함께 요청하고 게시판으로 이동한다 (취소하면 요청 안 함)", async () => {
-  const cancelled = openDetail({ meeting: { ...DETAIL, isHost: true }, confirm: false });
+  const cancelled = openDetail({
+    meeting: { ...DETAIL, isHost: true },
+    confirm: false,
+  });
   await settle();
   cancelled.click("[data-delete-btn]");
   await settle();
-  assert.equal(cancelled.calls.fetch.some((c) => c.method === "DELETE"), false);
+  assert.equal(
+    cancelled.calls.fetch.some((c) => c.method === "DELETE"),
+    false,
+  );
   cancelled.close();
 
   const page = openDetail({
     meeting: { ...DETAIL, isHost: true },
-    routes: { "DELETE /api/meetings/10": () => response(undefined, { status: 204 }) },
+    routes: {
+      "DELETE /api/meetings/10": () => response(undefined, { status: 204 }),
+    },
   });
   await settle();
   page.click("[data-delete-btn]");
@@ -368,7 +542,11 @@ test("글 삭제가 거부되면 이유를 알려주고 다시 누를 수 있게
   const page = openDetail({
     meeting: { ...DETAIL, isHost: true },
     routes: {
-      "DELETE /api/meetings/10": () => response({ message: "본인이 작성한 글만 삭제할 수 있어요." }, { status: 403 }),
+      "DELETE /api/meetings/10": () =>
+        response(
+          { message: "본인이 작성한 글만 삭제할 수 있어요." },
+          { status: 403 },
+        ),
     },
   });
   await settle();
@@ -385,7 +563,10 @@ test("상세 지도: 경로가 없으면 출발 지점 마커, 왕복 코스면 
   const start = openDetail({ kakao: true });
   await settle();
   assert.equal(start.calls.kakao.polylines.length, 0);
-  assert.deepEqual(start.calls.kakao.markers.map((m) => m.options.title), ["산책로 시작점"]);
+  assert.deepEqual(
+    start.calls.kakao.markers.map((m) => m.options.title),
+    ["산책로 시작점"],
+  );
   start.close();
 
   const loop = [
@@ -393,10 +574,19 @@ test("상세 지도: 경로가 없으면 출발 지점 마커, 왕복 코스면 
     { sequence: 2, latitude: 37.545, longitude: 127.044 },
     { sequence: 3, latitude: 37.544, longitude: 127.043 },
   ];
-  const round = openDetail({ kakao: true, meeting: { ...DETAIL, points: loop } });
+  const round = openDetail({
+    kakao: true,
+    meeting: { ...DETAIL, points: loop },
+  });
   await settle();
   assert.equal(round.calls.kakao.polylines.length, 1);
-  assert.deepEqual(round.calls.kakao.markers.map((m) => m.options.title), ["시작 · 도착"]);
-  assert.equal(round.calls.kakao.overlays[0].options.content.textContent, "시작 · 도착");
+  assert.deepEqual(
+    round.calls.kakao.markers.map((m) => m.options.title),
+    ["시작 · 도착"],
+  );
+  assert.equal(
+    round.calls.kakao.overlays[0].options.content.textContent,
+    "시작 · 도착",
+  );
   round.close();
 });

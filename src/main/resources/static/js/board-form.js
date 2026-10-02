@@ -78,7 +78,8 @@
   function loadRecommendedCourse() {
     if (!/^[a-zA-Z0-9-]+$/.test(routeKey)) return null;
     const route = JSON.parse(sessionStorage.getItem(`walk-route:${routeKey}`));
-    if (!route || typeof route !== "object" || Array.isArray(route)) return null;
+    if (!route || typeof route !== "object" || Array.isArray(route))
+      return null;
     const first = [...(Array.isArray(route.points) ? route.points : [])].sort(
       (a, b) => a.sequence - b.sequence,
     )[0];
@@ -108,7 +109,9 @@
   // - 형식이 맞지 않으면 null (서버는 좌표 없이 출발 지점만 저장)
   function loadRecommendedPoints() {
     try {
-      const route = JSON.parse(sessionStorage.getItem(`walk-route:${routeKey}`));
+      const route = JSON.parse(
+        sessionStorage.getItem(`walk-route:${routeKey}`),
+      );
       const points = Array.isArray(route?.points) ? route.points : [];
       const valid =
         points.length >= 2 &&
@@ -195,11 +198,12 @@
     try {
       if (editMode) {
         document.title = "멍자국 — 산책로 게시글 수정";
-        document.querySelector("#board-form-heading").textContent = "산책로 게시글 수정";
+        document.querySelector("#board-form-heading").textContent =
+          "산책로 게시글 수정";동행 게시판
         document.querySelector("#board-form-sub").textContent =
           "모집 정보를 수정할 수 있어요 (코스는 바꿀 수 없어요)";
         submitButton.textContent = "수정";
-        backLink.textContent = "산책로 게시판으로";
+        backLink.textContent = "동행 게시판으로";
         backLink.href = "/board";
         const result = await loadMeeting();
         if (result !== "ok") {
@@ -385,7 +389,8 @@
       meetingTime: fields.meetingTime.value || null,
       maxParticipants: maxText === "" ? null : Number(maxText),
       petRequired: fields.petRequired.checked,
-      participationCondition: fields.participationCondition.value.trim() || null,
+      participationCondition:
+        fields.participationCondition.value.trim() || null,
       description: fields.description.value.trim() || null,
       petIds: Array.from(
         form.querySelectorAll('input[name="petIds"]:checked'),
@@ -410,12 +415,14 @@
         headers[page.dataset.csrfHeader] = page.dataset.csrfToken;
       }
       const response = await fetch(
-        editMode ? `${page.dataset.meetingApi}${encodeURIComponent(meetingId)}` : page.dataset.submitUrl,
+        editMode
+          ? `${page.dataset.meetingApi}${encodeURIComponent(meetingId)}`
+          : page.dataset.submitUrl,
         {
-        method: editMode ? "PUT" : "POST",
-        credentials: "same-origin",
-        headers,
-        body: JSON.stringify({ ...courseSource, ...values }),
+          method: editMode ? "PUT" : "POST",
+          credentials: "same-origin",
+          headers,
+          body: JSON.stringify({ ...courseSource, ...values }),
         },
       );
       if (response.redirected || response.status === 401) {
@@ -427,8 +434,14 @@
         return;
       }
       const data = await response.json().catch(() => null);
-      if (response.status !== (editMode ? 200 : 201) || data?.meetingId == null) {
-        showError(data?.message || `${actionText()}하지 못했어요. 잠시 후 다시 시도해주세요.`);
+      if (
+        response.status !== (editMode ? 200 : 201) ||
+        data?.meetingId == null
+      ) {
+        showError(
+          data?.message ||
+            `${actionText()}하지 못했어요. 잠시 후 다시 시도해주세요.`,
+        );
         return;
       }
       done = true;

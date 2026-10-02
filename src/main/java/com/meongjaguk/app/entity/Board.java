@@ -6,7 +6,7 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 
 /**
- * 산책로 게시판 게시글 = 같이 걷기 모집 (walk_meetings)
+ * 동행 게시판 게시글 = 같이 걷기 모집 (walk_meetings)
  */
 @Entity
 @Table(name = "walk_meetings")
@@ -18,13 +18,11 @@ public class Board {
     private Long meetingId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "host_user_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_walk_meetings_host_user"))
+    @JoinColumn(name = "host_user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_walk_meetings_host_user"))
     private User host;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "course_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_walk_meetings_course"))
+    @JoinColumn(name = "course_id", nullable = false, foreignKey = @ForeignKey(name = "fk_walk_meetings_course"))
     private Route course;
 
     @Column(nullable = false, length = 150)
@@ -70,11 +68,12 @@ public class Board {
     public static final int MIN_PARTICIPANTS = 2;
     public static final int MAX_PARTICIPANTS = 10;
 
-    protected Board() {}
+    protected Board() {
+    }
 
     public static Board create(User host, Route course, String title, String description,
-                               LocalDate meetingDate, LocalTime meetingTime, int maxParticipants,
-                               boolean petRequired, String participationCondition) {
+            LocalDate meetingDate, LocalTime meetingTime, int maxParticipants,
+            boolean petRequired, String participationCondition) {
         Board board = new Board();
         board.host = host;
         board.course = course;
@@ -121,7 +120,7 @@ public class Board {
      * - 모임 일시가 지나 마감(CLOSED)됐던 글도 새 일시로 바꾸면 다시 모집 중으로 변경
      */
     public void update(String title, String description, LocalDate meetingDate, LocalTime meetingTime,
-                       int maxParticipants, boolean petRequired, String participationCondition) {
+            int maxParticipants, boolean petRequired, String participationCondition) {
         this.title = title;
         this.description = description;
         this.meetingDate = meetingDate;
@@ -144,19 +143,63 @@ public class Board {
         return !now.isBefore(LocalDateTime.of(meetingDate, meetingTime));
     }
 
-    public Long getMeetingId() { return meetingId; }
-    public User getHost() { return host; }
-    public Route getCourse() { return course; }
-    public String getTitle() { return title; }
-    public String getDescription() { return description; }
-    public LocalDate getMeetingDate() { return meetingDate; }
-    public LocalTime getMeetingTime() { return meetingTime; }
-    public int getMaxParticipants() { return maxParticipants; }
-    public boolean isPetRequired() { return petRequired; }
-    public String getParticipationCondition() { return participationCondition; }
-    public BoardStatus getStatus() { return status; }
-    public LocalDateTime getStartedAt() { return startedAt; }
-    public LocalDateTime getEndedAt() { return endedAt; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Long getMeetingId() {
+        return meetingId;
+    }
+
+    public User getHost() {
+        return host;
+    }
+
+    public Route getCourse() {
+        return course;
+    }
+
+    public String getTitle() {
+        return title;
+    }
+
+    public String getDescription() {
+        return description;
+    }
+
+    public LocalDate getMeetingDate() {
+        return meetingDate;
+    }
+
+    public LocalTime getMeetingTime() {
+        return meetingTime;
+    }
+
+    public int getMaxParticipants() {
+        return maxParticipants;
+    }
+
+    public boolean isPetRequired() {
+        return petRequired;
+    }
+
+    public String getParticipationCondition() {
+        return participationCondition;
+    }
+
+    public BoardStatus getStatus() {
+        return status;
+    }
+
+    public LocalDateTime getStartedAt() {
+        return startedAt;
+    }
+
+    public LocalDateTime getEndedAt() {
+        return endedAt;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

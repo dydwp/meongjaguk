@@ -77,8 +77,10 @@ public class MainService {
     }
 
     private static String dayLabel(LocalDate date, LocalDate today) {
-        if (date.equals(today)) return "오늘";
-        if (date.equals(today.minusDays(1))) return "어제";
+        if (date.equals(today))
+            return "오늘";
+        if (date.equals(today.minusDays(1)))
+            return "어제";
         return date.getMonthValue() + "/" + date.getDayOfMonth();
     }
 
@@ -89,7 +91,7 @@ public class MainService {
     /**
      * 같이 걷기 모집 카드 limit개 (walk_meetings 실제 데이터)
      * - 최신 글 6개 중 모집 중인 글을 먼저, 부족하면 마감된 글로 채움 (각각 최신순 유지)
-     * - 참여 인원 = 작성자 1명 + 수락된 신청 수 (산책로 게시판과 같은 기준)
+     * - 참여 인원 = 작성자 1명 + 수락된 신청 수 (동행 게시판과 같은 기준)
      */
     public List<MeetCardDto> getRecentMeets(int limit) {
         List<Board> boards = boardRepository.findTop6ByOrderByCreatedAtDescMeetingIdDesc();
@@ -99,7 +101,8 @@ public class MainService {
 
         List<Long> meetingIds = boards.stream().map(Board::getMeetingId).toList();
         Map<Long, Long> acceptedCounts = new HashMap<>();
-        for (Object[] row : companionRequestRepository.countByMeetingIdsAndStatus(meetingIds, ApplicationStatus.ACCEPTED)) {
+        for (Object[] row : companionRequestRepository.countByMeetingIdsAndStatus(meetingIds,
+                ApplicationStatus.ACCEPTED)) {
             acceptedCounts.put((Long) row[0], (Long) row[1]);
         }
 
