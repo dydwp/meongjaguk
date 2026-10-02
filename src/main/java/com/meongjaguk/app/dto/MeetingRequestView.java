@@ -12,8 +12,17 @@ public record MeetingRequestView(
         String message,
         LocalDate meetingDate,
         LocalTime meetingTime,
-        String status
+        String status,
+        String meetingStatus // 모집글 상태 (추가: 김환중)
 ) {
+    // 모집글 상태 없이 만드는 기존 생성자 (추가: 김환중)
+    public MeetingRequestView(Long applicationId, Long meetingId, String meetingTitle,
+                              String applicantNickname, String message,
+                              LocalDate meetingDate, LocalTime meetingTime, String status) {
+        this(applicationId, meetingId, meetingTitle, applicantNickname, message,
+                meetingDate, meetingTime, status, null);
+    }
+
     public String avatarInitial() {
         if (applicantNickname == null || applicantNickname.isBlank()) {
             return "멍";
@@ -23,7 +32,9 @@ public record MeetingRequestView(
     }
 
     public boolean closed() {
-        return !LocalDateTime.now().isBefore(LocalDateTime.of(meetingDate, meetingTime));
+        // 동행 산책이 시작됐거나 끝난 모집글도 지난 신청과 똑같이 마감 처리 (추가: 김환중)
+        return !LocalDateTime.now().isBefore(LocalDateTime.of(meetingDate, meetingTime))
+                || "IN_PROGRESS".equals(meetingStatus) || "COMPLETED".equals(meetingStatus);
     }
 
     public boolean pending() {

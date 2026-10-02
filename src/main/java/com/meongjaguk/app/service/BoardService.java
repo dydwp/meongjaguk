@@ -17,6 +17,7 @@ import com.meongjaguk.app.entity.CoursePoint;
 import com.meongjaguk.app.entity.Pet;
 import com.meongjaguk.app.entity.Route;
 import com.meongjaguk.app.entity.User;
+import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.repository.BoardCommentRepository;
 import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.CompanionRequestRepository;
@@ -24,6 +25,7 @@ import com.meongjaguk.app.repository.CoursePointRepository;
 import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.RouteRepository;
 import com.meongjaguk.app.repository.WalkMeetingPetRepository;
+import com.meongjaguk.app.repository.WalkRecordRepository;
 
 import org.springframework.data.domain.PageRequest;
 import org.springframework.security.access.AccessDeniedException;
@@ -60,20 +62,22 @@ public class BoardService {
     private final WalkMeetingPetRepository walkMeetingPetRepository;
     private final PetRepository petRepository;
     private final PetService petService;
+    private final WalkRecordRepository walkRecordRepository; // 동행 산책에 연결된 기록 (추가: 김환중)
 
     /** 저장할 수 있는 경로 좌표 최대 개수 (비정상적으로 큰 요청 방지) */
     private static final int MAX_COURSE_POINTS = 5000;
 
     public BoardService(BoardRepository boardRepository,
-            CompanionRequestRepository companionRequestRepository,
-            BoardCommentRepository commentRepository,
-            UserService userService,
-            RouteRepository routeRepository,
-            CoursePointRepository coursePointRepository,
-            NotificationService notificationService,
-            WalkMeetingPetRepository walkMeetingPetRepository,
-            PetRepository petRepository,
-            PetService petService) {
+                        CompanionRequestRepository companionRequestRepository,
+                        BoardCommentRepository commentRepository,
+                        UserService userService,
+                        RouteRepository routeRepository,
+                        CoursePointRepository coursePointRepository,
+                        NotificationService notificationService,
+                        WalkMeetingPetRepository walkMeetingPetRepository,
+                        PetRepository petRepository,
+                        PetService petService,
+                        WalkRecordRepository walkRecordRepository) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
@@ -84,6 +88,7 @@ public class BoardService {
         this.walkMeetingPetRepository = walkMeetingPetRepository;
         this.petRepository = petRepository;
         this.petService = petService;
+        this.walkRecordRepository = walkRecordRepository;
     }
 
     /**
@@ -183,29 +188,32 @@ public class BoardService {
         List<PetCardView> pets = petService.getMyPetsByIds(hostUserId, petIds);
 
         return new BoardDetailDto(
-                board.getMeetingId(),
-                board.getTitle(),
-                board.getDescription(),
-                course.getCourseName(),
-                course.getDistanceM(),
-                course.getEstimatedMinutes(),
-                board.getMeetingDate(),
-                board.getMeetingTime(),
-                board.isPetRequired(),
-                board.getParticipationCondition(),
-                board.getHost().getNickname(),
-                board.getCreatedAt(),
-                participants,
-                participants.size(),
-                board.getMaxParticipants(),
-                displayStatus(board, accepted.size()),
-                isHost,
-                myStatus,
-                course.getStartLatitude(),
-                course.getStartLongitude(),
-                coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
-                        .stream().map(BoardService::toPointDto).toList(),
-                pets);
+            board.getMeetingId(),
+            board.getTitle(),
+            board.getDescription(),
+            course.getCourseName(),
+            course.getDistanceM(),
+            course.getEstimatedMinutes(),
+            board.getMeetingDate(),
+            board.getMeetingTime(),
+            board.isPetRequired(),
+            board.getParticipationCondition(),
+            board.getHost().getNickname(),
+            board.getCreatedAt(),
+            participants,
+            participants.size(),
+            board.getMaxParticipants(),
+            displayStatus(board, accepted.size()),
+            isHost,
+            myStatus,
+            course.getStartLatitude(),
+            course.getStartLongitude(),
+            coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
+                                .stream().map(BoardService::toPointDto).toList(),
+            pets,
+            board.getStartedAt(),
+            board.getEndedAt(),
+            walkRecordRepository.findByMeetingId(meetingId).map(WalkRecord::getWalkRecordId).orElse(null));
     }
 
     /**
@@ -249,6 +257,10 @@ public class BoardService {
         if (!board.isHostedBy(userId)) {
             throw new AccessDeniedException("본인이 작성한 글만 수정할 수 있어요.");
         }
+        // 동행 산책을 시작한 글은 수정 불가 (추가: 김환중)
+        if (board.isWalkStarted()) {
+            throw new IllegalArgumentException("동행 산책을 시작한 글은 수정할 수 없어요.");
+        }
 
         BoardFields fields = validateFields(request);
         long accepted = companionRequestRepository.countByMeetingIdAndStatus(meetingId, ApplicationStatus.ACCEPTED);
@@ -276,12 +288,59 @@ public class BoardService {
         if (!board.isHostedBy(userId)) {
             throw new AccessDeniedException("본인이 작성한 글만 삭제할 수 있어요.");
         }
+        // 동행 산책을 시작한 글은 삭제 불가 (추가: 김환중)
+        if (board.isWalkStarted()) {
+            throw new IllegalArgumentException("동행 산책을 시작한 글은 삭제할 수 없어요.");
+        }
 
         companionRequestRepository.deleteByMeetingId(meetingId);
         commentRepository.deleteByMeetingId(meetingId);
         walkMeetingPetRepository.deletePetLinks(meetingId);
         notificationService.deleteByMeeting(meetingId);
         boardRepository.delete(board);
+    }
+
+    /**
+     * 동행 산책 시작 (작성자만) (추가: 김환중)
+     * - 화면에 보이는 상태가 모집 마감(CLOSED)이고 수락된 참가자가 1명 이상일 때만 가능
+     * - 시작하면 산책 중(IN_PROGRESS), 시작 시각 기록
+     */
+    @Transactional
+    public void startWalk(Long meetingId, Long userId) {
+        Board board = findBoard(meetingId);
+        if (!board.isHostedBy(userId)) {
+            throw new AccessDeniedException("본인이 작성한 모집만 산책을 시작할 수 있어요.");
+        }
+        if (board.isWalkStarted()) {
+            throw new IllegalArgumentException("이미 시작한 동행 산책이에요.");
+        }
+
+        long accepted = companionRequestRepository.countByMeetingIdAndStatus(meetingId, ApplicationStatus.ACCEPTED);
+        if (!BoardStatus.CLOSED.name().equals(displayStatus(board, accepted))) {
+            throw new IllegalArgumentException("모집이 마감된 뒤에 산책을 시작할 수 있어요.");
+        }
+        if (accepted == 0) {
+            throw new IllegalArgumentException("수락된 참가자가 있어야 산책을 시작할 수 있어요.");
+        }
+
+        board.startWalk(LocalDateTime.now());
+    }
+
+    /**
+     * 동행 산책 종료 (작성자만, 산책 중일 때만) (추가: 김환중)
+     * - 종료하면 완료(COMPLETED), 종료 시각 기록
+     */
+    @Transactional
+    public void completeWalk(Long meetingId, Long userId) {
+        Board board = findBoard(meetingId);
+        if (!board.isHostedBy(userId)) {
+            throw new AccessDeniedException("본인이 작성한 모집만 산책을 종료할 수 있어요.");
+        }
+        if (board.getStatus() != BoardStatus.IN_PROGRESS) {
+            throw new IllegalArgumentException("산책 중인 동행 산책만 종료할 수 있어요.");
+        }
+
+        board.completeWalk(LocalDateTime.now());
     }
 
     /** 등록·수정 공통 입력값 (검증 후 앞뒤 공백 제거된 값) */

@@ -93,6 +93,28 @@ public class BoardController {
         return ResponseEntity.noContent().build();
     }
 
+    /** 동행 산책 시작 (작성자만, 모집 마감 + 수락된 참가자 1명 이상) (추가: 김환중) */
+    @PostMapping("/api/meetings/{meetingId}/start")
+    public ResponseEntity<Void> startWalk(@PathVariable Long meetingId,
+                                          @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        boardService.startWalk(meetingId, loginUser.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
+    /** 동행 산책 종료 (작성자만, 산책 중일 때만) (추가: 김환중) */
+    @PostMapping("/api/meetings/{meetingId}/end")
+    public ResponseEntity<Void> completeWalk(@PathVariable Long meetingId,
+                                             @AuthenticationPrincipal LoginUser loginUser) {
+        if (loginUser == null) {
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
+        }
+        boardService.completeWalk(meetingId, loginUser.getUserId());
+        return ResponseEntity.noContent().build();
+    }
+
     /** 댓글 목록 (비회원도 조회 가능) */
     @GetMapping("/api/meetings/{meetingId}/comments")
     public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId,

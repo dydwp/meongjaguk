@@ -79,6 +79,28 @@ class MyPageQueryIntegrationTest extends IntegrationTestSupport {
         assertTrue(received.get(4).closed());
     }
 
+    // 받은 신청에 모집글 상태가 함께 들어와서, 산책이 시작된 모집글의 신청은 마감 처리 (추가: 김환중)
+    @Test
+    void receivedRequestsCarryMeetingStatus() {
+        Board started = data.board(host, "시작한 산책", LocalDateTime.now().plusDays(1), 5);
+        Board recruiting = data.board(host, "모집 산책", LocalDateTime.now().plusDays(2), 5);
+        long startedPending = data.pendingRequest(started, data.user("A")).getId();
+        long recruitingPending = data.pendingRequest(recruiting, data.user("B")).getId();
+        started.startWalk(LocalDateTime.now());
+        flushAndClear();
+
+        List<MeetingRequestView> received = myPage.findRequestsForMyMeetings(host.getUserId());
+
+        MeetingRequestView startedView = received.stream()
+                .filter(r -> r.applicationId().equals(startedPending)).findFirst().orElseThrow();
+        MeetingRequestView recruitingView = received.stream()
+                .filter(r -> r.applicationId().equals(recruitingPending)).findFirst().orElseThrow();
+        assertEquals("IN_PROGRESS", startedView.meetingStatus());
+        assertTrue(startedView.closed());
+        assertEquals("RECRUITING", recruitingView.meetingStatus());
+        assertTrue(recruitingView.actionable());
+    }
+
     @Test
     void sentRequestsPutAcceptedFirstAndShowHost() {
         long past = data.acceptedRequest(data.board(host, "지난 산책", LocalDateTime.now().minusDays(2), 5), me).getId();

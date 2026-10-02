@@ -46,6 +46,17 @@
     return dateTime ? dateTime.substring(0, 10).replace(/-/g, ".") : "";
   }
 
+  // "2026-10-02T18:02:11" → "18:02" (추가: 김환중)
+  function formatClock(dateTime) {
+    return dateTime ? dateTime.substring(11, 16) : "";
+  }
+
+  // 시작~종료 시간 (분 단위 반올림) (추가: 김환중)
+  function walkMinutes(startedAt, endedAt) {
+    if (!startedAt || !endedAt) return 0;
+    return Math.round((new Date(endedAt).getTime() - new Date(startedAt).getTime()) / 60000);
+  }
+
   // 방금 전 / n분 전 / n시간 전 / 어제 / n일 전
   function formatRelative(dateTime) {
     if (!dateTime) return "";
@@ -393,12 +404,14 @@
         if (!meeting) return;
         renderDetail(meeting);
         meetingClosed = meeting.status !== "RECRUITING";
+        var walkStarted = meeting.status === "IN_PROGRESS" || meeting.status === "COMPLETED";
         if (meeting.isHost) {
           renderDisabledButton("HOST", "내가 공유한 모집이에요");
-          showHostActions();
+          if (!walkStarted) showHostActions(); // 산책을 시작한 글은 수정·삭제 불가 (추가: 김환중)
         } else {
           renderApplyButton(meeting.myApplicationStatus);
         }
+        renderWalkSection(meeting);
         detailRoot.hidden = false;
         showDetailMap(meeting);
         loadComments();
@@ -463,6 +476,117 @@
           console.error("게시글 삭제 실패", err);
           alert("글을 삭제하지 못했어요. 잠시 후 다시 시도해주세요.");
           deleteBtn.disabled = false;
+        });
+    });
+
+    /* ---------- 동행 산책 시작 / 종료 (작성자만) (추가: 김환중) ---------- */
+    var walkSection = detailRoot.querySelector("[data-walk-section]");
+    var walkInfo = detailRoot.querySelector("[data-walk-info]");
+    var walkActions = detailRoot.querySelector("[data-walk-actions]");
+    var walkBtn = detailRoot.querySelector("[data-walk-btn]");
+    var walkRecordLink = detailRoot.querySelector("[data-walk-record-link]");
+    var walkRecordView = detailRoot.querySelector("[data-walk-record-view]");
+    var walkAction = null; // "start" | "end"
+
+    // 상태별 안내 문구와 작성자 버튼 (작성자가 아니면 산책 중·완료일 때 문구만 표시)
+    function renderWalkSection(meeting) {
+      var status = meeting.status;
+      var info = "";
+      var label = "";
+      var enabled = false;
+
+      if (status === "RECRUITING") {
+        info = "모집이 마감되면 동행 산책을 시작할 수 있어요.";
+        label = "동행 산책 시작";
+      } else if (status === "CLOSED") {
+        enabled = meeting.currentParticipants >= 2;
+        info = enabled
+          ? "모두 모이면 동행 산책을 시작해주세요."
+          : "수락된 참가자가 있어야 동행 산책을 시작할 수 있어요.";
+        label = "동행 산책 시작";
+      } else if (status === "IN_PROGRESS") {
+        info = "산책 중 · " + formatClock(meeting.startedAt) + " 시작";
+        label = "동행 산책 종료(기록 없이)";
+        enabled = true;
+      } else if (status === "COMPLETED") {
+        info = "산책 완료 · " + formatClock(meeting.startedAt) + " ~ " + formatClock(meeting.endedAt) +
+          " (" + walkMinutes(meeting.startedAt, meeting.endedAt) + "분)";
+      } else {
+        return;
+      }
+
+      var showInfoOnly = status === "IN_PROGRESS" || status === "COMPLETED";
+      if (!meeting.isHost && !showInfoOnly) return;
+
+      walkInfo.textContent = info;
+      walkSection.hidden = false;
+      if (meeting.isHost && label) {
+        walkAction = status === "IN_PROGRESS" ? "end" : "start";
+        walkBtn.textContent = label;
+        walkBtn.disabled = !enabled;
+        walkActions.hidden = false;
+      }
+
+      // 산책 중(작성자): GPS 기록 화면으로 돌아가는 링크 (추가: 김환중)
+      if (meeting.isHost && status === "IN_PROGRESS") {
+        walkRecordLink.href = walkRecordUrl();
+        walkRecordLink.hidden = false;
+      }
+      // 완료 + 연결된 기록: 작성자와 수락된 참가자에게만 산책 기록 보기 (추가: 김환중)
+      if (status === "COMPLETED" && meeting.walkRecordId != null &&
+          (meeting.isHost || meeting.myApplicationStatus === "ACCEPTED")) {
+        walkRecordView.href = "/activity-detail?id=" + encodeURIComponent(meeting.walkRecordId);
+        walkRecordView.hidden = false;
+        walkBtn.hidden = true;
+        walkActions.hidden = false;
+      }
+    }
+
+    // 동행 산책 GPS 기록 화면 (추가: 김환중)
+    function walkRecordUrl() {
+      return "/walk-record?meetingId=" + encodeURIComponent(meetingId);
+    }
+
+    walkBtn.addEventListener("click", function () {
+      if (walkBtn.disabled || !walkAction) return;
+      var message = walkAction === "start"
+        ? "동행 산책을 시작할까요?\n시작하면 글 수정·삭제와 동행 신청 수락·거절을 할 수 없어요."
+        : "기록 화면에서 종료하면 경로와 거리가 저장돼요.\n기록 없이 동행 산책을 종료할까요?";
+      if (!confirm(message)) return;
+
+      var headers = {};
+      if (csrfHeader && csrfToken) headers[csrfHeader] = csrfToken;
+      var failMessage = walkAction === "start"
+        ? "동행 산책을 시작하지 못했어요. 잠시 후 다시 시도해주세요."
+        : "동행 산책을 종료하지 못했어요. 잠시 후 다시 시도해주세요.";
+
+      walkBtn.disabled = true;
+      fetch("/api/meetings/" + encodeURIComponent(meetingId) + "/" + walkAction, {
+        method: "POST",
+        headers: headers
+      })
+        .then(function (res) {
+          if (res.redirected || res.status === 401) {
+            window.location.href = "/login";
+            return;
+          }
+          if (res.ok) {
+            // 시작하면 GPS 기록 화면으로, 기록 없이 종료하면 새로고침 (추가: 김환중)
+            if (walkAction === "start") window.location.href = walkRecordUrl();
+            else window.location.reload();
+            return;
+          }
+          return res.json()
+            .catch(function () { return {}; })
+            .then(function (body) {
+              alert(body.message || failMessage);
+              walkBtn.disabled = false;
+            });
+        })
+        .catch(function (err) {
+          console.error("동행 산책 요청 실패", err);
+          alert(failMessage);
+          walkBtn.disabled = false;
         });
     });
 
