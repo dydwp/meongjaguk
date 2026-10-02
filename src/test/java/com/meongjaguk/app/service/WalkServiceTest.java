@@ -10,6 +10,7 @@ import com.meongjaguk.app.entity.WalkRecordPlannedPoint;
 import com.meongjaguk.app.entity.WalkRecordPoint;
 import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.PetRepository;
+import com.meongjaguk.app.repository.WalkMeetingPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPlannedPointRepository;
 import com.meongjaguk.app.repository.WalkRecordPointRepository;
@@ -42,6 +43,7 @@ class WalkServiceTest {
 
     private static final long START = 1_700_000_000_000L; // 2023-11-15 07:13:20 (서울)
 
+    private WalkMeetingPetRepository meetingPets; // 모집글 pet 정보
     private WalkRecordRepository records;
     private WalkRecordPointRepository actualPoints;
     private WalkRecordPlannedPointRepository plannedPoints;
@@ -52,12 +54,15 @@ class WalkServiceTest {
 
     @BeforeEach
     void setUp() {
+        meetingPets = mock(WalkMeetingPetRepository.class);
         records = mock(WalkRecordRepository.class);
         actualPoints = mock(WalkRecordPointRepository.class);
         plannedPoints = mock(WalkRecordPlannedPointRepository.class);
         walkPets = mock(WalkRecordPetRepository.class);
         pets = mock(PetRepository.class);
-        walkService = new WalkService(records, actualPoints, plannedPoints, walkPets, pets, boards);
+
+        walkService = new WalkService(meetingPets, records, actualPoints, plannedPoints, walkPets, pets, boards);
+
         when(records.save(any(WalkRecord.class))).thenAnswer(invocation -> {
             WalkRecord record = invocation.getArgument(0);
             ReflectionTestUtils.setField(record, "walkRecordId", 1L);
@@ -72,15 +77,12 @@ class WalkServiceTest {
         WalkRecordPointRepository actualRepository = mock(WalkRecordPointRepository.class);
         WalkRecordPlannedPointRepository plannedRepository = mock(WalkRecordPlannedPointRepository.class);
         WalkRecordPetRepository walkRecordPetRepository = mock(WalkRecordPetRepository.class);
+        WalkMeetingPetRepository meetingPetRepository = mock(WalkMeetingPetRepository.class);
         PetRepository petRepository = mock(PetRepository.class);
 
         WalkService service = new WalkService(
-                recordRepository,
-                actualRepository,
-                plannedRepository,
-                walkRecordPetRepository,
-                petRepository,
-                mock(BoardRepository.class)
+                meetingPetRepository, recordRepository, actualRepository, plannedRepository,
+                walkRecordPetRepository, petRepository, mock(BoardRepository.class)
         );
 
         when(recordRepository.save(any(WalkRecord.class))).thenAnswer(invocation -> {
@@ -249,18 +251,24 @@ class WalkServiceTest {
         return new WalkSaveRequest(courseId, START, START + 1_530_000L, 2100, null, route, null, 10L);
     }
 
+    // 동행 산책 테스트에 반려견 정보 받아오는 기능 추가후 테스트 수정(담당: 최주영)
     @Test
     void meetingWalkIsLinkedWithMeetingCourseAndCompletesMeeting() {
         Board meeting = givenMeeting(BoardStatus.IN_PROGRESS);
+        when(meetingPets.findPetIdsByMeetingId(10L, 7L)).thenReturn(List.of(1L, 2L));
 
-        // 보내온 코스·추천 경로는 무시하고 모집글 코스(1번)로 저장
-        assertEquals(1L, walkService.saveCompletedWalk(7L, meetingWalk(3L, route("추천 코스", 1000L, 2))));
+        assertEquals(1L, walkService.saveCompletedWalk(
+                7L, meetingWalk(3L, route("추천 코스", 1000L, 2))));
 
         WalkRecord saved = savedRecord();
         assertEquals(10L, saved.getMeetingId());
         assertEquals(1L, saved.getCourseId());
         assertNull(saved.getPlannedTitle());
+
         verify(plannedPoints, never()).saveAll(any());
+        verify(meetingPets).findPetIdsByMeetingId(10L, 7L);
+        verify(walkPets).savePetLinks(1L, List.of(1L, 2L));
+
         assertEquals(BoardStatus.COMPLETED, meeting.getStatus());
         assertEquals(LocalDateTime.of(2023, 11, 15, 7, 38, 50), meeting.getEndedAt());
     }
