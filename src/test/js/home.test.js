@@ -247,6 +247,94 @@ test("산책 기록 화면에서 추천 경로로 시작하면 추천 경로·�
   page.close();
 });
 
+// ---------- 동행 산책 기록 화면 (추가: 김환중) ----------
+
+const MEETING = {
+  meetingId: 10,
+  title: "저녁 산책",
+  points: [{ sequence: 2, latitude: 37.552, longitude: 127.041 }, { sequence: 1, latitude: 37.551, longitude: 127.04 }],
+};
+const WALKED = [{ lat: 37.5, lng: 127.0 }, { lat: 37.501, lng: 127.0 }];
+
+function openMeetingWalk({ url = "http://localhost:8081/walk-record?meetingId=10", meeting = MEETING, localStorage } = {}) {
+  return openPage({
+    html: template("walk/record.html"),
+    url,
+    scripts: ["walk-map.js"],
+    kakao: true,
+    geolocation: {},
+    localStorage,
+    fetch: () => (meeting instanceof Error ? meeting : response(meeting)),
+  });
+}
+
+test("동행 산책 시작 화면이면 모집글 제목과 모집 코스를 계획 경로로 표시한다", async () => {
+  const page = openMeetingWalk();
+
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책");
+  await settle();
+
+  assert.deepEqual(page.calls.fetch.map((c) => c.url), ["/api/meetings/10"]);
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책 · 저녁 산책");
+  assert.equal(page.$("[data-walk-route-legend]").hidden, false);
+  assert.equal(page.$("[data-walk-planned-label]").textContent, "모집 코스");
+  const { polylines, markers, maps } = page.calls.kakao;
+  assert.equal(polylines.length, 2, "실제 경로 + 모집 코스");
+  assert.deepEqual(polylines[1].path.map((p) => p.lat), [37.551, 37.552]);
+  assert.equal(polylines[0].options.strokeColor, "#E08F4F", "실제 경로는 추천 산책로와 같은 색");
+  assert.deepEqual(markers.slice(-2).map((m) => m.options.title), ["모집 코스 시작", "모집 코스 도착"]);
+  assert.ok(maps[0].bounds, "모집 코스에 맞춰 범위 조정");
+  page.close();
+});
+
+test("모집 정보를 못 불러오거나 좌표가 없으면 제목은 '동행 산책', 지도는 실제 경로만", async () => {
+  for (const meeting of [new TypeError("network"), { ...MEETING, points: [] }]) {
+    const page = openMeetingWalk({
+      meeting,
+      localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-meeting-id": "10", "meongjaguk-walk-points": WALKED },
+    });
+    await settle();
+
+    assert.equal(page.$("[data-walk-title]").textContent, "동행 산책");
+    assert.equal(page.$("[data-walk-route-legend]").hidden, true);
+    const { polylines } = page.calls.kakao;
+    assert.equal(polylines.length, 1, "계획 경로 없음");
+    assert.equal(polylines[0].path.length, 2, "실제 경로는 그대로");
+    assert.ok(page.consoleLog.some(([level]) => level === "error"), "콘솔에 기록");
+    page.close();
+  }
+});
+
+test("산책 중이면 주소에 번호가 없어도 저장된 동행 모집글로 표시한다", async () => {
+  const page = openMeetingWalk({
+    url: "http://localhost:8081/walk-record",
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-meeting-id": "10", "meongjaguk-walk-points": WALKED },
+  });
+  await settle();
+
+  assert.deepEqual(page.calls.fetch.map((c) => c.url), ["/api/meetings/10"]);
+  assert.equal(page.$("[data-walk-title]").textContent, "동행 산책 · 저녁 산책");
+  assert.equal(page.calls.kakao.polylines.length, 2);
+  assert.equal(page.$("[data-walk-route-legend]").hidden, false);
+  page.close();
+});
+
+test("개인 산책 중에 동행 주소를 열어도 자유 산책 그대로 보여주고 모집글을 조회하지 않는다", async () => {
+  const page = openMeetingWalk({
+    localStorage: { "meongjaguk-walk-active": "true", "meongjaguk-walk-points": WALKED },
+  });
+  await settle();
+
+  assert.equal(page.calls.fetch.length, 0);
+  assert.equal(page.$("[data-walk-title]").textContent, "자유 산책");
+  assert.equal(page.$("[data-walk-route-legend]").hidden, true);
+  const { polylines, markers } = page.calls.kakao;
+  assert.equal(polylines.length, 1);
+  assert.equal(polylines[0].options.strokeColor, "#5C8D4E", "자유 산책 선 색");
+  assert.equal(markers[0].options.title, "시작");
+  page.close();
+});
+
 test("카카오맵 SDK가 없으면 지도 없이 안내만 한다", () => {
   const page = openPage({
     html: template("walk/record.html"),

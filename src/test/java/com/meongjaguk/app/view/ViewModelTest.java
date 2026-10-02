@@ -76,6 +76,40 @@ class ViewModelTest {
         return new MeetingRequestView(1L, 10L, "모집", nickname, null, at.toLocalDate(), at.toLocalTime(), status);
     }
 
+    // 동행 산책이 시작됐거나 끝난 모집글의 신청은 모임 시간 전이어도 마감 처리 (추가: 김환중)
+    @Test
+    void requestsForStartedOrCompletedMeetingAreClosed() {
+        for (String meetingStatus : new String[]{"IN_PROGRESS", "COMPLETED"}) {
+            MeetingRequestView pending = receivedWithMeeting(FUTURE, "PENDING", meetingStatus);
+            assertTrue(pending.closed(), meetingStatus);
+            assertFalse(pending.actionable(), meetingStatus);
+            assertEquals("마감됨", pending.statusLabel(), meetingStatus);
+            assertEquals("closed", pending.statusClass(), meetingStatus);
+            assertEquals("수락됨", receivedWithMeeting(FUTURE, "ACCEPTED", meetingStatus).statusLabel());
+        }
+    }
+
+    // 모집글 상태가 없거나 모집 중·모집 마감이면 기존처럼 모임 시간으로만 판단 (추가: 김환중)
+    @Test
+    void requestsForRecruitingOrClosedMeetingFollowMeetingTime() {
+        for (String meetingStatus : new String[]{null, "RECRUITING", "CLOSED"}) {
+            MeetingRequestView pending = receivedWithMeeting(FUTURE, "PENDING", meetingStatus);
+            assertFalse(pending.closed(), String.valueOf(meetingStatus));
+            assertTrue(pending.actionable(), String.valueOf(meetingStatus));
+            assertEquals("대기 중", pending.statusLabel(), String.valueOf(meetingStatus));
+
+            MeetingRequestView expired = receivedWithMeeting(PAST, "PENDING", meetingStatus);
+            assertTrue(expired.closed(), String.valueOf(meetingStatus));
+            assertEquals("마감됨", expired.statusLabel(), String.valueOf(meetingStatus));
+        }
+    }
+
+    // 모집글 상태까지 넣어 만드는 받은 신청 (추가: 김환중)
+    private static MeetingRequestView receivedWithMeeting(LocalDateTime at, String status, String meetingStatus) {
+        return new MeetingRequestView(1L, 10L, "모집", "민준", null,
+                at.toLocalDate(), at.toLocalTime(), status, meetingStatus);
+    }
+
     // ---------- 내가 보낸 동행 신청 ----------
 
     @Test
@@ -109,7 +143,7 @@ class ViewModelTest {
         assertEquals("모집 중", meeting.statusLabel());
         assertEquals("모집 마감", withStatus("CLOSED").statusLabel());
         assertEquals("산책 완료", withStatus("COMPLETED").statusLabel());
-        assertEquals("IN_PROGRESS", withStatus("IN_PROGRESS").statusLabel());
+        assertEquals("산책 중", withStatus("IN_PROGRESS").statusLabel()); // 동행 산책 진행 중 (수정: 김환중)
     }
 
     private static MySharedMeetingView withStatus(String status) {

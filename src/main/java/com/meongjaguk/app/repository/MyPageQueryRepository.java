@@ -58,7 +58,8 @@ public class MyPageQueryRepository {
                     wa.message,
                     wm.meeting_date,
                     wm.meeting_time,
-                    wa.status
+                    wa.status,
+                    wm.status AS meeting_status -- 모집글 상태 (추가: 김환중)
                 FROM walk_applications wa
                 JOIN walk_meetings wm ON wa.meeting_id = wm.meeting_id
                 JOIN users u ON wa.user_id = u.user_id
@@ -88,7 +89,8 @@ public class MyPageQueryRepository {
                 rs.getString("message"),
                 rs.getDate("meeting_date").toLocalDate(),
                 rs.getTime("meeting_time").toLocalTime(),
-                rs.getString("status")
+                rs.getString("status"),
+                rs.getString("meeting_status") // 모집글 상태 (추가: 김환중)
         ), userId);
     }
 
