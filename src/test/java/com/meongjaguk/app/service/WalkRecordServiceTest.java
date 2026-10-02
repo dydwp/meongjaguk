@@ -11,6 +11,7 @@ import com.meongjaguk.app.entity.Route;
 import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.entity.WalkRecordPlannedPoint;
 import com.meongjaguk.app.entity.WalkRecordPoint;
+import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.CompanionRequestRepository;
 import com.meongjaguk.app.repository.CoursePointRepository;
 import com.meongjaguk.app.repository.PetRepository;
@@ -41,7 +42,6 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.ArgumentMatchers.anyLong;
 import static org.mockito.Mockito.inOrder;
 import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
@@ -65,7 +65,8 @@ class WalkRecordServiceTest {
                 mock(WalkRecordPetRepository.class),
                 mock(PetRepository.class),
                 mock(PetService.class),
-                mock(CompanionRequestRepository.class)
+                mock(CompanionRequestRepository.class),
+                mock(BoardRepository.class)
         );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
@@ -92,7 +93,8 @@ class WalkRecordServiceTest {
                 mock(WalkRecordPetRepository.class),
                 mock(PetRepository.class),
                 mock(PetService.class),
-                mock(CompanionRequestRepository.class)
+                mock(CompanionRequestRepository.class),
+                mock(BoardRepository.class)
         );
         WalkRecord record = completedRecord();
         when(records.findByWalkRecordIdAndUserId(42L, 7L)).thenReturn(Optional.of(record));
@@ -121,8 +123,9 @@ class WalkRecordServiceTest {
     private final PetRepository pets = mock(PetRepository.class);
     private final PetService petService = mock(PetService.class);
     private final CompanionRequestRepository requests = mock(CompanionRequestRepository.class); // 동행 산책 참가자 (추가: 김환중)
+    private final BoardRepository boards = mock(BoardRepository.class); // 동행 산책 모집글 제목 (추가: 김환중)
     private final WalkRecordService service = new WalkRecordService(
-            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets, petService, requests);
+            records, routes, actualPoints, plannedPoints, coursePoints, walkPets, pets, petService, requests, boards);
 
     private WalkRecord record(long id, Long courseId, int durationSeconds, int distanceM) {
         LocalDateTime start = LocalDateTime.of(2026, 9, 29, 10, 0);
@@ -138,7 +141,7 @@ class WalkRecordServiceTest {
         planned.setPlannedRoute("추천 코스", "설명", 2000L, 30);
         WalkRecord withCourse = record(2L, 5L, 20, 50);
         WalkRecord free = record(1L, null, 600, 0);
-        when(records.findByUserIdAndMeetingIdIsNullOrderByStartedAtDesc(7L)).thenReturn(List.of(planned, withCourse, free));
+        when(records.findByUserIdOrderByStartedAtDesc(7L)).thenReturn(List.of(planned, withCourse, free));
         when(routes.findById(5)).thenReturn(Optional.of(route(5, "한강 코스")));
         when(walkPets.findPetNamesByUserId(7L)).thenReturn(Map.of(3L, List.of("보리", "초코")));
 
@@ -156,7 +159,7 @@ class WalkRecordServiceTest {
 
     @Test
     void historyFilteredByMyPet() {
-        when(records.findByUserIdAndMeetingIdIsNullOrderByStartedAtDesc(7L))
+        when(records.findByUserIdOrderByStartedAtDesc(7L))
                 .thenReturn(List.of(record(3L, null, 60, 100), record(2L, null, 60, 100), record(1L, null, 60, 100)));
         when(pets.findByPetIdAndUser_UserId(9L, 7L)).thenReturn(Optional.of(new Pet()));
         when(walkPets.findWalkRecordIdsByPetId(7L, 9L)).thenReturn(Set.of(1L, 3L));
@@ -280,12 +283,16 @@ class WalkRecordServiceTest {
     }
 
     @Test
-    void myHistoryExcludesMeetingWalks() {
-        when(records.findByUserIdAndMeetingIdIsNullOrderByStartedAtDesc(7L)).thenReturn(List.of(record(1L, null, 60, 100)));
+    void myHistoryIncludesMeetingWalksWithMeetingTag() {
+        WalkRecord meeting = record(5L, null, 1800, 2000);
+        meeting.linkMeeting(10L);
+        when(records.findByUserIdOrderByStartedAtDesc(7L)).thenReturn(List.of(meeting, record(1L, null, 60, 100)));
         when(walkPets.findPetNamesByUserId(7L)).thenReturn(Map.of());
 
-        assertEquals(List.of(1L), service.getMyWalkHistory(7L).stream().map(WalkHistoryItemView::id).toList());
-        verify(records, never()).findByUserIdOrderByStartedAtDesc(anyLong());
+        List<WalkHistoryItemView> history = service.getMyWalkHistory(7L);
+
+        assertEquals(List.of(5L, 1L), history.stream().map(WalkHistoryItemView::id).toList());
+        assertEquals(List.of("동행 산책", "개인 산책"), history.stream().map(WalkHistoryItemView::tagLabel).toList());
     }
 
     @Test
@@ -348,5 +355,111 @@ class WalkRecordServiceTest {
         verify(records, never()).delete(record);
         verify(actualPoints, never()).deleteByWalkRecordId(5L);
         verify(plannedPoints, never()).deleteByWalkRecordId(5L);
+    }
+    // ---------- 활동 내역 동행 산책 표시 (추가: 김환중) ----------
+
+    private WalkRecord startedAt(WalkRecord record, LocalDateTime startedAt) {
+        ReflectionTestUtils.setField(record, "startedAt", startedAt);
+        return record;
+    }
+
+    /** 10번 모집(제목 "모집 10")에 연결된 개최자(7번)의 동행 기록 5번, 9월 30일 시작 */
+    private WalkRecord meetingWalk() {
+        WalkRecord record = startedAt(record(5L, null, 1800, 2000), LocalDateTime.of(2026, 9, 30, 8, 0));
+        record.linkMeeting(10L);
+        when(boards.findAllById(List.of(10L)))
+                .thenReturn(List.of(board(10L, user(7L, "용제"), LocalDateTime.now().minusHours(1), 4)));
+        return record;
+    }
+
+    private List<Long> ids(List<WalkHistoryItemView> history) {
+        return history.stream().map(WalkHistoryItemView::id).toList();
+    }
+
+    @Test
+    void hostHistoryMixesPersonalAndMeetingWalksByStartTime() {
+        WalkRecord meeting = meetingWalk();
+        WalkRecord newer = startedAt(record(1L, null, 600, 500), LocalDateTime.of(2026, 10, 1, 9, 0));
+        WalkRecord older = startedAt(record(2L, null, 600, 500), LocalDateTime.of(2026, 9, 28, 9, 0));
+        when(records.findByUserIdOrderByStartedAtDesc(7L)).thenReturn(List.of(older, meeting, newer));
+        when(walkPets.findPetNamesByUserId(7L)).thenReturn(Map.of(5L, List.of("보리")));
+        // 같은 기록이 수락된 모집 쪽에서 또 나와도 한 번만
+        when(requests.findMeetingIdsByApplicantAndStatus(7L, ApplicationStatus.ACCEPTED)).thenReturn(List.of(10L));
+        when(records.findByMeetingIdIn(List.of(10L))).thenReturn(List.of(meeting));
+
+        List<WalkHistoryItemView> history = service.getMyWalkHistory(7L);
+
+        assertEquals(List.of(1L, 5L, 2L), ids(history));
+        assertEquals(List.of("개인 산책", "동행 산책", "개인 산책"),
+                history.stream().map(WalkHistoryItemView::tagLabel).toList());
+        assertEquals(List.of("자유 산책", "모집 10", "자유 산책"),
+                history.stream().map(WalkHistoryItemView::title).toList());
+        assertEquals("보리", history.get(1).petNamesLabel()); // 개최자에게는 함께한 반려견 표시
+    }
+
+    @Test
+    void acceptedParticipantSeesHostsMeetingWalkWithoutPetNames() {
+        WalkRecord meeting = meetingWalk();
+        WalkRecord mineNewer = startedAt(record(21L, null, 600, 500), LocalDateTime.of(2026, 10, 1, 9, 0));
+        WalkRecord mineOlder = startedAt(record(20L, null, 600, 500), LocalDateTime.of(2026, 9, 29, 9, 0));
+        when(records.findByUserIdOrderByStartedAtDesc(8L)).thenReturn(List.of(mineNewer, mineOlder));
+        when(requests.findMeetingIdsByApplicantAndStatus(8L, ApplicationStatus.ACCEPTED)).thenReturn(List.of(10L));
+        when(records.findByMeetingIdIn(List.of(10L))).thenReturn(List.of(meeting));
+        when(walkPets.findPetNamesByUserId(8L)).thenReturn(Map.of(20L, List.of("코코")));
+        when(walkPets.findPetNamesByUserId(7L)).thenReturn(Map.of(5L, List.of("보리")));
+
+        List<WalkHistoryItemView> history = service.getMyWalkHistory(8L);
+
+        assertEquals(List.of(21L, 5L, 20L), ids(history));
+        assertEquals("동행 산책", history.get(1).tagLabel());
+        assertEquals("모집 10", history.get(1).title());
+        assertEquals("", history.get(1).petNamesLabel()); // 참가자에게는 반려견 표시 안 함
+        assertEquals("코코", history.get(2).petNamesLabel());
+    }
+
+    @Test
+    void pendingRejectedOrUnrelatedUsersDoNotSeeMeetingWalk() {
+        WalkRecord meeting = meetingWalk();
+        when(records.findByMeetingIdIn(List.of(10L))).thenReturn(List.of(meeting));
+        // 대기·거절 신청은 수락(ACCEPTED) 모집 목록에 들어가지 않음
+        when(requests.findMeetingIdsByApplicantAndStatus(8L, ApplicationStatus.PENDING)).thenReturn(List.of(10L));
+        when(requests.findMeetingIdsByApplicantAndStatus(9L, ApplicationStatus.REJECTED)).thenReturn(List.of(10L));
+
+        for (long userId : new long[]{8L, 9L, 11L}) {
+            assertTrue(service.getMyWalkHistory(userId).isEmpty(), "user " + userId);
+            verify(requests).findMeetingIdsByApplicantAndStatus(userId, ApplicationStatus.ACCEPTED);
+        }
+        verify(records, never()).findByMeetingIdIn(any());
+    }
+
+    @Test
+    void petFilterKeepsHostsMeetingWalkButNotParticipantsSide() {
+        WalkRecord meeting = meetingWalk();
+        when(records.findByUserIdOrderByStartedAtDesc(7L)).thenReturn(List.of(meeting, record(1L, null, 600, 500)));
+        when(pets.findByPetIdAndUser_UserId(9L, 7L)).thenReturn(Optional.of(new Pet()));
+        when(walkPets.findWalkRecordIdsByPetId(7L, 9L)).thenReturn(Set.of(5L)); // 개최자가 9번 반려견과 함께한 동행 기록
+        when(walkPets.findPetNamesByUserId(7L)).thenReturn(Map.of());
+
+        assertEquals(List.of(5L), ids(service.getMyWalkHistory(7L, 9L)));
+
+        when(records.findByUserIdOrderByStartedAtDesc(8L)).thenReturn(List.of(record(20L, null, 600, 500)));
+        when(requests.findMeetingIdsByApplicantAndStatus(8L, ApplicationStatus.ACCEPTED)).thenReturn(List.of(10L));
+        when(records.findByMeetingIdIn(List.of(10L))).thenReturn(List.of(meeting));
+        when(pets.findByPetIdAndUser_UserId(3L, 8L)).thenReturn(Optional.of(new Pet()));
+        when(walkPets.findWalkRecordIdsByPetId(8L, 3L)).thenReturn(Set.of(20L)); // 참가자 반려견은 동행 기록에 연결되지 않음
+        when(walkPets.findPetNamesByUserId(8L)).thenReturn(Map.of());
+
+        assertEquals(List.of(20L), ids(service.getMyWalkHistory(8L, 3L)));
+    }
+
+    @Test
+    void meetingWalkDetailTitleIsMeetingTitle() {
+        meetingRecord();
+        givenApplication(8L, ApplicationStatus.ACCEPTED);
+        when(boards.findById(10L))
+                .thenReturn(Optional.of(board(10L, user(7L, "용제"), LocalDateTime.now().minusHours(1), 4)));
+
+        assertEquals("모집 10", service.getDetail(5L, 7L).orElseThrow().title());
+        assertEquals("모집 10", service.getDetail(5L, 8L).orElseThrow().title());
     }
 }

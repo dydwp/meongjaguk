@@ -42,6 +42,12 @@ public interface CompanionRequestRepository extends JpaRepository<CompanionReque
     List<Object[]> countByMeetingIdsAndStatus(@Param("meetingIds") Collection<Long> meetingIds,
                                               @Param("status") ApplicationStatus status);
 
+    /** 내가 특정 상태(예: ACCEPTED)로 신청한 모집글 번호 목록 - 활동 내역 동행 산책 (추가: 김환중) */
+    @Query("select r.meetingId from CompanionRequest r " +
+           "where r.applicant.userId = :userId and r.status = :status")
+    List<Long> findMeetingIdsByApplicantAndStatus(@Param("userId") Long userId,
+                                                  @Param("status") ApplicationStatus status);
+
     /** 모집글 삭제 시 신청 전부 삭제 */
     @Modifying
     @Query("delete from CompanionRequest r where r.meetingId = :meetingId")
