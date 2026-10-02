@@ -47,7 +47,7 @@ import java.util.stream.Collectors;
 
 /**
  * 동행 게시판: 목록/상세 조회, 게시글 등록, 댓글 조회/작성/삭제
- */동행 게시판
+ */
 @Service
 @Transactional(readOnly = true)
 public class BoardService {
@@ -68,16 +68,16 @@ public class BoardService {
     private static final int MAX_COURSE_POINTS = 5000;
 
     public BoardService(BoardRepository boardRepository,
-                        CompanionRequestRepository companionRequestRepository,
-                        BoardCommentRepository commentRepository,
-                        UserService userService,
-                        RouteRepository routeRepository,
-                        CoursePointRepository coursePointRepository,
-                        NotificationService notificationService,
-                        WalkMeetingPetRepository walkMeetingPetRepository,
-                        PetRepository petRepository,
-                        PetService petService,
-                        WalkRecordRepository walkRecordRepository) {
+            CompanionRequestRepository companionRequestRepository,
+            BoardCommentRepository commentRepository,
+            UserService userService,
+            RouteRepository routeRepository,
+            CoursePointRepository coursePointRepository,
+            NotificationService notificationService,
+            WalkMeetingPetRepository walkMeetingPetRepository,
+            PetRepository petRepository,
+            PetService petService,
+            WalkRecordRepository walkRecordRepository) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
@@ -188,32 +188,32 @@ public class BoardService {
         List<PetCardView> pets = petService.getMyPetsByIds(hostUserId, petIds);
 
         return new BoardDetailDto(
-            board.getMeetingId(),
-            board.getTitle(),
-            board.getDescription(),
-            course.getCourseName(),
-            course.getDistanceM(),
-            course.getEstimatedMinutes(),
-            board.getMeetingDate(),
-            board.getMeetingTime(),
-            board.isPetRequired(),
-            board.getParticipationCondition(),
-            board.getHost().getNickname(),
-            board.getCreatedAt(),
-            participants,
-            participants.size(),
-            board.getMaxParticipants(),
-            displayStatus(board, accepted.size()),
-            isHost,
-            myStatus,
-            course.getStartLatitude(),
-            course.getStartLongitude(),
-            coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
-                                .stream().map(BoardService::toPointDto).toList(),
-            pets,
-            board.getStartedAt(),
-            board.getEndedAt(),
-            walkRecordRepository.findByMeetingId(meetingId).map(WalkRecord::getWalkRecordId).orElse(null));
+                board.getMeetingId(),
+                board.getTitle(),
+                board.getDescription(),
+                course.getCourseName(),
+                course.getDistanceM(),
+                course.getEstimatedMinutes(),
+                board.getMeetingDate(),
+                board.getMeetingTime(),
+                board.isPetRequired(),
+                board.getParticipationCondition(),
+                board.getHost().getNickname(),
+                board.getCreatedAt(),
+                participants,
+                participants.size(),
+                board.getMaxParticipants(),
+                displayStatus(board, accepted.size()),
+                isHost,
+                myStatus,
+                course.getStartLatitude(),
+                course.getStartLongitude(),
+                coursePointRepository.findByCourse_CourseIdOrderBySequenceNoAsc(course.getCourseId())
+                        .stream().map(BoardService::toPointDto).toList(),
+                pets,
+                board.getStartedAt(),
+                board.getEndedAt(),
+                walkRecordRepository.findByMeetingId(meetingId).map(WalkRecord::getWalkRecordId).orElse(null));
     }
 
     /**
