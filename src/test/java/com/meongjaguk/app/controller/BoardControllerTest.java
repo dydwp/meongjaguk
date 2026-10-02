@@ -192,6 +192,49 @@ class BoardControllerTest extends WebTestSupport {
                 .andExpect(jsonPath("$.message").value("본인이 작성한 글만 삭제할 수 있어요."));
     }
 
+    // ---------- 동행 산책 시작 / 종료 (추가: 김환중) ----------
+
+    @Test
+    void guestCannotStartOrEndWalk() throws Exception {
+        mvc.perform(post("/api/meetings/10/start").with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        mvc.perform(post("/api/meetings/10/end").with(csrf()))
+                .andExpect(status().is3xxRedirection());
+        verify(boardService, never()).startWalk(anyLong(), anyLong());
+        verify(boardService, never()).completeWalk(anyLong(), anyLong());
+    }
+
+    @Test
+    void hostStartsAndEndsWalk() throws Exception {
+        mvc.perform(post("/api/meetings/10/start").with(login()).with(csrf()))
+                .andExpect(status().isNoContent());
+        mvc.perform(post("/api/meetings/10/end").with(login()).with(csrf()))
+                .andExpect(status().isNoContent());
+
+        verify(boardService).startWalk(10L, USER_ID);
+        verify(boardService).completeWalk(10L, USER_ID);
+    }
+
+    @Test
+    void rejectedStartIs400WithMessage() throws Exception {
+        doThrow(new IllegalArgumentException("수락된 참가자가 있어야 산책을 시작할 수 있어요."))
+                .when(boardService).startWalk(10L, USER_ID);
+
+        mvc.perform(post("/api/meetings/10/start").with(login()).with(csrf()))
+                .andExpect(status().isBadRequest())
+                .andExpect(jsonPath("$.message").value("수락된 참가자가 있어야 산책을 시작할 수 있어요."));
+    }
+
+    @Test
+    void endingOthersWalkIs403() throws Exception {
+        doThrow(new AccessDeniedException("본인이 작성한 모집만 산책을 종료할 수 있어요."))
+                .when(boardService).completeWalk(10L, USER_ID);
+
+        mvc.perform(post("/api/meetings/10/end").with(login()).with(csrf()))
+                .andExpect(status().isForbidden())
+                .andExpect(jsonPath("$.message").value("본인이 작성한 모집만 산책을 종료할 수 있어요."));
+    }
+
     // ---------- 댓글 ----------
 
     @Test

@@ -381,6 +381,114 @@ test("글 삭제가 거부되면 이유를 알려주고 다시 누를 수 있게
   page.close();
 });
 
+// ---------- 동행 산책 시작 / 종료 (추가: 김환중) ----------
+
+const STARTED = "2026-10-02T18:02:11";
+const ENDED = "2026-10-02T18:40:00";
+
+test("동행 산책 영역은 상태와 작성자 여부에 따라 바뀐다", async () => {
+  const cases = [
+    [{ status: "RECRUITING" }, "모집이 마감되면 동행 산책을 시작할 수 있어요.", "동행 산책 시작", true],
+    [{ status: "CLOSED", currentParticipants: 1 }, "수락된 참가자가 있어야 동행 산책을 시작할 수 있어요.", "동행 산책 시작", true],
+    [{ status: "CLOSED", currentParticipants: 2 }, "모두 모이면 동행 산책을 시작해주세요.", "동행 산책 시작", false],
+    [{ status: "IN_PROGRESS", startedAt: STARTED }, "산책 중 · 18:02 시작", "동행 산책 종료", false],
+    [{ status: "COMPLETED", startedAt: STARTED, endedAt: ENDED }, "산책 완료 · 18:02 ~ 18:40 (38분)", null, null],
+  ];
+  for (const [change, info, label, disabled] of cases) {
+    const host = openDetail({ meeting: { ...DETAIL, isHost: true, ...change } });
+    await settle();
+    assert.equal(host.$("[data-walk-section]").hidden, false, info);
+    assert.equal(host.$("[data-walk-info]").textContent, info);
+    if (label) {
+      assert.equal(host.$("[data-walk-actions]").hidden, false, info);
+      assert.equal(host.$("[data-walk-btn]").textContent, label);
+      assert.equal(host.$("[data-walk-btn]").disabled, disabled, info);
+    } else {
+      assert.equal(host.$("[data-walk-actions]").hidden, true, info);
+    }
+    host.close();
+
+    const guest = openDetail({ meeting: { ...DETAIL, ...change } });
+    await settle();
+    const infoOnly = change.status === "IN_PROGRESS" || change.status === "COMPLETED";
+    assert.equal(guest.$("[data-walk-section]").hidden, !infoOnly, info);
+    assert.equal(guest.$("[data-walk-actions]").hidden, true, info);
+    if (infoOnly) assert.equal(guest.$("[data-walk-info]").textContent, info);
+    guest.close();
+  }
+});
+
+test("동행 산책을 시작한 글은 작성자에게도 수정·삭제가 보이지 않는다", async () => {
+  for (const status of ["IN_PROGRESS", "COMPLETED"]) {
+    const page = openDetail({ meeting: { ...DETAIL, isHost: true, status, startedAt: STARTED, endedAt: ENDED } });
+    await settle();
+    assert.equal(page.$("[data-host-actions]").hidden, true, status);
+    page.close();
+  }
+});
+
+test("동행 산책 시작·종료는 확인 후 CSRF 토큰과 함께 요청하고 새로고침한다", async () => {
+  const start = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    routes: { "POST /api/meetings/10/start": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  start.click("[data-walk-btn]");
+  await settle();
+  assert.deepEqual(start.calls.confirms,
+    ["동행 산책을 시작할까요?\n시작하면 글 수정·삭제와 동행 신청 수락·거절을 할 수 없어요."]);
+  assert.equal(start.calls.fetch.at(-1).url, "/api/meetings/10/start");
+  assert.equal(start.calls.fetch.at(-1).method, "POST");
+  assert.equal(start.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(start.calls.navigations, ["reload"]);
+  start.close();
+
+  const end = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "IN_PROGRESS", startedAt: STARTED },
+    routes: { "POST /api/meetings/10/end": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  end.click("[data-walk-btn]");
+  await settle();
+  assert.deepEqual(end.calls.confirms, ["동행 산책을 종료할까요?"]);
+  assert.equal(end.calls.fetch.at(-1).url, "/api/meetings/10/end");
+  assert.equal(end.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(end.calls.navigations, ["reload"]);
+  end.close();
+});
+
+test("동행 산책 시작 확인을 취소하면 요청하지 않는다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    confirm: false,
+  });
+  await settle();
+  page.click("[data-walk-btn]");
+  await settle();
+
+  assert.equal(page.calls.fetch.some((c) => c.method === "POST"), false);
+  assert.equal(page.$("[data-walk-btn]").disabled, false);
+  page.close();
+});
+
+test("동행 산책 시작이 거부되면 이유를 알려주고 다시 누를 수 있게 한다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    routes: {
+      "POST /api/meetings/10/start": () =>
+        response({ message: "수락된 참가자가 있어야 산책을 시작할 수 있어요." }, { status: 400 }),
+    },
+  });
+  await settle();
+  page.click("[data-walk-btn]");
+  await settle();
+
+  assert.deepEqual(page.calls.alerts, ["수락된 참가자가 있어야 산책을 시작할 수 있어요."]);
+  assert.equal(page.$("[data-walk-btn]").disabled, false);
+  assert.deepEqual(page.calls.navigations, []);
+  page.close();
+});
+
 test("상세 지도: 경로가 없으면 출발 지점 마커, 왕복 코스면 '시작 · 도착' 표시", async () => {
   const start = openDetail({ kakao: true });
   await settle();

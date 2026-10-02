@@ -10,6 +10,7 @@ import com.meongjaguk.app.dto.RouteDto;
 import com.meongjaguk.app.entity.ApplicationStatus;
 import com.meongjaguk.app.entity.Board;
 import com.meongjaguk.app.entity.BoardComment;
+import com.meongjaguk.app.entity.BoardStatus;
 import com.meongjaguk.app.entity.CoursePoint;
 import com.meongjaguk.app.entity.Route;
 import com.meongjaguk.app.entity.User;
@@ -45,6 +46,7 @@ import static com.meongjaguk.app.support.Fixtures.route;
 import static com.meongjaguk.app.support.Fixtures.user;
 import static org.junit.jupiter.api.Assertions.assertEquals;
 import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -370,6 +372,145 @@ class BoardServiceTest {
             ArgumentCaptor<Iterable<CoursePoint>> captor = ArgumentCaptor.forClass((Class) Iterable.class);
             verify(coursePoints).saveAll(captor.capture());
             return StreamSupport.stream(captor.getValue().spliterator(), false).toList();
+        }
+    }
+
+    /** 동행 산책 시작·종료 (추가: 김환중) */
+    @Nested
+    class Walk {
+
+        private Board board;
+
+        @BeforeEach
+        void givenBoard() {
+            board = board(10L, host, tomorrow, 4);
+            when(boards.findWithHostAndCourseByMeetingId(10L)).thenReturn(Optional.of(board));
+        }
+
+        private void givenAccepted(long count) {
+            when(requests.countByMeetingIdAndStatus(10L, ApplicationStatus.ACCEPTED)).thenReturn(count);
+        }
+
+        private void assertBadRequest(Runnable action, String message) {
+            IllegalArgumentException e = assertThrows(IllegalArgumentException.class, action::run);
+            assertEquals(message, e.getMessage());
+        }
+
+        @Test
+        void hostStartsClosedWalkWithAcceptedParticipant() {
+            ReflectionTestUtils.setField(board, "status", BoardStatus.CLOSED);
+            givenAccepted(1L);
+
+            service.startWalk(10L, 1L);
+
+            assertEquals(BoardStatus.IN_PROGRESS, board.getStatus());
+            assertNotNull(board.getStartedAt());
+            assertNull(board.getEndedAt());
+        }
+
+        @Test
+        void fullRecruitingBoardIsShownClosedAndCanStart() {
+            givenAccepted(3L); // 1 + 3 = 정원 4
+
+            service.startWalk(10L, 1L);
+
+            assertEquals(BoardStatus.IN_PROGRESS, board.getStatus());
+        }
+
+        @Test
+        void cannotStartWhileRecruiting() {
+            givenAccepted(1L);
+
+            assertBadRequest(() -> service.startWalk(10L, 1L), "모집이 마감된 뒤에 산책을 시작할 수 있어요.");
+            assertEquals(BoardStatus.RECRUITING, board.getStatus());
+        }
+
+        @Test
+        void cannotStartWithoutAcceptedParticipant() {
+            ReflectionTestUtils.setField(board, "status", BoardStatus.CLOSED);
+            givenAccepted(0L);
+
+            assertBadRequest(() -> service.startWalk(10L, 1L), "수락된 참가자가 있어야 산책을 시작할 수 있어요.");
+            assertEquals(BoardStatus.CLOSED, board.getStatus());
+            assertNull(board.getStartedAt());
+        }
+
+        @Test
+        void cannotStartTwice() {
+            ReflectionTestUtils.setField(board, "status", BoardStatus.IN_PROGRESS);
+            assertBadRequest(() -> service.startWalk(10L, 1L), "이미 시작한 동행 산책이에요.");
+
+            ReflectionTestUtils.setField(board, "status", BoardStatus.COMPLETED);
+            assertBadRequest(() -> service.startWalk(10L, 1L), "이미 시작한 동행 산책이에요.");
+        }
+
+        @Test
+        void onlyHostCanStartOrEnd() {
+            ReflectionTestUtils.setField(board, "status", BoardStatus.CLOSED);
+            givenAccepted(1L);
+            AccessDeniedException start = assertThrows(AccessDeniedException.class, () -> service.startWalk(10L, 2L));
+            assertEquals("본인이 작성한 모집만 산책을 시작할 수 있어요.", start.getMessage());
+            assertEquals(BoardStatus.CLOSED, board.getStatus());
+
+            ReflectionTestUtils.setField(board, "status", BoardStatus.IN_PROGRESS);
+            AccessDeniedException end = assertThrows(AccessDeniedException.class, () -> service.completeWalk(10L, 2L));
+            assertEquals("본인이 작성한 모집만 산책을 종료할 수 있어요.", end.getMessage());
+            assertEquals(BoardStatus.IN_PROGRESS, board.getStatus());
+        }
+
+        @Test
+        void hostEndsWalkInProgress() {
+            ReflectionTestUtils.setField(board, "status", BoardStatus.IN_PROGRESS);
+
+            service.completeWalk(10L, 1L);
+
+            assertEquals(BoardStatus.COMPLETED, board.getStatus());
+            assertNotNull(board.getEndedAt());
+        }
+
+        @Test
+        void cannotEndWalkNotInProgress() {
+            assertBadRequest(() -> service.completeWalk(10L, 1L), "산책 중인 동행 산책만 종료할 수 있어요.");
+
+            ReflectionTestUtils.setField(board, "status", BoardStatus.CLOSED);
+            assertBadRequest(() -> service.completeWalk(10L, 1L), "산책 중인 동행 산책만 종료할 수 있어요.");
+
+            ReflectionTestUtils.setField(board, "status", BoardStatus.COMPLETED);
+            assertBadRequest(() -> service.completeWalk(10L, 1L), "산책 중인 동행 산책만 종료할 수 있어요.");
+            assertNull(board.getEndedAt());
+        }
+
+        @Test
+        void startedBoardCannotBeUpdatedOrDeleted() {
+            BoardCreateRequest update = new BoardCreateRequest(null, null, "새 제목", tomorrow.toLocalDate(),
+                    LocalTime.of(10, 0), 4, null, null, null, null, null);
+            for (BoardStatus status : List.of(BoardStatus.IN_PROGRESS, BoardStatus.COMPLETED)) {
+                ReflectionTestUtils.setField(board, "status", status);
+
+                assertBadRequest(() -> service.updateBoard(10L, 1L, update), "동행 산책을 시작한 글은 수정할 수 없어요.");
+                assertBadRequest(() -> service.deleteBoard(10L, 1L), "동행 산책을 시작한 글은 삭제할 수 없어요.");
+            }
+
+            assertEquals("모집 10", board.getTitle());
+            verify(boards, never()).delete(any());
+            verify(requests, never()).deleteByMeetingId(anyLong());
+        }
+
+        @Test
+        void detailIncludesWalkTimes() {
+            assertNull(service.getBoard(10L, 1L).startedAt());
+
+            LocalDateTime startedAt = LocalDateTime.of(2026, 10, 2, 18, 2, 11);
+            LocalDateTime endedAt = LocalDateTime.of(2026, 10, 2, 18, 40, 0);
+            ReflectionTestUtils.setField(board, "status", BoardStatus.COMPLETED);
+            ReflectionTestUtils.setField(board, "startedAt", startedAt);
+            ReflectionTestUtils.setField(board, "endedAt", endedAt);
+
+            BoardDetailDto detail = service.getBoard(10L, 1L);
+
+            assertEquals("COMPLETED", detail.status());
+            assertEquals(startedAt, detail.startedAt());
+            assertEquals(endedAt, detail.endedAt());
         }
     }
 

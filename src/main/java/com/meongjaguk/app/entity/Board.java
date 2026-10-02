@@ -144,6 +144,23 @@ public class Board {
         return !now.isBefore(LocalDateTime.of(meetingDate, meetingTime));
     }
 
+    /** 동행 산책을 시작했는지 (산책 중 또는 완료) (추가: 김환중) */
+    public boolean isWalkStarted() {
+        return status == BoardStatus.IN_PROGRESS || status == BoardStatus.COMPLETED;
+    }
+
+    /** 동행 산책 시작 (조건 검사는 BoardService에서) (추가: 김환중) */
+    public void startWalk(LocalDateTime now) {
+        this.status = BoardStatus.IN_PROGRESS;
+        this.startedAt = now;
+    }
+
+    /** 동행 산책 종료 (조건 검사는 BoardService에서) (추가: 김환중) */
+    public void completeWalk(LocalDateTime now) {
+        this.status = BoardStatus.COMPLETED;
+        this.endedAt = now;
+    }
+
     public Long getMeetingId() { return meetingId; }
     public User getHost() { return host; }
     public Route getCourse() { return course; }
