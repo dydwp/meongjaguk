@@ -48,3 +48,12 @@ __pycache__/
 /ai-server/data/south-korea-latest.osm.pbf
 ### 프론트 테스트 (npm install 로 설치) ###
 node_modules/
+
+# Route 53 DNS 레코드 설정 파일
+dns-records.json
+
+# AWS 리소스 ID 및 Elastic IP 환경변수 파일
+meongjaguk-aws.env
+
+# EC2 SSH 접속용 개인키
+meongjaguk-key.pem

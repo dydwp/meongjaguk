@@ -30,7 +30,7 @@ public class SecurityConfig {
                         .requestMatchers("/board", "/course-detail-shared").permitAll()
                         // 추가: 추천 산책로 조회 API는 비회원도 볼 수 있게
                         .requestMatchers(HttpMethod.GET, "/api/courses/**").permitAll()
-                        // 추가(김환중): 산책로 게시판 목록/상세/댓글 조회 API는 비회원도 볼 수 있게
+                        // 추가(김환중): 동행 게시판 목록/상세/댓글 조회 API는 비회원도 볼 수 있게
                         .requestMatchers(HttpMethod.GET, "/api/meetings/**").permitAll()
                         // 추가(박용제): AI 산책로 추천 중계 API는 비회원도 사용
                         .requestMatchers(HttpMethod.POST, "/api/routes/recommend").permitAll()

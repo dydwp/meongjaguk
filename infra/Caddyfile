@@ -1,0 +1,9 @@
+# meongjaguk.cloud 로 들어온 요청을 Spring 앱으로 전달 (인증서는 자동 발급)
+meongjaguk.cloud {
+    reverse_proxy app:8081
+}
+ 
+# www 로 들어오면 www 없는 주소로 이동 (로그인 주소를 하나로 통일)
+www.meongjaguk.cloud {
+    redir https://meongjaguk.cloud{uri} permanent
+}

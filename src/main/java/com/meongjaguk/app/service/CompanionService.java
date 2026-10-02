@@ -122,6 +122,9 @@ public class CompanionService {
         }
 
         request.accept();
+        if (request.getBoard().isFull(acceptedCount + 1)) {
+            request.getBoard().close();
+        }
         notificationService.notifyCompanionAccepted(request);
     }
 

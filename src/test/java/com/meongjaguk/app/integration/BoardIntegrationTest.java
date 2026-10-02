@@ -39,17 +39,25 @@ import static org.junit.jupiter.api.Assertions.assertNull;
 import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
-/** 산책로 게시판: 등록(코스·좌표 함께 저장), 수정·삭제, 무한스크롤, 상세, 댓글 */
+/** 동행 게시판: 등록(코스·좌표 함께 저장), 수정·삭제, 무한스크롤, 상세, 댓글 */
 class BoardIntegrationTest extends IntegrationTestSupport {
 
-    @Autowired BoardService boardService;
-    @Autowired BoardRepository boards;
-    @Autowired CoursePointRepository coursePoints;
-    @Autowired NotificationRepository notifications;
-    @Autowired BoardCloseScheduler closeScheduler;
-    @Autowired CompanionRequestRepository requests;
-    @Autowired BoardCommentRepository comments;
-    @Autowired WalkMeetingPetRepository walkMeetingPets;
+    @Autowired
+    BoardService boardService;
+    @Autowired
+    BoardRepository boards;
+    @Autowired
+    CoursePointRepository coursePoints;
+    @Autowired
+    NotificationRepository notifications;
+    @Autowired
+    BoardCloseScheduler closeScheduler;
+    @Autowired
+    CompanionRequestRepository requests;
+    @Autowired
+    BoardCommentRepository comments;
+    @Autowired
+    WalkMeetingPetRepository walkMeetingPets;
 
     private User host;
     private final LocalDate tomorrow = LocalDate.now().plusDays(1);
@@ -67,7 +75,7 @@ class BoardIntegrationTest extends IntegrationTestSupport {
                 4, true, "소형견", "같이 걸어요", List.of(
                         new CoursePointDto(2, 37.545, 127.044),
                         new CoursePointDto(1, 37.544, 127.043)),
-                        null);
+                null);
 
         Long meetingId = boardService.createBoard(host.getUserId(), request);
         flushAndClear();

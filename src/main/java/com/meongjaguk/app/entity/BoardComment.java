@@ -4,7 +4,7 @@ import jakarta.persistence.*;
 import java.time.LocalDateTime;
 
 /**
- * 산책로 게시판 게시글 댓글 (walk_meeting_comments)
+ * 동행 게시판게시글 댓글 (walk_meeting_comments)
  */
 @Entity
 @Table(name = "walk_meeting_comments")
@@ -18,13 +18,11 @@ public class BoardComment {
     private Long commentId;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "meeting_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_walk_meeting_comments_meeting"))
+    @JoinColumn(name = "meeting_id", nullable = false, foreignKey = @ForeignKey(name = "fk_walk_meeting_comments_meeting"))
     private Board board;
 
     @ManyToOne(fetch = FetchType.LAZY, optional = false)
-    @JoinColumn(name = "user_id", nullable = false,
-                foreignKey = @ForeignKey(name = "fk_walk_meeting_comments_user"))
+    @JoinColumn(name = "user_id", nullable = false, foreignKey = @ForeignKey(name = "fk_walk_meeting_comments_user"))
     private User user;
 
     @Column(nullable = false, length = MAX_CONTENT_LENGTH)
@@ -36,7 +34,8 @@ public class BoardComment {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    protected BoardComment() {}
+    protected BoardComment() {
+    }
 
     public static BoardComment create(Board board, User user, String content) {
         BoardComment comment = new BoardComment();
@@ -57,10 +56,27 @@ public class BoardComment {
         this.updatedAt = LocalDateTime.now();
     }
 
-    public Long getCommentId() { return commentId; }
-    public Board getBoard() { return board; }
-    public User getUser() { return user; }
-    public String getContent() { return content; }
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public LocalDateTime getUpdatedAt() { return updatedAt; }
+    public Long getCommentId() {
+        return commentId;
+    }
+
+    public Board getBoard() {
+        return board;
+    }
+
+    public User getUser() {
+        return user;
+    }
+
+    public String getContent() {
+        return content;
+    }
+
+    public LocalDateTime getCreatedAt() {
+        return createdAt;
+    }
+
+    public LocalDateTime getUpdatedAt() {
+        return updatedAt;
+    }
 }

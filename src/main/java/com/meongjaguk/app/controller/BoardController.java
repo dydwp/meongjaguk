@@ -27,8 +27,9 @@ import java.util.Map;
 import java.util.NoSuchElementException;
 
 /**
- * 산책로 게시판 API: 목록/상세 조회, 게시글 등록/수정/삭제, 댓글 조회/작성/삭제
- * (화면 연결 /board, /board/new, /board/edit, /course-detail-shared 는 MeetupController)
+ * 동행 게시판 API: 목록/상세 조회, 게시글 등록/수정/삭제, 댓글 조회/작성/삭제
+ * (화면 연결 /board, /board/new, /board/edit, /course-detail-shared 는
+ * MeetupController)
  */
 @RestController
 public class BoardController {
@@ -40,12 +41,12 @@ public class BoardController {
     }
 
     /**
-     * 산책로 게시판 목록 (무한스크롤)
+     * 동행 게시판 목록 (무한스크롤)
      * 예) /api/meetings?size=6 → 첫 페이지, /api/meetings?cursor=12&size=6 → 12번보다 오래된 글
      */
     @GetMapping("/api/meetings")
     public ResponseEntity<BoardPageDto> boards(@RequestParam(required = false) Long cursor,
-                                               @RequestParam(defaultValue = "6") int size) {
+            @RequestParam(defaultValue = "6") int size) {
         int pageSize = Math.max(1, Math.min(size, 30));
         return ResponseEntity.ok(boardService.getBoards(cursor, pageSize));
     }
@@ -53,7 +54,7 @@ public class BoardController {
     /** 산책로 게시글(동행 모집) 등록 (로그인 회원만) */
     @PostMapping("/api/meetings")
     public ResponseEntity<?> createBoard(@RequestBody BoardCreateRequest request,
-                                         @AuthenticationPrincipal LoginUser loginUser) {
+            @AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
         }
@@ -64,7 +65,7 @@ public class BoardController {
     /** 공유 산책로 상세 */
     @GetMapping("/api/meetings/{meetingId}")
     public ResponseEntity<BoardDetailDto> board(@PathVariable Long meetingId,
-                                                @AuthenticationPrincipal LoginUser loginUser) {
+            @AuthenticationPrincipal LoginUser loginUser) {
         Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
         return ResponseEntity.ok(boardService.getBoard(meetingId, loginUserId));
     }
@@ -72,8 +73,8 @@ public class BoardController {
     /** 산책로 게시글 수정 (작성자만, 코스는 변경 불가) */
     @PutMapping("/api/meetings/{meetingId}")
     public ResponseEntity<?> updateBoard(@PathVariable Long meetingId,
-                                         @RequestBody BoardCreateRequest request,
-                                         @AuthenticationPrincipal LoginUser loginUser) {
+            @RequestBody BoardCreateRequest request,
+            @AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
         }
@@ -84,7 +85,7 @@ public class BoardController {
     /** 산책로 게시글 삭제 (작성자만, 신청·댓글·알림도 함께 삭제) */
     @DeleteMapping("/api/meetings/{meetingId}")
     public ResponseEntity<Void> deleteBoard(@PathVariable Long meetingId,
-                                            @AuthenticationPrincipal LoginUser loginUser) {
+            @AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
@@ -117,7 +118,7 @@ public class BoardController {
     /** 댓글 목록 (비회원도 조회 가능) */
     @GetMapping("/api/meetings/{meetingId}/comments")
     public ResponseEntity<List<CommentDto>> comments(@PathVariable Long meetingId,
-                                                     @AuthenticationPrincipal LoginUser loginUser) {
+            @AuthenticationPrincipal LoginUser loginUser) {
         Long loginUserId = loginUser != null ? loginUser.getUserId() : null;
         return ResponseEntity.ok(boardService.getComments(meetingId, loginUserId));
     }
@@ -125,8 +126,8 @@ public class BoardController {
     /** 댓글 작성 (로그인 회원만) */
     @PostMapping("/api/meetings/{meetingId}/comments")
     public ResponseEntity<?> addComment(@PathVariable Long meetingId,
-                                        @RequestBody CommentRequest request,
-                                        @AuthenticationPrincipal LoginUser loginUser) {
+            @RequestBody CommentRequest request,
+            @AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(Map.of("message", "로그인이 필요해요."));
         }
@@ -137,8 +138,8 @@ public class BoardController {
     /** 댓글 삭제 (본인 댓글만) */
     @DeleteMapping("/api/meetings/{meetingId}/comments/{commentId}")
     public ResponseEntity<Void> deleteComment(@PathVariable Long meetingId,
-                                              @PathVariable Long commentId,
-                                              @AuthenticationPrincipal LoginUser loginUser) {
+            @PathVariable Long commentId,
+            @AuthenticationPrincipal LoginUser loginUser) {
         if (loginUser == null) {
             return ResponseEntity.status(HttpStatus.UNAUTHORIZED).build();
         }
