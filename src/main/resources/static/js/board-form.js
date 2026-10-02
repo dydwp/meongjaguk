@@ -199,7 +199,7 @@
       if (editMode) {
         document.title = "멍자국 — 산책로 게시글 수정";
         document.querySelector("#board-form-heading").textContent =
-          "산책로 게시글 수정";동행 게시판
+          "산책로 게시글 수정";
         document.querySelector("#board-form-sub").textContent =
           "모집 정보를 수정할 수 있어요 (코스는 바꿀 수 없어요)";
         submitButton.textContent = "수정";

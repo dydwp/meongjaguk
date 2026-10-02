@@ -151,6 +151,23 @@
               동행 신청
             </button>
           </div>
+
+          <!-- 동행 산책 시작·종료 (작성자 버튼, 산책 중·완료 안내) (추가: 김환중) -->
+          <div class="mt-16" data-walk-section hidden>
+            <p class="small text-muted mb-0" data-walk-info></p>
+            <div class="btn-row mt-16" data-walk-actions hidden>
+              <!-- 산책 중(작성자): 기록 화면으로 돌아가기 / 완료: 산책 기록 보기 (추가: 김환중) -->
+              <a class="btn btn-primary" data-walk-record-link hidden
+                >기록 화면으로 돌아가기</a
+              >
+              <a class="btn btn-primary" data-walk-record-view hidden
+                >산책 기록 보기</a
+              >
+              <button type="button" class="btn btn-primary" data-walk-btn>
+                동행 산책 시작
+              </button>
+            </div>
+          </div>
         </section>
 
         <div class="mt-24">
@@ -170,22 +187,10 @@
         </div>
       </div>
 
-      <!-- 동행 산책 시작·종료 (작성자 버튼, 산책 중·완료 안내) (추가: 김환중) -->
-      <div class="mt-16" data-walk-section hidden>
-        <p class="small text-muted mb-0" data-walk-info></p>
-        <div class="btn-row mt-16" data-walk-actions hidden>
-          <!-- 산책 중(작성자): 기록 화면으로 돌아가기 / 완료: 산책 기록 보기 (추가: 김환중) -->
-          <a class="btn btn-primary" data-walk-record-link hidden>기록 화면으로 돌아가기</a>
-          <a class="btn btn-primary" data-walk-record-view hidden>산책 기록 보기</a>
-          <button type="button" class="btn btn-primary" data-walk-btn>동행 산책 시작</button>
-        </div>
-      </div>
-    </section>
-
       <div class="mt-24" data-meeting-empty hidden>
         <p class="text-muted"></p>
         <a th:href="@{/board}" class="btn btn-outline" style="width: auto"
-          >동행 게시판으로</a
+          >산책로 게시판으로</a
         >
       </div>
 
