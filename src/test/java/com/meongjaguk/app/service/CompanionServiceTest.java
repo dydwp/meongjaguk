@@ -225,6 +225,23 @@ class CompanionServiceTest {
         assertThrows(AccessDeniedException.class, () -> service.rejectForHost(5L, 3L));
     }
 
+    // 동행 산책 시작 후 수락·거절 불가, 대기 신청은 그대로 (추가: 김환중)
+    @Test
+    void cannotAcceptOrRejectAfterWalkStarted() {
+        for (BoardStatus status : new BoardStatus[]{BoardStatus.IN_PROGRESS, BoardStatus.COMPLETED}) {
+            ReflectionTestUtils.setField(board, "status", status);
+            CompanionRequest pending = givenRequest(ApplicationStatus.PENDING);
+
+            IllegalStateException accept = assertThrows(IllegalStateException.class, () -> service.acceptForHost(5L, 1L));
+            IllegalStateException reject = assertThrows(IllegalStateException.class, () -> service.rejectForHost(5L, 1L));
+
+            assertEquals("동행 산책이 시작되어 신청을 처리할 수 없습니다.", accept.getMessage());
+            assertEquals("동행 산책이 시작되어 신청을 처리할 수 없습니다.", reject.getMessage());
+            assertEquals(ApplicationStatus.PENDING, pending.getStatus());
+        }
+        verifyNoInteractions(notifications);
+    }
+
     @Test
     void missingRequestIsBadRequest() {
         when(requests.findById(404L)).thenReturn(Optional.empty());

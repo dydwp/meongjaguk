@@ -2,10 +2,13 @@ package com.meongjaguk.app.service;
 
 import com.meongjaguk.app.dto.CoursePointDto;
 import com.meongjaguk.app.dto.WalkSaveRequest;
+import com.meongjaguk.app.entity.Board;
+import com.meongjaguk.app.entity.BoardStatus;
 import com.meongjaguk.app.entity.User;
 import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.entity.WalkRecordPlannedPoint;
 import com.meongjaguk.app.entity.WalkRecordPoint;
+import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.WalkRecordPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPlannedPointRepository;
@@ -21,6 +24,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Optional;
 import java.util.stream.StreamSupport;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
@@ -31,6 +35,7 @@ import static org.mockito.Mockito.mock;
 import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.times;
 import static org.mockito.Mockito.verify;
+import static org.mockito.Mockito.verifyNoInteractions;
 import static org.mockito.Mockito.when;
 
 class WalkServiceTest {
@@ -43,6 +48,7 @@ class WalkServiceTest {
     private WalkRecordPetRepository walkPets;
     private PetRepository pets;
     private WalkService walkService;
+    private final BoardRepository boards = mock(BoardRepository.class); // 동행 산책 (추가: 김환중)
 
     @BeforeEach
     void setUp() {
@@ -51,7 +57,7 @@ class WalkServiceTest {
         plannedPoints = mock(WalkRecordPlannedPointRepository.class);
         walkPets = mock(WalkRecordPetRepository.class);
         pets = mock(PetRepository.class);
-        walkService = new WalkService(records, actualPoints, plannedPoints, walkPets, pets);
+        walkService = new WalkService(records, actualPoints, plannedPoints, walkPets, pets, boards);
         when(records.save(any(WalkRecord.class))).thenAnswer(invocation -> {
             WalkRecord record = invocation.getArgument(0);
             ReflectionTestUtils.setField(record, "walkRecordId", 1L);
@@ -73,7 +79,8 @@ class WalkServiceTest {
                 actualRepository,
                 plannedRepository,
                 walkRecordPetRepository,
-                petRepository
+                petRepository,
+                mock(BoardRepository.class)
         );
 
         when(recordRepository.save(any(WalkRecord.class))).thenAnswer(invocation -> {
@@ -227,6 +234,86 @@ class WalkServiceTest {
 
         verify(walkPets).savePetLinks(1L, List.of());
         verify(pets, never()).findByUser_UserIdOrderByPetIdAsc(any());
+    }
+
+    // ---------- 동행 산책 기록 (추가: 김환중) ----------
+
+    private Board givenMeeting(BoardStatus status) {
+        Board meeting = Fixtures.board(10L, Fixtures.user(7L, "용제"), LocalDateTime.now().minusHours(1), 4);
+        ReflectionTestUtils.setField(meeting, "status", status);
+        when(boards.findById(10L)).thenReturn(Optional.of(meeting));
+        return meeting;
+    }
+
+    private static WalkSaveRequest meetingWalk(Long courseId, WalkSaveRequest.RecommendedRoute route) {
+        return new WalkSaveRequest(courseId, START, START + 1_530_000L, 2100, null, route, null, 10L);
+    }
+
+    @Test
+    void meetingWalkIsLinkedWithMeetingCourseAndCompletesMeeting() {
+        Board meeting = givenMeeting(BoardStatus.IN_PROGRESS);
+
+        // 보내온 코스·추천 경로는 무시하고 모집글 코스(1번)로 저장
+        assertEquals(1L, walkService.saveCompletedWalk(7L, meetingWalk(3L, route("추천 코스", 1000L, 2))));
+
+        WalkRecord saved = savedRecord();
+        assertEquals(10L, saved.getMeetingId());
+        assertEquals(1L, saved.getCourseId());
+        assertNull(saved.getPlannedTitle());
+        verify(plannedPoints, never()).saveAll(any());
+        assertEquals(BoardStatus.COMPLETED, meeting.getStatus());
+        assertEquals(LocalDateTime.of(2023, 11, 15, 7, 38, 50), meeting.getEndedAt());
+    }
+
+    @Test
+    void meetingEndedWithoutRecordOnlyLinksRecordAndKeepsEndTime() {
+        Board meeting = givenMeeting(BoardStatus.COMPLETED);
+        LocalDateTime firstEndedAt = LocalDateTime.of(2023, 11, 15, 7, 30, 0);
+        ReflectionTestUtils.setField(meeting, "endedAt", firstEndedAt);
+
+        walkService.saveCompletedWalk(7L, meetingWalk(null, null));
+
+        assertEquals(10L, savedRecord().getMeetingId());
+        assertEquals(BoardStatus.COMPLETED, meeting.getStatus());
+        assertEquals(firstEndedAt, meeting.getEndedAt());
+    }
+
+    @Test
+    void meetingWalkIsRejectedWhenNotRecordable() {
+        when(boards.findById(10L)).thenReturn(Optional.empty());
+        assertMeetingRejected("동행 산책 정보를 찾을 수 없습니다.");
+
+        givenMeeting(BoardStatus.IN_PROGRESS);
+        IllegalArgumentException notHost = assertThrows(IllegalArgumentException.class,
+                () -> walkService.saveCompletedWalk(8L, meetingWalk(null, null)));
+        assertEquals("본인이 연 동행 산책만 기록할 수 있습니다.", notHost.getMessage());
+
+        givenMeeting(BoardStatus.RECRUITING);
+        assertMeetingRejected("산책 중인 동행 산책이 아닙니다.");
+        givenMeeting(BoardStatus.CLOSED);
+        assertMeetingRejected("산책 중인 동행 산책이 아닙니다.");
+
+        givenMeeting(BoardStatus.IN_PROGRESS);
+        when(records.existsByMeetingId(10L)).thenReturn(true);
+        assertMeetingRejected("이미 기록이 저장된 동행 산책입니다.");
+
+        verify(records, never()).save(any());
+    }
+
+    @Test
+    void personalWalkDoesNotTouchMeeting() {
+        walkService.saveCompletedWalk(7L, new WalkSaveRequest(5L, START, START + 60_000L, 100, null, null, null));
+
+        WalkRecord saved = savedRecord();
+        assertNull(saved.getMeetingId());
+        assertEquals(5L, saved.getCourseId());
+        verifyNoInteractions(boards);
+    }
+
+    private void assertMeetingRejected(String message) {
+        IllegalArgumentException e = assertThrows(IllegalArgumentException.class,
+                () -> walkService.saveCompletedWalk(7L, meetingWalk(null, null)));
+        assertEquals(message, e.getMessage());
     }
 
     private static WalkSaveRequest.RecommendedRoute route(String title, Long distanceM, int pointCount) {

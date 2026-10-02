@@ -105,6 +105,11 @@ public class CompanionService {
             return;
         }
 
+        // 동행 산책을 시작한 뒤에는 수락 불가 (추가: 김환중)
+        if (request.getBoard().isWalkStarted()) {
+            throw new IllegalStateException("동행 산책이 시작되어 신청을 처리할 수 없습니다.");
+        }
+
         if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {
             throw new IllegalStateException("모임 시간이 지나 신청을 처리할 수 없습니다.");
         }
@@ -129,6 +134,11 @@ public class CompanionService {
 
         if (request.getStatus() != ApplicationStatus.PENDING) {
             return;
+        }
+
+        // 동행 산책을 시작한 뒤에는 거절 불가 (추가: 김환중)
+        if (request.getBoard().isWalkStarted()) {
+            throw new IllegalStateException("동행 산책이 시작되어 신청을 처리할 수 없습니다.");
         }
 
         if (request.getBoard().isMeetingTimePassed(LocalDateTime.now())) {

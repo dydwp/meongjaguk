@@ -39,6 +39,7 @@ services:
       - "./sql/db 테이블 생성 sql/11.개인 산책 추천 경로 저장.sql:/docker-entrypoint-initdb.d/11_planned_points.sql:ro"
       - "./sql/db 테이블 생성 sql/12.산책 기록 - 반려견 연결.sql:/docker-entrypoint-initdb.d/12_walk_record_pets.sql:ro"
       - "./sql/db 테이블 생성 sql/13.동행 모집 - 반려견 연결.sql:/docker-entrypoint-initdb.d/13_walk_meeting_pets.sql:ro"
+      - "./sql/db 테이블 생성 sql/14.동행 산책 기록 연결.sql:/docker-entrypoint-initdb.d/14_walk_record_meeting.sql:ro"
 
   app:
     build: .

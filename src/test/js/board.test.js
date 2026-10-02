@@ -381,6 +381,160 @@ test("글 삭제가 거부되면 이유를 알려주고 다시 누를 수 있게
   page.close();
 });
 
+// ---------- 동행 산책 시작 / 종료 (추가: 김환중) ----------
+
+const STARTED = "2026-10-02T18:02:11";
+const ENDED = "2026-10-02T18:40:00";
+
+test("동행 산책 영역은 상태와 작성자 여부에 따라 바뀐다", async () => {
+  const cases = [
+    [{ status: "RECRUITING" }, "모집이 마감되면 동행 산책을 시작할 수 있어요.", "동행 산책 시작", true],
+    [{ status: "CLOSED", currentParticipants: 1 }, "수락된 참가자가 있어야 동행 산책을 시작할 수 있어요.", "동행 산책 시작", true],
+    [{ status: "CLOSED", currentParticipants: 2 }, "모두 모이면 동행 산책을 시작해주세요.", "동행 산책 시작", false],
+    [{ status: "IN_PROGRESS", startedAt: STARTED }, "산책 중 · 18:02 시작", "동행 산책 종료(기록 없이)", false],
+    [{ status: "COMPLETED", startedAt: STARTED, endedAt: ENDED }, "산책 완료 · 18:02 ~ 18:40 (38분)", null, null],
+  ];
+  for (const [change, info, label, disabled] of cases) {
+    const host = openDetail({ meeting: { ...DETAIL, isHost: true, ...change } });
+    await settle();
+    assert.equal(host.$("[data-walk-section]").hidden, false, info);
+    assert.equal(host.$("[data-walk-info]").textContent, info);
+    if (label) {
+      assert.equal(host.$("[data-walk-actions]").hidden, false, info);
+      assert.equal(host.$("[data-walk-btn]").textContent, label);
+      assert.equal(host.$("[data-walk-btn]").disabled, disabled, info);
+    } else {
+      assert.equal(host.$("[data-walk-actions]").hidden, true, info);
+    }
+    host.close();
+
+    const guest = openDetail({ meeting: { ...DETAIL, ...change } });
+    await settle();
+    const infoOnly = change.status === "IN_PROGRESS" || change.status === "COMPLETED";
+    assert.equal(guest.$("[data-walk-section]").hidden, !infoOnly, info);
+    assert.equal(guest.$("[data-walk-actions]").hidden, true, info);
+    if (infoOnly) assert.equal(guest.$("[data-walk-info]").textContent, info);
+    guest.close();
+  }
+});
+
+test("동행 산책을 시작한 글은 작성자에게도 수정·삭제가 보이지 않는다", async () => {
+  for (const status of ["IN_PROGRESS", "COMPLETED"]) {
+    const page = openDetail({ meeting: { ...DETAIL, isHost: true, status, startedAt: STARTED, endedAt: ENDED } });
+    await settle();
+    assert.equal(page.$("[data-host-actions]").hidden, true, status);
+    page.close();
+  }
+});
+
+test("동행 산책 시작·종료는 확인 후 CSRF 토큰과 함께 요청하고, 시작하면 기록 화면으로 이동·종료하면 새로고침한다", async () => {
+  const start = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    routes: { "POST /api/meetings/10/start": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  start.click("[data-walk-btn]");
+  await settle();
+  assert.deepEqual(start.calls.confirms,
+    ["동행 산책을 시작할까요?\n시작하면 글 수정·삭제와 동행 신청 수락·거절을 할 수 없어요."]);
+  assert.equal(start.calls.fetch.at(-1).url, "/api/meetings/10/start");
+  assert.equal(start.calls.fetch.at(-1).method, "POST");
+  assert.equal(start.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(start.calls.navigations, ["/walk-record?meetingId=10"]);
+  start.close();
+
+  const end = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "IN_PROGRESS", startedAt: STARTED },
+    routes: { "POST /api/meetings/10/end": () => response(undefined, { status: 204 }) },
+  });
+  await settle();
+  end.click("[data-walk-btn]");
+  await settle();
+  assert.deepEqual(end.calls.confirms, ["기록 화면에서 종료하면 경로와 거리가 저장돼요.\n기록 없이 동행 산책을 종료할까요?"]);
+  assert.equal(end.calls.fetch.at(-1).url, "/api/meetings/10/end");
+  assert.equal(end.calls.fetch.at(-1).headers["X-CSRF-TOKEN"], "token-123");
+  assert.deepEqual(end.calls.navigations, ["reload"]);
+  end.close();
+});
+
+test("동행 산책 시작 확인을 취소하면 요청하지 않는다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    confirm: false,
+  });
+  await settle();
+  page.click("[data-walk-btn]");
+  await settle();
+
+  assert.equal(page.calls.fetch.some((c) => c.method === "POST"), false);
+  assert.equal(page.$("[data-walk-btn]").disabled, false);
+  page.close();
+});
+
+test("동행 산책 시작이 거부되면 이유를 알려주고 다시 누를 수 있게 한다", async () => {
+  const page = openDetail({
+    meeting: { ...DETAIL, isHost: true, status: "CLOSED", currentParticipants: 2 },
+    routes: {
+      "POST /api/meetings/10/start": () =>
+        response({ message: "수락된 참가자가 있어야 산책을 시작할 수 있어요." }, { status: 400 }),
+    },
+  });
+  await settle();
+  page.click("[data-walk-btn]");
+  await settle();
+
+  assert.deepEqual(page.calls.alerts, ["수락된 참가자가 있어야 산책을 시작할 수 있어요."]);
+  assert.equal(page.$("[data-walk-btn]").disabled, false);
+  assert.deepEqual(page.calls.navigations, []);
+  page.close();
+});
+
+// ---------- 동행 산책 GPS 기록 연결 (추가: 김환중) ----------
+
+test("산책 중이면 작성자에게 기록 화면으로 돌아가기와 기록 없이 종료 버튼을 보여준다", async () => {
+  const host = openDetail({ meeting: { ...DETAIL, isHost: true, status: "IN_PROGRESS", startedAt: STARTED } });
+  await settle();
+  assert.equal(host.$("[data-walk-actions]").hidden, false);
+  assert.equal(host.$("[data-walk-record-link]").hidden, false);
+  assert.equal(host.$("[data-walk-record-link]").getAttribute("href"), "/walk-record?meetingId=10");
+  assert.equal(host.$("[data-walk-btn]").hidden, false);
+  assert.equal(host.$("[data-walk-btn]").textContent, "동행 산책 종료(기록 없이)");
+  assert.equal(host.$("[data-walk-record-view]").hidden, true);
+  host.close();
+
+  const member = openDetail({ meeting: { ...DETAIL, status: "IN_PROGRESS", startedAt: STARTED, myApplicationStatus: "ACCEPTED" } });
+  await settle();
+  assert.equal(member.$("[data-walk-record-link]").hidden, true);
+  assert.equal(member.$("[data-walk-actions]").hidden, true);
+  member.close();
+});
+
+test("완료된 동행 산책의 기록 보기는 작성자와 수락된 참가자에게만 보인다", async () => {
+  const done = { ...DETAIL, status: "COMPLETED", startedAt: STARTED, endedAt: ENDED, walkRecordId: 55 };
+  const cases = [
+    [{ isHost: true }, true],
+    [{ myApplicationStatus: "ACCEPTED" }, true],
+    [{ myApplicationStatus: "PENDING" }, false],
+    [{ myApplicationStatus: "REJECTED" }, false],
+    [{}, false],
+    [{ isHost: true, walkRecordId: null }, false],
+  ];
+  for (const [change, shown] of cases) {
+    const page = openDetail({ meeting: { ...done, ...change } });
+    await settle();
+    const label = JSON.stringify(change);
+    assert.equal(page.$("[data-walk-record-view]").hidden, !shown, label);
+    assert.equal(page.$("[data-walk-actions]").hidden, !shown, label);
+    if (shown) {
+      assert.equal(page.$("[data-walk-record-view]").getAttribute("href"), "/activity-detail?id=55");
+      assert.equal(page.$("[data-walk-btn]").hidden, true, label);
+    }
+    assert.equal(page.$("[data-walk-record-link]").hidden, true, label);
+    assert.equal(page.$("[data-walk-info]").textContent, "산책 완료 · 18:02 ~ 18:40 (38분)");
+    page.close();
+  }
+});
+
 test("상세 지도: 경로가 없으면 출발 지점 마커, 왕복 코스면 '시작 · 도착' 표시", async () => {
   const start = openDetail({ kakao: true });
   await settle();

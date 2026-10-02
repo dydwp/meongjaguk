@@ -64,6 +64,9 @@ public class WalkRecord {
     @Column(name = "planned_estimated_minutes")
     private Integer plannedEstimatedMinutes;
 
+    @Column(name = "meeting_id")
+    private Long meetingId; // 동행 산책 기록이면 모집글 번호, 개인 산책이면 null (추가: 김환중)
+
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
@@ -93,5 +96,10 @@ public class WalkRecord {
         this.plannedDescription = description;
         this.plannedDistanceM = distanceM;
         this.plannedEstimatedMinutes = estimatedMinutes;
+    }
+
+    /** 동행 산책 모집글에 연결 (추가: 김환중) */
+    public void linkMeeting(Long meetingId) {
+        this.meetingId = meetingId;
     }
 }

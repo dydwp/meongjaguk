@@ -29,6 +29,7 @@ public record MySharedMeetingView(
         return switch (status) {
             case "RECRUITING" -> "모집 중";
             case "CLOSED" -> "모집 마감";
+            case "IN_PROGRESS" -> "산책 중"; // 동행 산책 진행 중 (추가: 김환중)
             case "COMPLETED" -> "산책 완료";
             default -> status;
         };
