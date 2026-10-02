@@ -17,6 +17,7 @@ import com.meongjaguk.app.entity.CoursePoint;
 import com.meongjaguk.app.entity.Pet;
 import com.meongjaguk.app.entity.Route;
 import com.meongjaguk.app.entity.User;
+import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.repository.BoardCommentRepository;
 import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.CompanionRequestRepository;
@@ -24,6 +25,7 @@ import com.meongjaguk.app.repository.CoursePointRepository;
 import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.RouteRepository;
 import com.meongjaguk.app.repository.WalkMeetingPetRepository;
+import com.meongjaguk.app.repository.WalkRecordRepository;
 
 
 import org.springframework.data.domain.PageRequest;
@@ -61,6 +63,7 @@ public class BoardService {
     private final WalkMeetingPetRepository walkMeetingPetRepository;
     private final PetRepository petRepository;
     private final PetService petService;
+    private final WalkRecordRepository walkRecordRepository; // 동행 산책에 연결된 기록 (추가: 김환중)
 
     /** 저장할 수 있는 경로 좌표 최대 개수 (비정상적으로 큰 요청 방지) */
     private static final int MAX_COURSE_POINTS = 5000;
@@ -74,7 +77,8 @@ public class BoardService {
                         NotificationService notificationService,
                         WalkMeetingPetRepository walkMeetingPetRepository,
                         PetRepository petRepository,
-                        PetService petService) {
+                        PetService petService,
+                        WalkRecordRepository walkRecordRepository) {
         this.boardRepository = boardRepository;
         this.companionRequestRepository = companionRequestRepository;
         this.commentRepository = commentRepository;
@@ -85,6 +89,7 @@ public class BoardService {
         this.walkMeetingPetRepository = walkMeetingPetRepository;
         this.petRepository = petRepository;
         this.petService = petService;
+        this.walkRecordRepository = walkRecordRepository;
     }
 
     /**
@@ -206,7 +211,8 @@ public class BoardService {
                                 .stream().map(BoardService::toPointDto).toList(),
             pets,
             board.getStartedAt(),
-            board.getEndedAt());
+            board.getEndedAt(),
+            walkRecordRepository.findByMeetingId(meetingId).map(WalkRecord::getWalkRecordId).orElse(null));
     }
 
     /**

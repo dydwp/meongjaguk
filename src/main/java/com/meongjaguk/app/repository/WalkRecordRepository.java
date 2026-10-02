@@ -22,4 +22,13 @@ public interface WalkRecordRepository extends JpaRepository<WalkRecord, Long> {
 
     /** 메인 "마지막 산책": 가장 최근 기록 1개 */
     Optional<WalkRecord> findFirstByUserIdAndStatusOrderByStartedAtDesc(Long userId, String status);
+
+    /** 내 개인 산책 기록 최신순 (동행 산책 기록 제외) (추가: 김환중) */
+    List<WalkRecord> findByUserIdAndMeetingIdIsNullOrderByStartedAtDesc(Long userId);
+
+    /** 동행 모집글에 연결된 산책 기록 (추가: 김환중) */
+    Optional<WalkRecord> findByMeetingId(Long meetingId);
+
+    /** 동행 모집글에 이미 연결된 기록이 있는지 (추가: 김환중) */
+    boolean existsByMeetingId(Long meetingId);
 }

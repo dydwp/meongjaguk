@@ -418,6 +418,8 @@
     var walkInfo = detailRoot.querySelector("[data-walk-info]");
     var walkActions = detailRoot.querySelector("[data-walk-actions]");
     var walkBtn = detailRoot.querySelector("[data-walk-btn]");
+    var walkRecordLink = detailRoot.querySelector("[data-walk-record-link]");
+    var walkRecordView = detailRoot.querySelector("[data-walk-record-view]");
     var walkAction = null; // "start" | "end"
 
     // 상태별 안내 문구와 작성자 버튼 (작성자가 아니면 산책 중·완료일 때 문구만 표시)
@@ -438,7 +440,7 @@
         label = "동행 산책 시작";
       } else if (status === "IN_PROGRESS") {
         info = "산책 중 · " + formatClock(meeting.startedAt) + " 시작";
-        label = "동행 산책 종료";
+        label = "동행 산책 종료(기록 없이)";
         enabled = true;
       } else if (status === "COMPLETED") {
         info = "산책 완료 · " + formatClock(meeting.startedAt) + " ~ " + formatClock(meeting.endedAt) +
@@ -458,13 +460,32 @@
         walkBtn.disabled = !enabled;
         walkActions.hidden = false;
       }
+
+      // 산책 중(작성자): GPS 기록 화면으로 돌아가는 링크 (추가: 김환중)
+      if (meeting.isHost && status === "IN_PROGRESS") {
+        walkRecordLink.href = walkRecordUrl();
+        walkRecordLink.hidden = false;
+      }
+      // 완료 + 연결된 기록: 작성자와 수락된 참가자에게만 산책 기록 보기 (추가: 김환중)
+      if (status === "COMPLETED" && meeting.walkRecordId != null &&
+          (meeting.isHost || meeting.myApplicationStatus === "ACCEPTED")) {
+        walkRecordView.href = "/activity-detail?id=" + encodeURIComponent(meeting.walkRecordId);
+        walkRecordView.hidden = false;
+        walkBtn.hidden = true;
+        walkActions.hidden = false;
+      }
+    }
+
+    // 동행 산책 GPS 기록 화면 (추가: 김환중)
+    function walkRecordUrl() {
+      return "/walk-record?meetingId=" + encodeURIComponent(meetingId);
     }
 
     walkBtn.addEventListener("click", function () {
       if (walkBtn.disabled || !walkAction) return;
       var message = walkAction === "start"
         ? "동행 산책을 시작할까요?\n시작하면 글 수정·삭제와 동행 신청 수락·거절을 할 수 없어요."
-        : "동행 산책을 종료할까요?";
+        : "기록 화면에서 종료하면 경로와 거리가 저장돼요.\n기록 없이 동행 산책을 종료할까요?";
       if (!confirm(message)) return;
 
       var headers = {};
@@ -484,7 +505,9 @@
             return;
           }
           if (res.ok) {
-            window.location.reload();
+            // 시작하면 GPS 기록 화면으로, 기록 없이 종료하면 새로고침 (추가: 김환중)
+            if (walkAction === "start") window.location.href = walkRecordUrl();
+            else window.location.reload();
             return;
           }
           return res.json()

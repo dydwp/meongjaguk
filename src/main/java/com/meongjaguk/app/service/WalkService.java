@@ -2,10 +2,13 @@ package com.meongjaguk.app.service;
 
 import com.meongjaguk.app.dto.CoursePointDto;
 import com.meongjaguk.app.dto.WalkSaveRequest;
+import com.meongjaguk.app.entity.Board;
+import com.meongjaguk.app.entity.BoardStatus;
 import com.meongjaguk.app.entity.Pet;
 import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.entity.WalkRecordPoint;
 import com.meongjaguk.app.entity.WalkRecordPlannedPoint;
+import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.WalkRecordPetRepository;
 import com.meongjaguk.app.repository.WalkRecordPointRepository;
@@ -39,6 +42,7 @@ public class WalkService {
     private final WalkRecordPlannedPointRepository plannedPointRepository;
     private final WalkRecordPetRepository walkRecordPetRepository;
     private final PetRepository petRepository;
+    private final BoardRepository boardRepository; // 동행 산책 기록 연결 (추가: 김환중)
 
     /** 끝난 산책(+ 경로 좌표)을 저장하고 저장된 기록 번호를 돌려줌 */
     @Transactional
@@ -49,10 +53,18 @@ public class WalkService {
         }
 
         WalkSaveRequest.RecommendedRoute recommended = request.recommendedRoute();
+        // 동행 산책: 모집글의 코스로 저장하고 보내온 코스·추천 경로는 무시 (추가: 김환중)
+        Long courseId = request.courseId();
+        Board meeting = null;
+        if (request.meetingId() != null) {
+            meeting = findRecordableMeeting(userId, request.meetingId());
+            courseId = meeting.getCourse().getCourseId().longValue();
+            recommended = null;
+        }
         validateRecommendedRoute(recommended);
         List<Long> petIds = validatePetIds(userId, request.petIds());
 
-        if (recommended != null && request.courseId() != null) {
+        if (recommended != null && courseId != null) {
             throw new IllegalArgumentException("산책 경로 정보가 올바르지 않습니다.");
         }
 
@@ -63,7 +75,7 @@ public class WalkService {
 
         // 1) 산책 기록 한 줄 저장
         WalkRecord record = WalkRecord.completed(
-                userId, request.courseId(), startedAt, endedAt, durationSeconds, distanceM);
+                userId, courseId, startedAt, endedAt, durationSeconds, distanceM);
         if (recommended != null) {
             record.setPlannedRoute(recommended.title().trim(), recommended.description(),
                     recommended.distanceM(), recommended.estimatedMinutes());
@@ -78,7 +90,35 @@ public class WalkService {
 
         walkRecordPetRepository.savePetLinks(walkRecordId, petIds);
 
+        // 동행 산책: 기록을 모집글에 연결하고, 산책 중이면 완료 처리 (추가: 김환중)
+        // - 이미 기록 없이 종료(COMPLETED)된 모집이면 기록만 연결하고 처음 종료 시각을 유지
+        if (meeting != null) {
+            record.linkMeeting(meeting.getMeetingId());
+            if (meeting.getStatus() == BoardStatus.IN_PROGRESS) {
+                meeting.completeWalk(endedAt);
+            }
+        }
+
         return walkRecordId;
+    }
+
+    /**
+     * 기록을 연결할 수 있는 동행 모집글 (추가: 김환중)
+     * - 개최자 본인, 산책 중(IN_PROGRESS)이거나 기록 없이 종료(COMPLETED)된 모집, 아직 연결된 기록이 없을 때
+     */
+    private Board findRecordableMeeting(Long userId, Long meetingId) {
+        Board meeting = boardRepository.findById(meetingId)
+                .orElseThrow(() -> new IllegalArgumentException("동행 산책 정보를 찾을 수 없습니다."));
+        if (!meeting.isHostedBy(userId)) {
+            throw new IllegalArgumentException("본인이 연 동행 산책만 기록할 수 있습니다.");
+        }
+        if (meeting.getStatus() != BoardStatus.IN_PROGRESS && meeting.getStatus() != BoardStatus.COMPLETED) {
+            throw new IllegalArgumentException("산책 중인 동행 산책이 아닙니다.");
+        }
+        if (walkRecordRepository.existsByMeetingId(meetingId)) {
+            throw new IllegalArgumentException("이미 기록이 저장된 동행 산책입니다.");
+        }
+        return meeting;
     }
 
     private void validateRecommendedRoute(WalkSaveRequest.RecommendedRoute route) {

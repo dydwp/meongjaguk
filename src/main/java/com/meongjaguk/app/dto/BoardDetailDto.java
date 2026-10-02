@@ -14,6 +14,7 @@ import java.util.List;
  * startLatitude/startLongitude/points: 지도 표시용 (경로 좌표가 없으면 points는 빈 목록)
  * pets: 모집자의 반려견 정보
  * startedAt/endedAt: 동행 산책 시작·종료 시각 (시작 전이면 null) (추가: 김환중)
+ * walkRecordId: 동행 산책에 연결된 산책 기록 번호 (없으면 null) (추가: 김환중)
  */
 public record BoardDetailDto(
     Long meetingId,
@@ -39,5 +40,6 @@ public record BoardDetailDto(
     List<CoursePointDto> points,
     List<PetCardView> pets,
     LocalDateTime startedAt,
-    LocalDateTime endedAt) {
+    LocalDateTime endedAt,
+    Long walkRecordId) {
 }

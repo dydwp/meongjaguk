@@ -389,3 +389,83 @@ test("크기·활동성 버튼은 그룹 안에서 하나만 선택된다", () =
   assert.ok(!group.querySelector('[data-value="SMALL"]').classList.contains("selected"));
   page.close();
 });
+
+// ---------- 동행 산책 기록 (추가: 김환중) ----------
+
+const MEETING_KEY = "meongjaguk-walk-meeting-id";
+
+test("동행 산책 기록 화면에서 시작하면 모집글 번호를 저장해 기록과 함께 보내고, 저장 후 모집 상세로 이동한다", async () => {
+  const page = openRecord("http://localhost:8081/walk-record?meetingId=10");
+  await settle();
+
+  assert.equal(walking(page), true);
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), "10");
+
+  page.click("[data-end-walk]");
+  await settle();
+
+  const body = JSON.parse(page.calls.fetch.find((c) => c.url === "/api/walks").body);
+  assert.equal(body.meetingId, 10);
+  assert.deepEqual(page.calls.alerts, ["산책 기록을 저장했어요!"]);
+  assert.deepEqual(page.calls.navigations, ["/course-detail-shared?meetingId=10"]);
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), null);
+  page.close();
+});
+
+test("개인 산책 중에 동행 산책 기록 화면을 열면 안내하고 동행 산책으로 연결하지 않는다", async () => {
+  const page = openRecord("http://localhost:8081/walk-record?meetingId=10", { localStorage: walkingState() });
+  await settle();
+
+  assert.deepEqual(page.calls.alerts, ["진행 중인 산책을 먼저 종료해주세요."]);
+  assert.equal(walking(page), true);
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), null);
+
+  page.click("[data-end-walk]");
+  await settle();
+
+  const body = JSON.parse(page.calls.fetch.find((c) => c.url === "/api/walks").body);
+  assert.equal(body.meetingId, null);
+  assert.deepEqual(page.calls.navigations, ["/"]); // 개인 산책은 data-end-redirect
+  page.close();
+});
+
+test("같은 동행 산책 중이면 안내 없이 이어서 기록하고, 다른 동행 산책이면 안내한다", async () => {
+  const same = openRecord("http://localhost:8081/walk-record?meetingId=10", {
+    localStorage: walkingState({ [MEETING_KEY]: "10" }),
+  });
+  await settle();
+  assert.deepEqual(same.calls.alerts, []);
+  assert.equal(same.window.localStorage.getItem(MEETING_KEY), "10");
+  same.close();
+
+  const other = openRecord("http://localhost:8081/walk-record?meetingId=11", {
+    localStorage: walkingState({ [MEETING_KEY]: "10" }),
+  });
+  await settle();
+  assert.deepEqual(other.calls.alerts, ["진행 중인 산책을 먼저 종료해주세요."]);
+  assert.equal(other.window.localStorage.getItem(MEETING_KEY), "10");
+  other.close();
+});
+
+test("숫자가 아닌 모집글 번호는 무시하고 개인 산책으로 기록한다", async () => {
+  const page = openRecord("http://localhost:8081/walk-record?meetingId=10abc");
+  await settle();
+
+  assert.equal(walking(page), true);
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), null);
+  page.close();
+});
+
+test("동행 산책을 저장 없이 취소해도 모집글 번호를 지운다", async () => {
+  const page = openRecord("http://localhost:8081/walk-record?meetingId=10");
+  await settle();
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), "10");
+
+  page.click("[data-cancel-walk]");
+  await settle();
+
+  assert.equal(walking(page), false);
+  assert.equal(page.window.localStorage.getItem(MEETING_KEY), null);
+  assert.equal(page.calls.fetch.some((c) => c.url === "/api/walks"), false);
+  page.close();
+});

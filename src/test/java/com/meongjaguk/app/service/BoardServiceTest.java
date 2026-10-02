@@ -14,6 +14,7 @@ import com.meongjaguk.app.entity.BoardStatus;
 import com.meongjaguk.app.entity.CoursePoint;
 import com.meongjaguk.app.entity.Route;
 import com.meongjaguk.app.entity.User;
+import com.meongjaguk.app.entity.WalkRecord;
 import com.meongjaguk.app.repository.BoardCommentRepository;
 import com.meongjaguk.app.repository.BoardRepository;
 import com.meongjaguk.app.repository.CompanionRequestRepository;
@@ -21,6 +22,7 @@ import com.meongjaguk.app.repository.CoursePointRepository;
 import com.meongjaguk.app.repository.PetRepository;
 import com.meongjaguk.app.repository.RouteRepository;
 import com.meongjaguk.app.repository.WalkMeetingPetRepository;
+import com.meongjaguk.app.repository.WalkRecordRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Nested;
@@ -70,6 +72,7 @@ class BoardServiceTest {
     private WalkMeetingPetRepository walkMeetingPets;
     private PetRepository pets;
     private PetService petService;
+    private WalkRecordRepository walkRecords; // 동행 산책에 연결된 기록 (추가: 김환중)
 
     private final User host = user(1L, "용제");
     private final User applicant = user(2L, "민준");
@@ -87,6 +90,7 @@ class BoardServiceTest {
         walkMeetingPets = mock(WalkMeetingPetRepository.class);
         pets = mock(PetRepository.class);
         petService = mock(PetService.class);
+        walkRecords = mock(WalkRecordRepository.class);
         service = new BoardService(
                 boards,
                 requests,
@@ -97,7 +101,8 @@ class BoardServiceTest {
                 notifications,
                 walkMeetingPets,
                 pets,
-                petService
+                petService,
+                walkRecords
         );
         when(users.findById(1L)).thenReturn(host);
         when(users.findById(2L)).thenReturn(applicant);
@@ -511,6 +516,17 @@ class BoardServiceTest {
             assertEquals("COMPLETED", detail.status());
             assertEquals(startedAt, detail.startedAt());
             assertEquals(endedAt, detail.endedAt());
+        }
+
+        @Test
+        void detailIncludesLinkedWalkRecordId() {
+            assertNull(service.getBoard(10L, 1L).walkRecordId());
+
+            WalkRecord record = WalkRecord.completed(1L, 1L, tomorrow, tomorrow.plusMinutes(30), 1800, 2000);
+            ReflectionTestUtils.setField(record, "walkRecordId", 55L);
+            when(walkRecords.findByMeetingId(10L)).thenReturn(Optional.of(record));
+
+            assertEquals(55L, service.getBoard(10L, 2L).walkRecordId());
         }
     }
 
