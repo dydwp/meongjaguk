@@ -73,9 +73,8 @@ services:
       # AI 산책로 추천: 브라우저 → Spring(/api/routes/recommend) → 내부 네트워크로 AI 서버 호출
       AI_SERVER_URL: http://ai-server:8000
       TZ: Asia/Seoul
-    ports:
-      # 서버 접속 포트 (기본 80 → http://서버주소 로 접속, .env.prod 의 APP_PORT 로 변경 가능)
-      - "${APP_PORT:-80}:8081"
+    expose:
+      - "8081"
     depends_on:
       mysql:
         condition: service_healthy
