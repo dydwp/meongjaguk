@@ -100,3 +100,7 @@ sequenceDiagram
   - Spring 앱: [app-ci.yml](.github/workflows/app-ci.yml) — `dev`·`main` 대상 PR, `main` push (ai-server만 바뀐 경우 제외)
   - AI 서버: [ai-ci.yml](.github/workflows/ai-ci.yml) — `dev`·`main` 대상 PR과 push
 - **배포**: AWS EC2 한 대에서 Docker Compose로 MySQL, Spring 앱, AI 서버, Caddy를 함께 실행합니다.
+
+## 멍자국 시연 영상
+
+[GitHub Release에서 시연 영상 확인하기](https://github.com/dydwp/meongjaguk/releases/tag/v.2.0.1)
